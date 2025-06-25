@@ -7,6 +7,9 @@ import fileUpload from "express-fileupload";
 import { v2 as cloudinary } from "cloudinary";
 
 import dbConnect from "./db/ConnectMongoDB.js";
+
+import authRoutes from "./routes/auth.route.js";
+
 // imports End
 
 const app = express();
@@ -39,6 +42,7 @@ app.use(
 );
 
 // Routes Setup
+app.use("/api/auth", authRoutes);
 
 // Running App
 const PORT = process.env.PORT || 9000;
