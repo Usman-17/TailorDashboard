@@ -10,6 +10,9 @@ import useGetAuth from "./hooks/useGetAuth";
 import "react-loading-skeleton/dist/skeleton.css";
 import { lazy, Suspense, useEffect } from "react";
 
+import DashboardPage from "./pages/DashboardPage";
+import Layout from "./layout/Layout";
+
 // Lazy load pages
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 
@@ -46,6 +49,13 @@ const App = () => {
         }
       >
         <Routes>
+          <Route path="/" element={authUser ? <Layout /> : <LoginPage />}>
+            <Route
+              index
+              element={authUser ? <DashboardPage /> : <LoginPage />}
+            />
+          </Route>
+
           <Route
             path="/login"
             element={!authUser ? <LoginPage /> : <Navigate to="/" />}
