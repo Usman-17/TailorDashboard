@@ -21,4 +21,5 @@ input:-webkit-autofill:active {
 
 .ant-table-cell {
   font-family: "Outfit", sans-serif !important;
+  white-space: nowrap;
 }

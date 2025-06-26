@@ -10,7 +10,7 @@ import {
   updateMeasurement,
 } from "../controllers/measurement.controller.js";
 
-router.get("/all", protectRoute, protectRoute, getAllMeasurements);
+router.get("/all", protectRoute, getAllMeasurements);
 router.get("/:customerId", protectRoute, getMeasurementById);
 router.post("/add/:customerId", protectRoute, addMeasurement);
 router.put("/update/:customerId", protectRoute, updateMeasurement);

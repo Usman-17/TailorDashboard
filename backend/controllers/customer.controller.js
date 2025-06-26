@@ -1,4 +1,5 @@
 import Customer from "../models/customer.model.js";
+import Measurement from "../models/measurement.model.js";
 
 // PATH     : /api/customer/all
 // METHOD   : GET
@@ -90,6 +91,10 @@ export const deleteCustomer = async (req, res) => {
     const customer = await Customer.findById(id);
     if (!customer) return res.status(404).json({ error: "Customer not found" });
 
+    // Delete associated measurement if exists
+    await Measurement.deleteOne({ customer: id });
+
+    // Delete the customer
     await Customer.findByIdAndDelete(id);
 
     res.status(200).json({ message: "Customer deleted successfully" });

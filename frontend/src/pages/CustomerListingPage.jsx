@@ -202,6 +202,23 @@ const CustomerListingPage = () => {
             Edit
           </Button>
 
+          {/* Add Measurements */}
+          <Button
+            onClick={() => navigate(`/measurements/add/${record.key}`)}
+            className="flex items-center gap-1 text-green-600 hover:underline cursor-pointer"
+          >
+            <Redo className="w-4 h-4" />
+            Add Measurements
+          </Button>
+
+          <button
+            onClick={() => navigate(`/measurements/edit/${record.key}`)}
+            className="flex items-center gap-1 hover:text-red-600 hover:underline cursor-pointer border border-gray-300 p-1 px-3 rounded hover:border-red-500 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+            Edit Measurements
+          </button>
+
           <button
             onClick={() => deleteMutation.mutate(record._id)}
             className="flex items-center gap-1 hover:text-red-600 hover:underline cursor-pointer border border-gray-300 p-1 px-3 rounded hover:border-red-500 transition-colors"
@@ -217,12 +234,19 @@ const CustomerListingPage = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between mb-6 sm:mb-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
           title="Customers"
           subtitle="Search and manage customers below"
         />
-        <CustomButton title="Add New Customer" to="/customer/add" Icon={Redo} />
+
+        <div className="sm:w-auto w-full">
+          <CustomButton
+            title="Add New Customer"
+            to="/customer/add"
+            Icon={Redo}
+          />
+        </div>
       </div>
 
       {/* Table */}

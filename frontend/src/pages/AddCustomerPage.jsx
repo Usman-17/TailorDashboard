@@ -85,17 +85,19 @@ const AddCustomerPage = () => {
   return (
     <>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between mb-6 sm:mb-0 text-white">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
           title={id ? "Edit Customer" : "Add New Customer"}
           subtitle="Fill out the details below to save customer"
         />
 
-        <CustomButton
-          title="Manage All Customers"
-          to="/customer/manage"
-          Icon={Undo}
-        />
+        <div className="sm:w-auto w-full">
+          <CustomButton
+            title="Manage All Customers"
+            to="/customer/manage"
+            Icon={Undo}
+          />
+        </div>
       </div>
 
       {/* Form */}
