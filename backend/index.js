@@ -9,6 +9,7 @@ import { v2 as cloudinary } from "cloudinary";
 import dbConnect from "./db/ConnectMongoDB.js";
 
 import authRoutes from "./routes/auth.route.js";
+import customerRoutes from "./routes/customer.route.js";
 
 // imports End
 
@@ -43,6 +44,7 @@ app.use(
 
 // Routes Setup
 app.use("/api/auth", authRoutes);
+app.use("/api/customer", customerRoutes);
 
 // Running App
 const PORT = process.env.PORT || 9000;
