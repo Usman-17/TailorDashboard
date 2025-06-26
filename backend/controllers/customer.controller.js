@@ -6,7 +6,9 @@ import Customer from "../models/customer.model.js";
 // DESC     : Get all Customers
 export const getAllCustomers = async (req, res) => {
   try {
-    const customer = await Customer.find().sort({ createdAt: -1 });
+    const customer = await Customer.find()
+      .populate("measurement")
+      .sort({ createdAt: -1 });
 
     if (!customer.length === 0) return res.status(200).json([]);
     return res.status(200).json(customer);
@@ -23,7 +25,7 @@ export const getAllCustomers = async (req, res) => {
 export const getCustomer = async (req, res) => {
   const { id } = req.params;
   try {
-    const customer = await Customer.findById(id);
+    const customer = await Customer.findById(id).populate("measurement");
     res.status(200).json(customer);
   } catch (error) {
     console.log("Error in getCustomer Controller", error.message);

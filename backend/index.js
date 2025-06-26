@@ -10,6 +10,7 @@ import dbConnect from "./db/ConnectMongoDB.js";
 
 import authRoutes from "./routes/auth.route.js";
 import customerRoutes from "./routes/customer.route.js";
+import measurementsRoutes from "./routes/measurement.route.js";
 
 // imports End
 
@@ -45,6 +46,7 @@ app.use(
 // Routes Setup
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/measurements", measurementsRoutes);
 
 // Running App
 const PORT = process.env.PORT || 9000;

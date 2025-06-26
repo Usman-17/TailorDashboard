@@ -14,7 +14,7 @@ const customerSchema = new mongoose.Schema(
       unique: true,
     },
 
-    measurementId: {
+    measurement: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Measurement",
     },
