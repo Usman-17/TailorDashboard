@@ -12,7 +12,6 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      match: /^[0-9]{10,15}$/,
     },
 
     measurementId: {

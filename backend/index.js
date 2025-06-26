@@ -44,7 +44,7 @@ app.use(
 
 // Routes Setup
 app.use("/api/auth", authRoutes);
-app.use("/api/customer", customerRoutes);
+app.use("/api/customers", customerRoutes);
 
 // Running App
 const PORT = process.env.PORT || 9000;
