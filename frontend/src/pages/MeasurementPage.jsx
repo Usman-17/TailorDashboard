@@ -28,7 +28,7 @@ const MeasurementPage = () => {
     return <div className="text-red-500 p-4">Error: {error.message}</div>;
 
   return (
-    <div>
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
           title="Customer Measurement Details"
@@ -47,7 +47,7 @@ const MeasurementPage = () => {
       {/* Customer Detail */}
       {isLoading ? (
         <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6 animate-pulse">
-          <div className="flex flex-col sm:flex-row sm:gap-10">
+          <div className="flex gap-10">
             <div className="h-4 w-1/6 bg-gray-300 rounded " />
             <div className="h-4 w-1/6 bg-gray-300 rounded" />
           </div>
@@ -55,13 +55,13 @@ const MeasurementPage = () => {
       ) : (
         measurement.customer.name &&
         measurement.customer.phone && (
-          <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6">
-            <div className="flex flex-col sm:flex-row sm:gap-10">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
+          <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 sm:p-4 mb-6 text-nowrap">
+            <div className="flex gap-10">
+              <div className="flex items-center gap-1 sm:gap-2 text-sm text-gray-700">
                 <span className="font-medium">Name:</span>
                 <span>{measurement?.customer.name}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700 mt-1 sm:mt-0">
+              <div className="flex items-center gap-1 sm:gap-2 text-sm text-gray-700 mt-1 sm:mt-0">
                 <span className="font-medium">Phone:</span>
                 <span>{measurement?.customer.phone}</span>
               </div>
@@ -71,7 +71,7 @@ const MeasurementPage = () => {
       )}
 
       {/* Measurement Fields */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-1 sm:gap-4">
         <div className="border border-gray-200 rounded-md p-3">
           <p className="text-sm text-gray-500 font-medium capitalize">Length</p>
           <p className="text-md font-semibold text-gray-800">
@@ -178,7 +178,7 @@ const MeasurementPage = () => {
           </p>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
