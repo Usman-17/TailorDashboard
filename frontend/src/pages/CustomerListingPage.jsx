@@ -234,7 +234,14 @@ const CustomerListingPage = () => {
           )}
 
           <button
-            onClick={() => deleteMutation.mutate(record._id)}
+            onClick={() => {
+              if (
+                window.confirm("Are you sure you want to delete this customer?")
+              ) {
+                deleteMutation.mutate(record._id);
+                console.log(`Customer with ID ${record._id} deleted`);
+              }
+            }}
             className="flex items-center gap-1 hover:text-red-600 hover:underline cursor-pointer border border-gray-300 p-1 px-3 rounded hover:border-red-500 transition-colors"
           >
             <Trash className="w-4 h-4" />
