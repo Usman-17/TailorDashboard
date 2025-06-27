@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Highlighter from "react-highlight-words";
 import { Table, Input, Button, Space } from "antd";
 import { useEffect, useRef, useState } from "react";
-import { Search, Pencil, Redo, Trash } from "lucide-react";
+import { Search, Pencil, Redo, Trash, Eye } from "lucide-react";
 
 import CustomButton from "../components/CustomButton";
 import SectionHeading from "../components/SectionHeading";
@@ -35,6 +35,7 @@ const CustomerListingPage = () => {
             sr: index + 1,
             name: customer.name,
             phone: customer.phone,
+            measurement: customer.measurement,
             createdAt: moment(customer.createdAt).format("DD MMM YYYY"),
           }))
         );
@@ -179,19 +180,19 @@ const CustomerListingPage = () => {
       title: "Phone",
       dataIndex: "phone",
       key: "phone",
-      width: "25%",
+      width: "15%",
       ...getColumnSearchProps("phone"),
     },
     {
       title: "Created At",
       dataIndex: "createdAt",
       key: "createdAt",
-      width: "20%",
+      width: "15%",
     },
     {
       title: "Action",
       key: "action",
-      width: "20%",
+      width: "35%",
       render: (_, record) => (
         <div className="flex items-center gap-2">
           <Button
@@ -203,28 +204,40 @@ const CustomerListingPage = () => {
           </Button>
 
           {/* Add Measurements */}
-          <Button
-            onClick={() => navigate(`/measurements/add/${record.key}`)}
-            className="flex items-center gap-1 text-green-600 hover:underline cursor-pointer"
-          >
-            <Redo className="w-4 h-4" />
-            Add Measurements
-          </Button>
+          {!record.measurement && (
+            <Button
+              onClick={() => navigate(`/measurements/add/${record.key}`)}
+              className="text-green-600"
+            >
+              <Redo className="w-4 h-4" />
+              Add Measurement
+            </Button>
+          )}
 
-          <button
-            onClick={() => navigate(`/measurements/edit/${record.key}`)}
-            className="flex items-center gap-1 hover:text-red-600 hover:underline cursor-pointer border border-gray-300 p-1 px-3 rounded hover:border-red-500 transition-colors"
-          >
-            <Pencil className="w-4 h-4" />
-            Edit Measurements
-          </button>
+          {record.measurement && (
+            <>
+              <Button
+                onClick={() => navigate(`/measurements/edit/${record.key}`)}
+                className="border text-yellow-600"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit Measurement
+              </Button>
+
+              <Button
+                onClick={() => navigate(`/measurements/${record.key}`)}
+                className="border text-gray-600"
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            </>
+          )}
 
           <button
             onClick={() => deleteMutation.mutate(record._id)}
             className="flex items-center gap-1 hover:text-red-600 hover:underline cursor-pointer border border-gray-300 p-1 px-3 rounded hover:border-red-500 transition-colors"
           >
             <Trash className="w-4 h-4" />
-            Delete
           </button>
         </div>
       ),

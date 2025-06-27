@@ -15,6 +15,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AddCustomerPage from "./pages/AddCustomerPage";
 import CustomerListingPage from "./pages/CustomerListingPage";
 import AddMeasurementPage from "./pages/AddMeasurementPage";
+import MeasurementPage from "./pages/MeasurementPage";
 
 // Lazy load pages
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -89,6 +90,13 @@ const App = () => {
               path="measurements/edit/:customerId"
               element={
                 authUser ? <AddMeasurementPage /> : <Navigate to="/login" />
+              }
+            />
+
+            <Route
+              path="measurements/:customerId"
+              element={
+                authUser ? <MeasurementPage /> : <Navigate to="/login" />
               }
             />
           </Route>

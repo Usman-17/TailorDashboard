@@ -1,110 +1,97 @@
 import { Undo } from "lucide-react";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
+import CustomButton from "../components/CustomButton";
 import SectionHeading from "../components/SectionHeading";
 import LoadingSpinner from "../components/LoadingSpinner";
-import CustomButton from "../components/CustomButton";
+// Imports End
 
+// All input fields
 const fields = [
-  "Kameez Length",
-  "Shoulder",
-  "Chest",
-  "Waist",
-  "Hip",
-  "Neck",
-  "Sleeve Length",
-  "Wrist",
-  "Bicep",
-  "Shalwar Length",
-  "Thigh",
-  "Knee",
-  "Bottom",
-  "Pant Waist",
+  "length",
+  "shoulder",
+  "chest",
+  "waist",
+  "hip",
+  "neck",
+  "sleeveLength",
+  "wrist",
+  "bicep",
+  "shalwarLength",
+  "thigh",
+  "knee",
+  "bottom",
+  "pantWaist",
 ];
 
+// Initial form state
+const initialFormState = fields.reduce((acc, field) => {
+  acc[field] = "";
+  return acc;
+}, {});
+
 const AddMeasurementPage = () => {
+  const [formData, setFormData] = useState(initialFormState);
+
   const [customer, setCustomer] = useState({ name: "", phone: "" });
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(true);
 
-  const [formData, setFormData] = useState({
-    length: "",
-    shoulder: "",
-    chest: "",
-    waist: "",
-    hip: "",
-    neck: "",
-    sleeveLength: "",
-    wrist: "",
-    bicep: "",
-    shalwarLength: "",
-    thigh: "",
-    knee: "",
-    bottom: "",
-    pantWaist: "",
-  });
-
-  const { id, customerId } = useParams();
   const navigate = useNavigate();
+  const { customerId } = useParams();
 
-  // Fetch Customer
+  // Fetch Customer Info
   useEffect(() => {
     const fetchCustomer = async () => {
-      if (customerId) {
-        try {
-          setIsLoadingCustomer(true);
-          const res = await fetch(`/api/customers/${customerId}`);
-          if (!res.ok) throw new Error("Customer not found");
-          const data = await res.json();
-          setCustomer({ name: data.name, phone: data.phone });
-        } catch (error) {
-          toast.error("Failed to fetch customer info");
-          console.error("Customer fetch error:", error);
-        } finally {
-          setIsLoadingCustomer(false);
-        }
+      if (!customerId) return;
+
+      try {
+        setIsLoadingCustomer(true);
+        const res = await fetch(`/api/customers/${customerId}`);
+        if (!res.ok) throw new Error("Customer not found");
+        const data = await res.json();
+        setCustomer({ name: data.name, phone: data.phone });
+      } catch (err) {
+        toast.error("Failed to fetch customer info");
+        console.error("Customer fetch error:", err);
+      } finally {
+        setIsLoadingCustomer(false);
       }
     };
 
     fetchCustomer();
   }, [customerId]);
 
-  // Fetch Customer Measurement
+  // Fetch existing measurements
+  const { data: measurement } = useQuery({
+    queryKey: ["measurement", customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const res = await fetch(`/api/measurements/${customerId}`);
+      if (!res.ok) throw new Error("Failed to fetch measurement");
+      return res.json();
+    },
+    retry: false,
+  });
+
   useEffect(() => {
-    if (id) {
-      const fetchMeasurement = async () => {
-        try {
-          const res = await fetch(`/api/measurements/${id}`);
-          if (!res.ok) throw new Error("Measurement not found");
-
-          const data = await res.json();
-
-          const cleaned = {};
-          fields.forEach((field) => {
-            cleaned[field] = data[field] || "";
-          });
-          setFormData(cleaned);
-        } catch (error) {
-          toast.error("Failed to fetch measurement data");
-          console.error("Fetch error:", error);
-        }
-      };
-      fetchMeasurement();
+    if (measurement) {
+      const cleaned = { ...initialFormState };
+      Object.keys(cleaned).forEach((key) => {
+        cleaned[key] = measurement[key] ?? "";
+      });
+      setFormData(cleaned);
     }
-  }, [id]);
+  }, [measurement]);
 
-  const {
-    mutate: saveMeasurements,
-    isPending,
-    error,
-    isError,
-  } = useMutation({
+  // Save or Update Measurements
+  const { mutate: saveMeasurements, isPending } = useMutation({
     mutationFn: async (data) => {
-      const method = id ? "PUT" : "POST";
-      const url = id
-        ? `/api/measurements/${customerId}`
+      const method = measurement ? "PUT" : "POST";
+      const url = measurement
+        ? `/api/measurements/update/${customerId}`
         : `/api/measurements/add/${customerId}`;
 
       const res = await fetch(url, {
@@ -123,11 +110,13 @@ const AddMeasurementPage = () => {
       return res.json();
     },
     onSuccess: () => {
-      toast.success(`Measurements ${id ? "updated" : "added"} successfully`);
-      navigate("/measurements/manage");
+      toast.success(
+        `Measurements ${measurement ? "updated" : "added"} successfully`
+      );
+      navigate("/customer/manage");
     },
-    onError: () => {
-      toast.error(`Failed to ${id ? "update" : "add"} measurements`);
+    onError: (err) => {
+      toast.error(err.message || "Failed to save measurements");
     },
   });
 
@@ -137,32 +126,27 @@ const AddMeasurementPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Simple validation
-    const isEmpty = Object.values(formData).some((value) => value === "");
+    const isEmpty = Object.values(formData).some((val) => val === "");
     if (isEmpty) {
       toast.error("Please fill all fields");
       return;
     }
-
     saveMeasurements(formData);
   };
 
   return (
     <div>
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
-          title={id ? "Edit Measurements" : "Add Measurements"}
+          title={measurement ? "Edit Measurements" : "Add Measurements"}
           subtitle="Fill out the details below to save measurements"
         />
-
-        <div className="sm:w-auto w-full">
-          <CustomButton
-            title="Manage All Measurements"
-            to="/customer/manage"
-            Icon={Undo}
-          />
-        </div>
+        <CustomButton
+          title="Manage All Customers"
+          to="/customer/manage"
+          Icon={Undo}
+        />
       </div>
 
       {/* Customer Detail */}
@@ -191,45 +175,42 @@ const AddMeasurementPage = () => {
         )
       )}
 
-      {/* Form */}
+      {/* Measurement Form */}
       <form onSubmit={handleSubmit} className="space-y-5 mt-8">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4">
           {fields.map((field) => (
             <div key={field}>
               <label
                 htmlFor={field}
-                className="block mb-1 font-medium text-sm text-gray-700"
+                className="block mb-1 font-medium text-sm text-gray-700 capitalize"
               >
-                {field}
+                {field.replace(/([A-Z])/g, " $1")}
               </label>
               <input
                 id={field}
                 name={field}
                 type="number"
-                placeholder={`${field} size`}
+                step="any"
                 required
+                placeholder={`${field} size`}
                 value={formData[field]}
                 onChange={handleInputChange}
-                min={1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:outline-none placeholder:text-sm sm:placeholder:text-base"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none placeholder:text-sm sm:placeholder:text-base"
               />
             </div>
           ))}
         </div>
 
-        {/* Error Message */}
-        {isError && <p className="text-sm text-red-600">{error?.message}</p>}
-
         {/* Submit Button */}
-        <div className="mt-10">
+        <div className="mt-8">
           <button
             type="submit"
             disabled={isPending}
-            className="bg-black text-white px-4 py-2 rounded-full hover:bg-neutral-900 disabled:opacity-50 w-full cursor-pointer"
+            className="bg-black text-white px-4 py-2 rounded-full hover:bg-neutral-900 disabled:opacity-50 w-full"
           >
             {isPending ? (
               <LoadingSpinner content="Saving..." />
-            ) : id ? (
+            ) : measurement ? (
               "Update Measurement"
             ) : (
               "Add Measurement"
