@@ -23,3 +23,11 @@ input:-webkit-autofill:active {
   font-family: "Outfit", sans-serif !important;
   white-space: nowrap;
 }
+
+.ant-select-selector {
+  border: 1px solid black !important;
+}
+
+.ant-select-single {
+  height: 42px !important;
+}

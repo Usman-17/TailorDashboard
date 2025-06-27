@@ -16,6 +16,7 @@ import AddCustomerPage from "./pages/AddCustomerPage";
 import CustomerListingPage from "./pages/CustomerListingPage";
 import AddMeasurementPage from "./pages/AddMeasurementPage";
 import MeasurementPage from "./pages/MeasurementPage";
+import AddOrdersPage from "./pages/AddOrdersPage";
 
 // Lazy load pages
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -88,6 +89,26 @@ const App = () => {
             />
             <Route
               path="measurements/edit/:customerId"
+              element={
+                authUser ? <AddMeasurementPage /> : <Navigate to="/login" />
+              }
+            />
+
+            <Route
+              path="measurements/:customerId"
+              element={
+                authUser ? <MeasurementPage /> : <Navigate to="/login" />
+              }
+            />
+
+            {/* Orders Routes */}
+            <Route
+              path="/order/add"
+              element={authUser ? <AddOrdersPage /> : <Navigate to="/login" />}
+            />
+
+            <Route
+              path="/order/add/:id"
               element={
                 authUser ? <AddMeasurementPage /> : <Navigate to="/login" />
               }
