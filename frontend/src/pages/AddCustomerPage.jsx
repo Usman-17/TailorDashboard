@@ -137,6 +137,7 @@ const AddCustomerPage = () => {
               type="tel"
               placeholder="03XXXXXXXXX"
               required
+              pattern="03[0-9]{9}"
               minLength={11}
               maxLength={11}
               value={formData.phone}
