@@ -1,7 +1,7 @@
 const SummaryCard = ({ icon: Icon, title, count, color }) => {
   return (
     <div
-      className="bg-white shadow-md rounded-xl p-5 flex items-center gap-4 border-l-4"
+      className="bg-white shadow-md rounded-xl p-2 sm:p-5 flex items-center gap-2 sm:gap-4 border-l-4"
       style={{ borderColor: color }}
     >
       <div

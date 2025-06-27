@@ -2,10 +2,14 @@ import SummaryCard from "../components/SummaryCard";
 import CustomButton from "../components/CustomButton";
 import SectionHeading from "../components/SectionHeading";
 
+import { toast } from "react-hot-toast";
 import { useGetAllOrders } from "../hooks/useGetAllOrders";
 import { Ban, CheckCircle, Redo, Truck, Users } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+// Imports End
 
 const OrdersListingPage = () => {
+  const queryClient = useQueryClient();
   const { orders = [] } = useGetAllOrders();
 
   const totalOrders = orders.length;
@@ -15,8 +19,51 @@ const OrdersListingPage = () => {
     (o) => !["delivered", "cancelled"].includes(o.status)
   ).length;
 
+  //   update Order Status
+  const { mutate: updateStatus } = useMutation({
+    mutationFn: async ({ orderId, status }) => {
+      const res = await fetch(`/api/orders/status/${orderId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update order status");
+      return res.json();
+    },
+
+    onMutate: async ({ orderId, status }) => {
+      await queryClient.cancelQueries(["orders"]);
+      const previousOrders = queryClient.getQueryData(["orders"]);
+      queryClient.setQueryData(["orders"], (oldOrders) =>
+        oldOrders?.map((order) =>
+          order._id === orderId ? { ...order, status } : order
+        )
+      );
+      return { previousOrders };
+    },
+
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(["orders"], context.previousOrders);
+      toast.error("Failed to update order status");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries(["orders"]);
+    },
+    onSuccess: () => {
+      toast.success("Order status updated");
+    },
+  });
+
+  const statusColors = {
+    delivered: "text-green-600",
+    completed: "text-blue-600",
+    cancelled: "text-red-600",
+  };
+
   return (
-    <div>
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
           title="Orders List"
@@ -29,7 +76,7 @@ const OrdersListingPage = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 my-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 my-6">
         <SummaryCard
           icon={Users}
           title="Total Orders"
@@ -102,8 +149,15 @@ const OrdersListingPage = () => {
                   <span className="font-semibold">Status:</span>{" "}
                   <select
                     value={order.status}
-                    className="ml-2 text-sm border rounded px-2 py-1"
-                    disabled
+                    onChange={(e) =>
+                      updateStatus({
+                        orderId: order._id,
+                        status: e.target.value,
+                      })
+                    }
+                    className={`cursor-pointer text-sm border rounded px-2 py-1 focus:outline-none ${
+                      statusColors[order.status] || "text-yellow-600"
+                    }`}
                   >
                     <option value="pending">Pending</option>
                     <option value="in progress">In Progress</option>
@@ -112,6 +166,7 @@ const OrdersListingPage = () => {
                     <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
+
                 {order.notes && (
                   <p>
                     <span className="font-semibold">Notes:</span> {order.notes}
@@ -122,7 +177,7 @@ const OrdersListingPage = () => {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 };
 

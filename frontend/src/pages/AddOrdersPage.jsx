@@ -20,10 +20,13 @@ const AddOrdersPage = () => {
     advancePaid: "",
     notes: "",
   });
+
   const navigate = useNavigate();
 
+  // Get All Customers
   const { customers = [] } = useGetAllCustomers();
 
+  // Add Order Mutation
   const { mutate: addOrder, isPending } = useMutation({
     mutationFn: async (data) => {
       const res = await fetch("/api/orders/add", {
@@ -63,17 +66,20 @@ const AddOrdersPage = () => {
   };
 
   return (
-    <div>
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
           title="Add New Order"
           subtitle="Fill order details below"
         />
-        <CustomButton title="Manage Orders" to="/orders/manage" Icon={Undo} />
+
+        <div className="sm:w-auto w-full">
+          <CustomButton title="Manage Orders" to="/orders/manage" Icon={Undo} />
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {/* Customer Dropdown */}
           <div>
             <label className="block text-sm font-medium mb-1">Customer</label>
@@ -191,7 +197,7 @@ const AddOrdersPage = () => {
           </button>
         </div>
       </form>
-    </div>
+    </>
   );
 };
 
