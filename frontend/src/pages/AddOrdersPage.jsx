@@ -44,7 +44,7 @@ const AddOrdersPage = () => {
 
     onSuccess: () => {
       toast.success("Order added successfully");
-      navigate("/");
+      navigate("/orders/manage");
     },
 
     onError: (err) => {

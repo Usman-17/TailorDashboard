@@ -31,8 +31,8 @@ const navItems = [
     name: "Manage Orders",
     icon: <ShoppingBag />,
     subItems: [
-      { name: "Add Order", path: "/order/add" },
-      { name: "Manage Customers", path: "/customer/manage" },
+      { name: "Add Order", path: "/orders/add" },
+      { name: "Manage Orders", path: "/orders/manage" },
     ],
   },
 ];
