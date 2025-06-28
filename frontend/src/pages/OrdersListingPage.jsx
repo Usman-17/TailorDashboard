@@ -138,6 +138,10 @@ const OrdersListingPage = () => {
                   {order.advancePaid || "00"}
                 </p>
                 <p>
+                  <span className="font-semibold">Order Date:</span>{" "}
+                  {new Date(order.createdAt).toLocaleDateString()}
+                </p>
+                <p>
                   <span className="font-semibold">Delivery Date:</span>{" "}
                   {new Date(order.deliveryDate).toLocaleDateString()}
                 </p>

@@ -4,7 +4,7 @@ const SalesCard = ({ orders }) => {
   const series = [100];
 
   const totalSales = orders.reduce((acc, order) => {
-    if (order.status === "completed") {
+    if (order.status === "delivered") {
       return acc + (order.totalAmount || 0);
     }
     return acc;

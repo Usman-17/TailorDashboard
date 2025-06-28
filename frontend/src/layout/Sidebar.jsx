@@ -7,6 +7,7 @@ import {
   Layers2,
   LayoutDashboard,
   ShoppingBag,
+  TrendingUp,
 } from "lucide-react";
 
 import logo from "../assets/logo.png";
@@ -34,6 +35,11 @@ const navItems = [
       { name: "Add Order", path: "/orders/add" },
       { name: "Manage Orders", path: "/orders/manage" },
     ],
+  },
+  {
+    name: "Manage Sale",
+    icon: <TrendingUp />,
+    path: "/sale",
   },
 ];
 

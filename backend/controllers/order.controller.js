@@ -75,3 +75,38 @@ export const updateOrderStatus = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// PATH     : /api/orders/sale
+// METHOD   : POST
+// ACCESS   : Private
+// DESC     : get sale
+export const getSalesByDateRange = async (req, res) => {
+  const { from, to } = req.query;
+
+  if (!from || !to) {
+    return res.status(400).json({ message: "From and to dates are required" });
+  }
+
+  try {
+    const orders = await Order.find({
+      createdAt: {
+        $gte: new Date(from),
+        $lte: new Date(to),
+      },
+    });
+
+    const totalAmount = orders.reduce(
+      (sum, order) => sum + (order.totalAmount || 0),
+      0
+    );
+
+    res.status(200).json({
+      totalAmount,
+      totalOrders: orders.length,
+      orders,
+    });
+  } catch (error) {
+    console.error("Error getting sales by date range:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
