@@ -88,10 +88,18 @@ export const getSalesByDateRange = async (req, res) => {
   }
 
   try {
+    const fromDate = new Date(from);
+    fromDate.setHours(0, 0, 0, 0);
+
+    const toDate = new Date(to);
+    toDate.setHours(23, 59, 59, 999);
+
     const orders = await Order.find({
+      status: "delivered",
+
       createdAt: {
-        $gte: new Date(from),
-        $lte: new Date(to),
+        $gte: fromDate,
+        $lte: toDate,
       },
     });
 
