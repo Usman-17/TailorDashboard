@@ -22,6 +22,8 @@ import SalePage from "./pages/SalePage";
 import AddExpensesPage from "./pages/addExpensesPage";
 import ExpensesListingPage from "./pages/ExpensesListingPage";
 import { Loader } from "lucide-react";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Lazy load pages
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -149,6 +151,15 @@ const App = () => {
           <Route
             path="/login"
             element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+          />
+
+          <Route
+            path="/forgot-password"
+            element={!authUser ? <ForgotPasswordPage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/reset-password/:token"
+            element={!authUser ? <ResetPasswordPage /> : <Navigate to="/" />}
           />
         </Routes>
       </Suspense>

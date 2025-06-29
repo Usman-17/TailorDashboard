@@ -1,7 +1,7 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -81,9 +81,18 @@ const LoginPage = () => {
 
           {/* Password */}
           <div className="grid">
-            <label htmlFor="password" className="text-base font-medium">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-base font-medium">
+                Password
+              </label>
+
+              <Link
+                to={"/forgot-password"}
+                className="ml-auto inline-block text-sm font-semibold hover:text-blue-700 hover:underline transition duration-75 ease-in-out"
+              >
+                Forgot your password?
+              </Link>
+            </div>
 
             <div className="relative">
               <input
