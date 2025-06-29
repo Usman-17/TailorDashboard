@@ -12,7 +12,7 @@ import authRoutes from "./routes/auth.route.js";
 import customerRoutes from "./routes/customer.route.js";
 import measurementsRoutes from "./routes/measurement.route.js";
 import orderRoutes from "./routes/order.route.js";
-
+import expenseRoutes from "./routes/expense.route.js";
 // imports End
 
 const app = express();
@@ -49,6 +49,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/measurements", measurementsRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 // Running App
 const PORT = process.env.PORT || 9000;
