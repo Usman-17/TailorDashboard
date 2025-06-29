@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import CustomButton from "../components/CustomButton";
 import SectionHeading from "../components/SectionHeading";
+import MeasurementSkeleton from "../components/Skeletons/MeasurementSkeleton";
 
 const MeasurementPage = () => {
   const { customerId } = useParams();
@@ -23,7 +24,7 @@ const MeasurementPage = () => {
     retry: false,
   });
 
-  if (isLoading) return <div className="p-4">Loading...</div>;
+  if (isLoading) return <MeasurementSkeleton />;
   if (isError)
     return <div className="text-red-500 p-4">Error: {error.message}</div>;
 
@@ -47,7 +48,7 @@ const MeasurementPage = () => {
       {/* Customer Detail */}
       {isLoading ? (
         <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6 animate-pulse">
-          <div className="flex gap-10">
+          <div className="flex flex-col sm:flex-row gap-0 sm:gap-10">
             <div className="h-4 w-1/6 bg-gray-300 rounded " />
             <div className="h-4 w-1/6 bg-gray-300 rounded" />
           </div>
@@ -56,7 +57,7 @@ const MeasurementPage = () => {
         measurement.customer.name &&
         measurement.customer.phone && (
           <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 sm:p-4 mb-6 text-nowrap">
-            <div className="flex gap-10">
+            <div className="flex flex-col sm:flex-row gap-0 sm:gap-10">
               <div className="flex items-center gap-1 sm:gap-2 text-sm text-gray-700">
                 <span className="font-medium">Name:</span>
                 <span>{measurement?.customer.name}</span>
