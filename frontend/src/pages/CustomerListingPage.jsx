@@ -32,6 +32,7 @@ const CustomerListingPage = () => {
           result.map((customer, index) => ({
             key: customer._id,
             _id: customer._id,
+            id: customer.customerId,
             sr: index + 1,
             name: customer.name,
             phone: customer.phone,
@@ -169,6 +170,14 @@ const CustomerListingPage = () => {
       width: "5%",
     },
     {
+      title: "Id",
+      dataIndex: "id",
+      key: "id",
+      className: "font-semibold text-md",
+      width: "10%",
+      ...getColumnSearchProps("id"),
+    },
+    {
       title: "Name",
       dataIndex: "name",
       key: "name",
@@ -271,7 +280,7 @@ const CustomerListingPage = () => {
         loading={loading}
         columns={columns}
         dataSource={data}
-        pagination={{ pageSize: 8 }}
+        pagination={{ pageSize: 10 }}
         scroll={{ x: true }}
       />
     </div>

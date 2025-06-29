@@ -1,5 +1,6 @@
 import Customer from "../models/customer.model.js";
 import Measurement from "../models/measurement.model.js";
+import Counter from "../models/counter.model.js";
 
 // PATH     : /api/customer/all
 // METHOD   : GET
@@ -46,10 +47,25 @@ export const addCustomer = async (req, res) => {
     if (existing)
       return res.status(400).json({ message: "Phone number already exists" });
 
-    const newCustomer = new Customer({ name, phone });
-    const saved = await newCustomer.save();
+    let counter = await Counter.findOne({ name: "customer" });
 
-    res.status(201).json(saved);
+    if (!counter) {
+      counter = await Counter.create({ name: "customer", value: 1 });
+    }
+
+    // Assign and increment the ID
+    const newId = String(counter.value).padStart(2, "0");
+    counter.value += 1;
+    await counter.save();
+
+    const newCustomer = new Customer({
+      name,
+      phone,
+      customerId: newId,
+    });
+
+    const customer = await newCustomer.save();
+    res.status(201).json(customer);
   } catch (error) {
     console.error("Error in addCustomer controller:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
