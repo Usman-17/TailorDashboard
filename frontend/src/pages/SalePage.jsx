@@ -40,22 +40,22 @@ const SalePage = () => {
         title="Sale Report"
         subtitle="View and track all sale orders and their status below"
       />
-
       <p className="text-sm text-gray-600 mb-2 mt-10">
         Select a date range to generate the sale report.
       </p>
-
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <RangePicker
-          value={dates}
-          className="w-full sm:w-auto"
-          allowClear
-          format="DD MMM YYYY"
-          onChange={(val) => {
-            setDates(val);
-            if (!val || val.length === 0) setEnabled(false);
-          }}
-        />
+        <div className="w-full max-w-xs sm:max-w-96">
+          <RangePicker
+            value={dates}
+            allowClear
+            format="DD MMM YYYY"
+            onChange={(val) => {
+              setDates(val);
+              if (!val || val.length === 0) setEnabled(false);
+            }}
+            className="w-full"
+          />
+        </div>
 
         <Button
           type="primary"
@@ -72,23 +72,33 @@ const SalePage = () => {
       </div>
 
       {data && (
-        <div className="rounded-md px-4 py-3 space-y-3 text-[15px] leading-6">
-          <div className="text-gray-700 text-sm mb-5">
-            <span className="font-medium">From:</span>{" "}
-            <b>{moment(from).format("DD MMM, YYYY")}</b>{" "}
-            <span className="mx-2">→</span>
-            <span className="font-medium">To:</span>{" "}
-            <b>{moment(to).format("DD MMM, YYYY")}</b>
-          </div>
-
-          <div className="mt-5">
-            <span className="text-gray-600">💰 Total Sales:</span>{" "}
-            <b className="text-green-600">Rs. {data.totalAmount}</b>
-          </div>
-          <div>
-            <span className="text-gray-600">📦 Total Orders:</span>{" "}
-            <b>{data.totalOrders}</b>
-          </div>
+        <div className="overflow-x-auto rounded-xl shadow bg-white text-nowrap">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
+              <tr>
+                <th className="px-2 sm:px-6 py-4 text-left">From</th>
+                <th className="px-2 sm:px-6 py-4 text-left">To</th>
+                <th className="px-2 sm:px-6 py-4 text-left">Total Sale</th>
+                <th className="px-2 sm:px-6 py-4 text-left">Total Orders</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              <tr className="hover:bg-gray-50 transition-all duration-200">
+                <td className="px-6 sm:px-10 py-4 font-medium text-gray-800">
+                  {moment(from).format("DD MMM, YYYY")}
+                </td>
+                <td className="px-2 sm:px-6 py-4 truncate max-w-xs">
+                  {moment(to).format("DD MMM, YYYY")}
+                </td>
+                <td className="px-2 sm:px-6 py-4 truncate max-w-xs">
+                  Rs. {data.totalAmount.toLocaleString()}
+                </td>
+                <td className="px-2 sm:px-6 py-4 truncate max-w-xs">
+                  {data.totalOrders.toLocaleString()}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
     </>

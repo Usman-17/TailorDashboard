@@ -40,7 +40,7 @@ const Header = () => {
 
           <div className="flex items-center justify-end gap-3">
             {/* 2 User */}
-            <Link to="/" className="flex items-center gap-3 p-2 rounded-md">
+            <Link to="/" className="hidden sm:flex items-center gap-3 p-2 rounded-md">
               <div>
                 <UserRound className="w-5 h-5" />
               </div>

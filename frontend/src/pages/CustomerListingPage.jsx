@@ -195,23 +195,20 @@ const CustomerListingPage = () => {
       width: "35%",
       render: (_, record) => (
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => navigate(`/customer/edit/${record.key}`)}
-            className="flex items-center gap-1 text-blue-600 hover:underline cursor-pointer"
-          >
+          <Button onClick={() => navigate(`/customer/edit/${record.key}`)}>
             <Pencil className="w-4 h-4" />
-            Edit
+            Update
           </Button>
 
           {/* Add Measurements */}
           {!record.measurement && (
-            <Button
+            <button
               onClick={() => navigate(`/measurements/add/${record.key}`)}
-              className="text-green-600"
+              className="flex items-center gap-2  border border-gray-300 px-3 py-1 rounded-md transition-colors duration-100 hover:text-orange-600 hover:border-orange-500"
             >
               <Redo className="w-4 h-4" />
               Add Measurement
-            </Button>
+            </button>
           )}
 
           {record.measurement && (

@@ -38,18 +38,17 @@ const navItems = [
     ],
   },
   {
-    name: "Manage Sale",
-    icon: <TrendingUp />,
-    path: "/sale",
-  },
-
-  {
     name: "Manage Expenses",
     icon: <SquareChartGantt />,
     subItems: [
       { name: "Add Expenses", path: "/expenses/add" },
       { name: "Manage Expenses", path: "/expenses/manage" },
     ],
+  },
+  {
+    name: "Manage Sale",
+    icon: <TrendingUp />,
+    path: "/sale",
   },
 ];
 

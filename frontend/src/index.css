@@ -22,6 +22,8 @@ input:-webkit-autofill:active {
 .ant-table-cell {
   font-family: "Outfit", sans-serif !important;
   white-space: nowrap;
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
 }
 
 .ant-select-selector {

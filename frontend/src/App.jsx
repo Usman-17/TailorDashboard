@@ -21,6 +21,7 @@ import OrdersListingPage from "./pages/OrdersListingPage";
 import SalePage from "./pages/SalePage";
 import AddExpensesPage from "./pages/addExpensesPage";
 import ExpensesListingPage from "./pages/ExpensesListingPage";
+import { Loader } from "lucide-react";
 
 // Lazy load pages
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -30,8 +31,8 @@ const App = () => {
 
   if (isLoading && !authUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center h-screen">
+        <Loader className="size-10 animate-spin" />
       </div>
     );
   }
@@ -52,8 +53,8 @@ const App = () => {
 
       <Suspense
         fallback={
-          <div className="min-h-screen flex items-center justify-center bg-white">
-            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="flex items-center justify-center h-screen">
+            <Loader className="size-10 animate-spin" />
           </div>
         }
       >
