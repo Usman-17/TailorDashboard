@@ -40,7 +40,10 @@ const Header = () => {
 
           <div className="flex items-center justify-end gap-3">
             {/* 2 User */}
-            <Link to="/" className="hidden sm:flex items-center gap-3 p-2 rounded-md">
+            <Link
+              to="/"
+              className="hidden sm:flex items-center gap-3 p-2 rounded-md"
+            >
               <div>
                 <UserRound className="w-5 h-5" />
               </div>
@@ -53,7 +56,7 @@ const Header = () => {
               </div>
             </Link>
 
-            <div className="cursor-pointer hover:text-gray-700">
+            <div className="cursor-pointer hover:text-gray-700 pr-2">
               <LogOut size={20} onClick={() => logoutMutation()} />
             </div>
           </div>

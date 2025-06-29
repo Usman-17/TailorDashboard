@@ -135,33 +135,36 @@ const AddMeasurementPage = () => {
   };
 
   return (
-    <div>
+    <>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <SectionHeading
           title={measurement ? "Edit Measurements" : "Add Measurements"}
           subtitle="Fill out the details below to save measurements"
         />
-        <CustomButton
-          title="Manage All Customers"
-          to="/customer/manage"
-          Icon={Undo}
-        />
+
+        <div className="sm:w-auto w-full">
+          <CustomButton
+            title="Manage All Customers"
+            to="/customer/manage"
+            Icon={Undo}
+          />
+        </div>
       </div>
 
       {/* Customer Detail */}
       {isLoadingCustomer ? (
         <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6 animate-pulse">
-          <div className="flex gap-10">
-            <div className="h-4 w-1/6 bg-gray-300 rounded " />
-            <div className="h-4 w-1/6 bg-gray-300 rounded" />
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-10">
+            <div className="h-4 w-32 bg-gray-300 rounded " />
+            <div className="h-4 w-40 bg-gray-300 rounded" />
           </div>
         </div>
       ) : (
         customer.name &&
         customer.phone && (
           <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 sm:p-4 mb-6 text-nowrap">
-            <div className="flex gap-10">
+            <div className="flex flex-col sm:flex-row gap-0 sm:gap-10">
               <div className="flex items-center gap-1 sm:gap-2 text-sm text-gray-700">
                 <span className="font-medium">Name:</span>
                 <span>{customer.name}</span>
@@ -218,7 +221,7 @@ const AddMeasurementPage = () => {
           </button>
         </div>
       </form>
-    </div>
+    </>
   );
 };
 
