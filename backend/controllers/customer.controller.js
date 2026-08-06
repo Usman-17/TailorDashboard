@@ -2,120 +2,306 @@ import Customer from "../models/customer.model.js";
 import Measurement from "../models/measurement.model.js";
 import Counter from "../models/counter.model.js";
 
-// PATH     : /api/customer/all
-// METHOD   : GET
-// ACCESS   : PRIVATE
-// DESC     : Get all Customers
+const PHONE_REGEX = /^(\+?92|0)?[3]\d{9}$/;
+
+const validatePhone = (phone) => {
+  if (!phone) return "Phone number is required";
+  if (typeof phone !== "string") return "Phone must be a string";
+  const cleaned = phone.replace(/[\s\-()]/g, "");
+  if (!PHONE_REGEX.test(cleaned)) return "Invalid Pakistani phone number format";
+  return null;
+};
+
+const sanitizeCustomer = (customer) => {
+  const obj = customer.toObject ? customer.toObject() : { ...customer };
+  delete obj.isDeleted;
+  delete obj.deletedAt;
+  return obj;
+};
+
+// GET /api/customers/all
 export const getAllCustomers = async (req, res) => {
   try {
-    const customer = await Customer.find()
-      .populate("measurement")
-      .sort({ createdAt: -1 });
+    const { shopId } = req;
+    const {
+      page = 1,
+      limit = 20,
+      search = "",
+      sortBy = "createdAt",
+      order = "desc",
+    } = req.query;
 
-    if (!customer.length === 0) return res.status(200).json([]);
-    return res.status(200).json(customer);
-  } catch (error) {
-    console.log("Error in getAllCustomers Controller:", error.message);
-    return res.status(500).json({ error: error.message });
-  }
-};
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
 
-// PATH     : /api/customer/id"
-// METHOD   : GET
-// ACCESS   : Public
-// DESC     : Get Customer by Id
-export const getCustomer = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const customer = await Customer.findById(id).populate("measurement");
-    res.status(200).json(customer);
-  } catch (error) {
-    console.log("Error in getCustomer Controller", error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
+    const filter = { shopId };
 
-// PATH     : /api/customer/add
-// METHOD   : POST
-// ACCESS   : PRIVATE
-// DESC     : Add new Customer
-export const addCustomer = async (req, res) => {
-  try {
-    const { name, phone } = req.body;
-
-    const existing = await Customer.findOne({ phone });
-    if (existing)
-      return res.status(400).json({ message: "Phone number already exists" });
-
-    let counter = await Counter.findOne({ name: "customer" });
-
-    if (!counter) {
-      counter = await Counter.create({ name: "customer", value: 1 });
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { customerId: { $regex: search, $options: "i" } },
+      ];
     }
 
-    // Assign and increment the ID
-    const newId = String(counter.value).padStart(2, "0");
-    counter.value += 1;
-    await counter.save();
+    const allowedSorts = ["name", "phone", "customerId", "createdAt"];
+    const sortField = allowedSorts.includes(sortBy) ? sortBy : "createdAt";
+    const sortOrder = order === "asc" ? 1 : -1;
 
-    const newCustomer = new Customer({
-      name,
-      phone,
-      customerId: newId,
+    const [customers, total] = await Promise.all([
+      Customer.find(filter)
+        .populate("measurement")
+        .sort({ [sortField]: sortOrder })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Customer.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      customers,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error("Error in getAllCustomers:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// GET /api/customers/trash
+export const getDeletedCustomers = async (req, res) => {
+  try {
+    const { shopId } = req;
+    const { page = 1, limit = 20 } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    const filter = { shopId, isDeleted: true };
+
+    const [customers, total] = await Promise.all([
+      Customer.find(filter)
+        .sort({ deletedAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Customer.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({
+      customers,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (error) {
+    console.error("Error in getDeletedCustomers:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// GET /api/customers/:id
+export const getCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shopId } = req;
+
+    const customer = await Customer.findOne({ _id: id, shopId })
+      .populate("measurement")
+      .populate("orders");
+
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    return res.status(200).json(customer);
+  } catch (error) {
+    console.error("Error in getCustomer:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// POST /api/customers/add
+export const addCustomer = async (req, res) => {
+  try {
+    const { shopId } = req;
+    const { name, phone, email, address, notes } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Customer name is required" });
+    }
+
+    const phoneError = validatePhone(phone);
+    if (phoneError) {
+      return res.status(400).json({ error: phoneError });
+    }
+
+    const cleanedPhone = phone.replace(/[\s\-()]/g, "");
+
+    const existingPhone = await Customer.findOne({
+      shopId,
+      phone: cleanedPhone,
+    });
+    if (existingPhone) {
+      return res.status(409).json({
+        error: "A customer with this phone number already exists in your shop",
+      });
+    }
+
+    const customerNum = await Counter.getNextValue(shopId, "customer");
+    const customerId = `C${String(customerNum).padStart(4, "0")}`;
+
+    const customer = await Customer.create({
+      customerId,
+      shopId,
+      name: name.trim(),
+      phone: cleanedPhone,
+      email: email || undefined,
+      address: address || undefined,
+      notes: notes || "",
     });
 
-    const customer = await newCustomer.save();
-    res.status(201).json(customer);
+    return res.status(201).json(customer);
   } catch (error) {
-    console.error("Error in addCustomer controller:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error in addCustomer:", error.message);
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "A customer with this phone number already exists in your shop",
+      });
+    }
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// PATH     : /api/customer/update/:id
-// METHOD   : PUT
-// ACCESS   : PRIVATE
-// DESC     : update customer
+// PUT /api/customers/update/:id
 export const updateCustomer = async (req, res) => {
   try {
-    const { name, phone } = req.body;
     const { id } = req.params;
+    const { shopId } = req;
+    const { name, phone, email, address, notes } = req.body;
 
-    const customer = await Customer.findById(id);
-    if (!customer)
-      return res.status(404).json({ message: "Customer not found" });
+    const customer = await Customer.findOne({ _id: id, shopId });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
 
-    if (name) customer.name = name;
-    if (phone) customer.phone = phone;
+    if (phone) {
+      const phoneError = validatePhone(phone);
+      if (phoneError) {
+        return res.status(400).json({ error: phoneError });
+      }
+
+      const cleanedPhone = phone.replace(/[\s\-()]/g, "");
+
+      if (cleanedPhone !== customer.phone) {
+        const existingPhone = await Customer.findOne({
+          shopId,
+          phone: cleanedPhone,
+          _id: { $ne: id },
+        });
+        if (existingPhone) {
+          return res.status(409).json({
+            error:
+              "A customer with this phone number already exists in your shop",
+          });
+        }
+      }
+      customer.phone = cleanedPhone;
+    }
+
+    if (name !== undefined) customer.name = name.trim();
+    if (email !== undefined) customer.email = email || null;
+    if (address !== undefined) customer.address = address;
+    if (notes !== undefined) customer.notes = notes;
 
     const updated = await customer.save();
-    res.status(200).json(updated);
+    return res.status(200).json(updated);
   } catch (error) {
-    console.error("Error in updateCustomer controller:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error in updateCustomer:", error.message);
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "A customer with this phone number already exists in your shop",
+      });
+    }
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// PATH     : /api/customer/:id"
-// METHOD   : DELETE
-// ACCESS   : PRIVATE
-// DESC     : Delete Customer
+// DELETE /api/customers/:id
 export const deleteCustomer = async (req, res) => {
-  const { id } = req.params;
-
   try {
-    const customer = await Customer.findById(id);
-    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    const { id } = req.params;
+    const { shopId } = req;
 
-    // Delete associated measurement if exists
+    const customer = await Customer.findOne({ _id: id, shopId });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    customer.isDeleted = true;
+    customer.deletedAt = new Date();
+    await customer.save();
+
+    return res.status(200).json({ message: "Customer moved to trash" });
+  } catch (error) {
+    console.error("Error in deleteCustomer:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// DELETE /api/customers/permanent/:id
+export const permanentDeleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shopId } = req;
+
+    const customer = await Customer.findOne({ _id: id, shopId });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
     await Measurement.deleteOne({ customer: id });
-
-    // Delete the customer
     await Customer.findByIdAndDelete(id);
 
-    res.status(200).json({ message: "Customer deleted successfully" });
+    return res.status(200).json({ message: "Customer permanently deleted" });
   } catch (error) {
-    console.error("Error in deleteCustomer controller:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Error in permanentDeleteCustomer:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// PUT /api/customers/restore/:id
+export const restoreCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shopId } = req;
+
+    const customer = await Customer.findOne({
+      _id: id,
+      shopId,
+      isDeleted: true,
+    });
+    if (!customer) {
+      return res.status(404).json({ error: "Deleted customer not found" });
+    }
+
+    customer.isDeleted = false;
+    customer.deletedAt = null;
+    await customer.save();
+
+    return res.status(200).json(customer);
+  } catch (error) {
+    console.error("Error in restoreCustomer:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };

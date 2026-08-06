@@ -1,208 +1,216 @@
 import Customer from "../models/customer.model.js";
 import Measurement from "../models/measurement.model.js";
 
-// PATH     : /api/measurements/customerId
-// METHOD   : GET
-// ACCESS   : PRIVATE
-// DESC     : Get a single measurement by ID
-export const getMeasurementById = async (req, res) => {
-  const { customerId } = req.params;
+const MEASUREMENT_FIELDS = [
+  "length",
+  "shoulder",
+  "chest",
+  "waist",
+  "hip",
+  "neck",
+  "sleeveLength",
+  "wrist",
+  "bicep",
+  "shalwarLength",
+  "thigh",
+  "knee",
+  "bottom",
+  "pantWaist",
+];
 
-  try {
-    const measurement = await Measurement.findOne({
-      customer: customerId,
-    }).populate("customer", "name phone");
-
-    if (!measurement) {
-      return res.status(404).json({ message: "Measurement not found" });
-    }
-
-    res.status(200).json(measurement);
-  } catch (error) {
-    console.error("Error in getMeasurementById controller:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-// PATH     : /api/measurements/all
-// METHOD   : GET
-// ACCESS   : PRIVATE
-// DESC     : Get all Measurements
+// GET /api/measurements/all
 export const getAllMeasurements = async (req, res) => {
   try {
-    const measurements = await Measurement.find()
-      .populate("customer", "name phone")
-      .sort({ createdAt: -1 });
+    const { shopId } = req;
+    const { page = 1, limit = 20, search = "" } = req.query;
 
-    res.status(200).json(measurements);
-  } catch (error) {
-    console.error("Error in getAllMeasurements controller:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
 
-// PATH   : /api/measurements/add/customerId
-// METHOD : POST
-// ACCESS : PRIVATE
-// DESC   : Add new measurement for a customer
-export const addMeasurement = async (req, res) => {
-  try {
-    const { customerId } = req.params;
+    const filter = { shopId };
 
-    const {
-      length,
-      shoulder,
-      chest,
-      waist,
-      hip,
-      neck,
-      sleeveLength,
-      wrist,
-      bicep,
-      shalwarLength,
-      thigh,
-      knee,
-      bottom,
-      pantWaist,
-    } = req.body;
-
-    // Validate all fields are provided
-    if (
-      !length ||
-      !shoulder ||
-      !chest ||
-      !waist ||
-      !hip ||
-      !neck ||
-      !sleeveLength ||
-      !wrist ||
-      !bicep ||
-      !shalwarLength ||
-      !thigh ||
-      !knee ||
-      !bottom ||
-      !pantWaist
-    ) {
-      return res
-        .status(400)
-        .json({ message: "All measurement fields are required" });
+    if (search) {
+      const customers = await Customer.find({
+        shopId,
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ],
+      }).select("_id");
+      filter.customer = { $in: customers.map((c) => c._id) };
     }
 
-    const existing = await Measurement.findOne({ customer: customerId });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ message: "Measurement already exists for this customer" });
-    }
+    const [measurements, total] = await Promise.all([
+      Measurement.find(filter)
+        .populate("customer", "name phone customerId")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Measurement.countDocuments(filter),
+    ]);
 
-    // Create measurement
-    const measurement = await Measurement.create({
-      customer: customerId,
-      length,
-      shoulder,
-      chest,
-      waist,
-      hip,
-      neck,
-      sleeveLength,
-      wrist,
-      bicep,
-      shalwarLength,
-      thigh,
-      knee,
-      bottom,
-      pantWaist,
-    });
-
-    // Link measurement to customer
-    await Customer.findByIdAndUpdate(customerId, {
-      measurement: measurement._id,
-    });
-
-    return res.status(201).json({
-      message: "Measurement added successfully",
-      measurement,
+    return res.status(200).json({
+      measurements,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
-    console.error("Error in addMeasurement controller:", error.message);
+    console.error("Error in getAllMeasurements:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// PATH     : /api/measurements/update/customerId
-// METHOD   : PUT
-// ACCESS   : PRIVATE
-// DESC     : Update Measurement
-export const updateMeasurement = async (req, res) => {
+// GET /api/measurements/:customerId
+export const getMeasurementById = async (req, res) => {
   try {
     const { customerId } = req.params;
-    const {
-      length,
-      shoulder,
-      chest,
-      waist,
-      hip,
-      neck,
-      sleeveLength,
-      wrist,
-      bicep,
-      shalwarLength,
-      thigh,
-      knee,
-      bottom,
-      pantWaist,
-    } = req.body;
+    const { shopId } = req;
 
-    const measurement = await Measurement.findOne({ customer: customerId });
-    if (!measurement)
-      return res.status(404).json({ message: "Measurement not found" });
+    const measurement = await Measurement.findOne({
+      customer: customerId,
+      shopId,
+    }).populate("customer", "name phone customerId");
 
-    if (length) measurement.length = length;
-    if (shoulder) measurement.shoulder = shoulder;
-    if (chest) measurement.chest = chest;
-    if (waist) measurement.waist = waist;
-    if (hip) measurement.hip = hip;
-    if (neck) measurement.neck = neck;
-    if (sleeveLength) measurement.sleeveLength = sleeveLength;
-    if (wrist) measurement.wrist = wrist;
-    if (bicep) measurement.bicep = bicep;
-    if (shalwarLength) measurement.shalwarLength = shalwarLength;
-    if (thigh) measurement.thigh = thigh;
-    if (knee) measurement.knee = knee;
-    if (bottom) measurement.bottom = bottom;
-    if (pantWaist) measurement.pantWaist = pantWaist;
+    if (!measurement) {
+      return res.status(404).json({ error: "Measurement not found" });
+    }
 
-    const updated = await measurement.save();
-    res.status(200).json(updated);
+    return res.status(200).json(measurement);
   } catch (error) {
-    console.error("Error in updateMeasurement controller:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error in getMeasurementById:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-// PATH     : /api/measurements/customerId
-// METHOD   : DELETE
-// ACCESS   : PRIVATE
-// DESC     : Delete a measurement by ID
-export const deleteMeasurement = async (req, res) => {
-  const { customerId } = req.params;
-
+// POST /api/measurements/add/:customerId
+export const addMeasurement = async (req, res) => {
   try {
-    const measurement = await Measurement.findOne({ customer: customerId });
+    const { customerId } = req.params;
+    const { shopId } = req;
 
-    if (!measurement)
-      return res.status(404).json({ message: "Measurement not found" });
+    const customer = await Customer.findOne({ _id: customerId, shopId });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
 
-    // Remove reference from customer
+    const existing = await Measurement.findOne({
+      customer: customerId,
+      shopId,
+    });
+    if (existing) {
+      return res
+        .status(409)
+        .json({ error: "Measurement already exists for this customer" });
+    }
+
+    const missingFields = MEASUREMENT_FIELDS.filter(
+      (field) => req.body[field] === undefined || req.body[field] === null
+    );
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: `Missing required fields: ${missingFields.join(", ")}`,
+      });
+    }
+
+    const measurementData = { shopId, customer: customerId };
+    for (const field of MEASUREMENT_FIELDS) {
+      const value = Number(req.body[field]);
+      if (isNaN(value) || value < 0) {
+        return res.status(400).json({
+          error: `${field} must be a valid non-negative number`,
+        });
+      }
+      measurementData[field] = value;
+    }
+    if (req.body.extraNotes !== undefined) {
+      measurementData.extraNotes = req.body.extraNotes;
+    }
+
+    const measurement = await Measurement.create(measurementData);
+
+    await Customer.findByIdAndUpdate(customerId, {
+      measurement: measurement._id,
+    });
+
+    return res.status(201).json(measurement);
+  } catch (error) {
+    console.error("Error in addMeasurement:", error.message);
+    if (error.code === 11000) {
+      return res
+        .status(409)
+        .json({ error: "Measurement already exists for this customer" });
+    }
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// PUT /api/measurements/update/:customerId
+export const updateMeasurement = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const { shopId } = req;
+
+    const measurement = await Measurement.findOne({
+      customer: customerId,
+      shopId,
+    });
+    if (!measurement) {
+      return res.status(404).json({ error: "Measurement not found" });
+    }
+
+    for (const field of MEASUREMENT_FIELDS) {
+      if (req.body[field] !== undefined) {
+        const value = Number(req.body[field]);
+        if (isNaN(value) || value < 0) {
+          return res.status(400).json({
+            error: `${field} must be a valid non-negative number`,
+          });
+        }
+        measurement[field] = value;
+      }
+    }
+
+    if (req.body.extraNotes !== undefined) {
+      measurement.extraNotes = req.body.extraNotes;
+    }
+
+    const updated = await measurement.save();
+    return res.status(200).json(updated);
+  } catch (error) {
+    console.error("Error in updateMeasurement:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// DELETE /api/measurements/:customerId
+export const deleteMeasurement = async (req, res) => {
+  try {
+    const { customerId } = req.params;
+    const { shopId } = req;
+
+    const measurement = await Measurement.findOne({
+      customer: customerId,
+      shopId,
+    });
+    if (!measurement) {
+      return res.status(404).json({ error: "Measurement not found" });
+    }
+
     await Customer.findByIdAndUpdate(customerId, {
       $unset: { measurement: "" },
     });
 
     await Measurement.findByIdAndDelete(measurement._id);
 
-    res.status(200).json({ message: "Measurement deleted successfully" });
+    return res.status(200).json({ message: "Measurement deleted successfully" });
   } catch (error) {
-    console.error("Error in deleteMeasurement controller:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error in deleteMeasurement:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };

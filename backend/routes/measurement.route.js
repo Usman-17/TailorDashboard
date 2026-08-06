@@ -2,6 +2,8 @@ import express from "express";
 const router = express.Router();
 
 import { protectRoute } from "../middlewares/authMiddleware.js";
+import { attachTenantContext } from "../middlewares/tenantMiddleware.js";
+import { isOwnerOrAdmin } from "../middlewares/roleMiddleware.js";
 import {
   addMeasurement,
   deleteMeasurement,
@@ -10,10 +12,12 @@ import {
   updateMeasurement,
 } from "../controllers/measurement.controller.js";
 
-router.get("/all", protectRoute, getAllMeasurements);
-router.get("/:customerId", protectRoute, getMeasurementById);
-router.post("/add/:customerId", protectRoute, addMeasurement);
-router.put("/update/:customerId", protectRoute, updateMeasurement);
-router.delete("/:customerId", protectRoute, deleteMeasurement);
+router.use(protectRoute, attachTenantContext);
+
+router.get("/all", getAllMeasurements);
+router.get("/:customerId", getMeasurementById);
+router.post("/add/:customerId", isOwnerOrAdmin, addMeasurement);
+router.put("/update/:customerId", isOwnerOrAdmin, updateMeasurement);
+router.delete("/:customerId", isOwnerOrAdmin, deleteMeasurement);
 
 export default router;
