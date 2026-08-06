@@ -3,16 +3,16 @@ import useGetAuth from "../hooks/useGetAuth";
 import { Loader } from "lucide-react";
 import Header from "./Header";
 import Backdrop from "./Backdrop";
-import Sidebar from "./Sidebar";
+import AdminSidebar from "./AdminSidebar";
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
 
-const TailorLayoutContent = () => {
+const AdminLayoutContent = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
 
   return (
     <div className="min-h-screen xl:flex">
       <div>
-        <Sidebar />
+        <AdminSidebar />
         <Backdrop />
       </div>
       <div
@@ -29,7 +29,7 @@ const TailorLayoutContent = () => {
   );
 };
 
-const TailorLayout = () => {
+const AdminLayout = () => {
   const { data: authUser, isLoading } = useGetAuth();
 
   if (isLoading) {
@@ -41,13 +41,13 @@ const TailorLayout = () => {
   }
 
   if (!authUser) return <Navigate to="/login" replace />;
-  if (authUser.role === "super_admin") return <Navigate to="/admin" replace />;
+  if (authUser.role !== "super_admin") return <Navigate to="/" replace />;
 
   return (
     <SidebarProvider>
-      <TailorLayoutContent />
+      <AdminLayoutContent />
     </SidebarProvider>
   );
 };
 
-export default TailorLayout;
+export default AdminLayout;

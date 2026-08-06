@@ -9,31 +9,54 @@ const LoginPage = () => {
   const [isShow, setIsShow] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const validate = () => {
+    const newErrors = {};
+    if (!email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Invalid email format";
+    }
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const { mutate: loginMutation, isPending } = useMutation({
     mutationFn: async ({ email, password }) => {
-      try {
-        const res = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!res.ok)
-          throw new Error(data.error || "Login failed. Please try again.");
-      } catch (error) {
-        throw new Error(error.message || "Login failed. Please try again.");
+      if (!res.ok) {
+        throw new Error(data.error || "Login failed. Please try again.");
       }
+
+      return data;
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      queryClient.setQueryData(["authUser"], data.user);
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
-      navigate("/");
+
+      const role = data.user.role;
+      if (role === "super_admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
     },
 
     onError: (error) => {
@@ -47,6 +70,7 @@ const LoginPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validate()) return;
     loginMutation({ email, password });
   };
 
@@ -54,13 +78,13 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-white text-black">
       <div className="w-full max-w-md sm:p-6 p-4">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Login</h1>
+          <h1 className="text-3xl font-bold">Welcome Back</h1>
           <p className="text-base text-gray-500 px-4 sm:px-8">
-            Enter your email and password below to access your account.
+            Sign in to your account to continue.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
           {/* Email */}
           <div className="grid">
             <label htmlFor="email" className="text-base font-medium">
@@ -71,12 +95,19 @@ const LoginPage = () => {
               name="email"
               type="email"
               placeholder="m@example.com"
-              required
               autoComplete="email"
-              className="border border-gray-300 px-2 py-2 rounded text-black"
+              className={`border px-2 py-2 rounded text-black ${
+                errors.email ? "border-red-500" : "border-gray-300"
+              }`}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors({ ...errors, email: "" });
+              }}
             />
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -85,12 +116,11 @@ const LoginPage = () => {
               <label htmlFor="password" className="text-base font-medium">
                 Password
               </label>
-
               <Link
-                to={"/forgot-password"}
+                to="/forgot-password"
                 className="ml-auto inline-block text-sm font-semibold hover:text-blue-700 hover:underline transition duration-75 ease-in-out"
               >
-                Forgot your password?
+                Forgot password?
               </Link>
             </div>
 
@@ -99,12 +129,16 @@ const LoginPage = () => {
                 id="password"
                 name="password"
                 type={isShow ? "text" : "password"}
-                required
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className="w-full border border-gray-300 px-2 py-2 rounded text-black"
+                className={`w-full border px-2 py-2 rounded text-black ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password) setErrors({ ...errors, password: "" });
+                }}
               />
 
               {password && (
@@ -119,16 +153,19 @@ const LoginPage = () => {
                 </div>
               )}
             </div>
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+            )}
           </div>
 
           {/* Submit */}
           <div className="mt-3">
             <button
               type="submit"
-              className="w-full bg-black text-white py-2 rounded hover:bg-gray-900 transition cursor-pointer select-none"
+              className="w-full bg-black text-white py-2.5 rounded hover:bg-gray-900 transition cursor-pointer select-none font-medium disabled:opacity-50"
               disabled={isPending}
             >
-              {isPending ? <LoadingSpinner content="Logging in..." /> : "Login"}
+              {isPending ? <LoadingSpinner content="Signing in..." /> : "Sign In"}
             </button>
           </div>
         </form>

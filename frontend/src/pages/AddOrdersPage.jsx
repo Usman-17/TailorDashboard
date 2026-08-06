@@ -24,7 +24,8 @@ const AddOrdersPage = () => {
   const navigate = useNavigate();
 
   // Get All Customers
-  const { customers = [] } = useGetAllCustomers();
+  const { data: customersData } = useGetAllCustomers({ page: 1, limit: 1000 });
+  const customers = customersData?.customers || [];
 
   // Add Order Mutation
   const { mutate: addOrder, isPending } = useMutation({

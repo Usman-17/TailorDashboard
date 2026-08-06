@@ -4,55 +4,40 @@ import { useSidebar } from "../context/SidebarContext";
 import {
   ChevronDownIcon,
   Ellipsis,
-  Layers2,
   LayoutDashboard,
-  ShoppingBag,
-  SquareChartGantt,
-  TrendingUp,
+  Store,
+  Users,
+  Settings,
 } from "lucide-react";
 import useGetAuth from "../hooks/useGetAuth";
 
 import logo from "../assets/logo.png";
 import logo_icon from "../assets/s-logo.png";
 
-const tailorNavItems = [
+const adminNavItems = [
   {
     name: "Dashboard",
     icon: <LayoutDashboard />,
-    path: "/",
+    path: "/admin",
   },
   {
-    name: "Manage Customers",
-    icon: <Layers2 />,
-    subItems: [
-      { name: "Add Customer", path: "/customer/add" },
-      { name: "Manage Customers", path: "/customer/manage" },
-    ],
+    name: "Manage Shops",
+    icon: <Store />,
+    path: "/admin/shops",
   },
   {
-    name: "Manage Orders",
-    icon: <ShoppingBag />,
-    subItems: [
-      { name: "Add Order", path: "/orders/add" },
-      { name: "Manage Orders", path: "/orders/manage" },
-    ],
+    name: "Manage Users",
+    icon: <Users />,
+    path: "/admin/users",
   },
   {
-    name: "Manage Expenses",
-    icon: <SquareChartGantt />,
-    subItems: [
-      { name: "Add Expenses", path: "/expenses/add" },
-      { name: "Manage Expenses", path: "/expenses/manage" },
-    ],
-  },
-  {
-    name: "Manage Sale",
-    icon: <TrendingUp />,
-    path: "/sale",
+    name: "Settings",
+    icon: <Settings />,
+    path: "/admin/settings",
   },
 ];
 
-const Sidebar = () => {
+const AdminSidebar = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
   const { data: authUser } = useGetAuth();
@@ -185,7 +170,7 @@ const Sidebar = () => {
         lg:translate-x-0`}
     >
       <div className="py-6 sm:py-3 flex justify-center">
-        <Link to="/" className="hidden sm:block">
+        <Link to="/admin" className="hidden sm:block">
           {isExpanded || isHovered || isMobileOpen ? (
             <img src={logo} alt="Logo" width={80} height={32} />
           ) : (
@@ -206,12 +191,12 @@ const Sidebar = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  ""
+                  "Admin Panel"
                 ) : (
                   <Ellipsis size={14} />
                 )}
               </h2>
-              {renderMenuItems(tailorNavItems, "main")}
+              {renderMenuItems(adminNavItems, "main")}
             </div>
           </div>
         </nav>
@@ -221,4 +206,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default AdminSidebar;

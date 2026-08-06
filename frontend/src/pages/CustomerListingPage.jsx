@@ -1,256 +1,157 @@
+import { useState } from "react";
 import moment from "moment";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import Highlighter from "react-highlight-words";
 import { Table, Input, Button, Space } from "antd";
-import { useEffect, useRef, useState } from "react";
-import { Search, Pencil, Redo, Trash, Eye } from "lucide-react";
+import { Search, Pencil, Trash, Plus, Redo, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-import CustomButton from "../components/CustomButton";
+import useGetAllCustomers from "../hooks/useGetAllCustomers";
 import SectionHeading from "../components/SectionHeading";
-import { useMutation } from "@tanstack/react-query";
-// Imports End
+import CustomerFormModal from "../components/CustomerFormModal";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 const CustomerListingPage = () => {
-  const [data, setData] = useState([]);
-  const [searchText, setSearchText] = useState("");
-  const [searchedColumn, setSearchedColumn] = useState("");
-  const [loading, setLoading] = useState(true);
-  const searchInput = useRef(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [editCustomer, setEditCustomer] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: "" });
+
   const navigate = useNavigate();
 
-  // Fetch all customers
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const res = await fetch("/api/customers/all", {
-          credentials: "include",
-        });
-        const result = await res.json();
+  const { data, isLoading } = useGetAllCustomers({ page, limit: pageSize, search });
 
-        setData(
-          result.map((customer, index) => ({
-            key: customer._id,
-            _id: customer._id,
-            id: customer.customerId,
-            sr: index + 1,
-            name: customer.name,
-            phone: customer.phone,
-            measurement: customer.measurement,
-            createdAt: moment(customer.createdAt).format("DD MMM YYYY"),
-          }))
-        );
-      } catch (err) {
-        toast.error("Failed to fetch customers");
-        console.log(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCustomers();
-  }, []);
+  const customers = data?.customers || [];
+  const pagination = data?.pagination || {};
 
-  // Delete customers mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      const res = await fetch(`/api/customers/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to delete customers");
-      return res.json();
-    },
-
-    onSuccess: (_, id) => {
-      toast.success("Customers deleted successfully");
-      setData((prev) => prev.filter((item) => item._id !== id));
-    },
-    onError: () => toast.error("Failed to delete customers"),
-  });
-
-  // Search filter functions
-  const handleSearch = (selectedKeys, confirm, dataIndex) => {
-    confirm();
-    setSearchText(selectedKeys[0]);
-    setSearchedColumn(dataIndex);
+  const handleSearch = () => {
+    setPage(1);
+    setSearch(searchInput);
   };
 
-  const handleReset = (clearFilters) => {
-    clearFilters();
-    setSearchText("");
+  const handleReset = () => {
+    setSearchInput("");
+    setSearch("");
+    setPage(1);
   };
 
-  const getColumnSearchProps = (dataIndex) => ({
-    filterDropdown: ({
-      setSelectedKeys,
-      selectedKeys,
-      confirm,
-      clearFilters,
-      close,
-    }) => (
-      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
-        <Input
-          ref={searchInput}
-          placeholder={`Search ${dataIndex}`}
-          value={selectedKeys[0]}
-          onChange={(e) =>
-            setSelectedKeys(e.target.value ? [e.target.value] : [])
-          }
-          onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
-          style={{ marginBottom: 8, display: "block" }}
-        />
-        <Space>
-          <Button
-            type="primary"
-            onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
-            icon={<Search size={14} />}
-            size="small"
-            style={{ width: 90 }}
-          >
-            Search
-          </Button>
-          <Button
-            onClick={() => clearFilters && handleReset(clearFilters)}
-            size="small"
-            style={{ width: 90 }}
-          >
-            Reset
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            onClick={() => {
-              confirm({ closeDropdown: false });
-              setSearchText(selectedKeys[0]);
-              setSearchedColumn(dataIndex);
-            }}
-          >
-            Filter
-          </Button>
-          <Button type="link" size="small" onClick={() => close()}>
-            Close
-          </Button>
-        </Space>
-      </div>
-    ),
-    filterIcon: (filtered) => (
-      <Search
-        className="w-4 h-4"
-        style={{ color: filtered ? "#1677ff" : undefined }}
-      />
-    ),
-    onFilter: (value, record) =>
-      record[dataIndex]?.toString().toLowerCase().includes(value.toLowerCase()),
-    filterDropdownProps: {
-      onOpenChange(open) {
-        if (open) {
-          setTimeout(() => searchInput.current?.select(), 100);
-        }
-      },
-    },
-    render: (text) =>
-      searchedColumn === dataIndex ? (
-        <Highlighter
-          highlightStyle={{ backgroundColor: "#ffc069", padding: 0 }}
-          searchWords={[searchText]}
-          autoEscape
-          textToHighlight={text ? text.toString() : ""}
-        />
-      ) : (
-        text
-      ),
-  });
+  const openEdit = (customer) => {
+    setEditCustomer(customer);
+    setFormModalOpen(true);
+  };
 
-  // Table columns
+  const openCreate = () => {
+    setEditCustomer(null);
+    setFormModalOpen(true);
+  };
+
   const columns = [
     {
       title: "Sr.",
-      dataIndex: "sr",
       key: "sr",
-      width: "5%",
+      width: 60,
+      render: (_, __, index) => (page - 1) * pageSize + index + 1,
     },
     {
-      title: "Id",
-      dataIndex: "id",
-      key: "id",
-      className: "font-semibold text-md",
-      width: "10%",
-      ...getColumnSearchProps("id"),
+      title: "ID",
+      dataIndex: "customerId",
+      key: "customerId",
+      width: 100,
+      render: (text) => <span className="font-mono text-xs text-gray-500">{text}</span>,
     },
     {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      className: "font-semibold text-md",
-      width: "30%",
-      ...getColumnSearchProps("name"),
+      render: (text) => <span className="font-medium text-gray-900">{text}</span>,
     },
     {
       title: "Phone",
       dataIndex: "phone",
       key: "phone",
-      width: "15%",
-      ...getColumnSearchProps("phone"),
     },
     {
-      title: "Created At",
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      render: (text) => text || <span className="text-gray-400">-</span>,
+    },
+    {
+      title: "City",
+      key: "city",
+      render: (_, r) => r.address?.city || <span className="text-gray-400">-</span>,
+    },
+    {
+      title: "Measurement",
+      key: "measurement",
+      width: 120,
+      render: (_, record) =>
+        record.measurement ? (
+          <span className="inline-block rounded-full bg-green-100 text-green-700 px-2 py-0.5 text-xs font-medium">
+            Added
+          </span>
+        ) : (
+          <span className="inline-block rounded-full bg-gray-100 text-gray-500 px-2 py-0.5 text-xs font-medium">
+            None
+          </span>
+        ),
+    },
+    {
+      title: "Created",
       dataIndex: "createdAt",
       key: "createdAt",
-      width: "15%",
+      width: 110,
+      render: (text) => moment(text).format("DD MMM YYYY"),
     },
     {
-      title: "Action",
-      key: "action",
-      width: "35%",
+      title: "Actions",
+      key: "actions",
+      width: 180,
       render: (_, record) => (
-        <div className="flex items-center gap-2">
-          <Button onClick={() => navigate(`/customer/edit/${record.key}`)}>
-            <Pencil className="w-4 h-4" />
-            Update
+        <div className="flex items-center gap-1 flex-wrap">
+          <Button size="small" onClick={() => openEdit(record)} title="Edit">
+            <Pencil className="w-3.5 h-3.5" />
           </Button>
 
-          {/* Add Measurements */}
           {!record.measurement && (
             <button
-              onClick={() => navigate(`/measurements/add/${record.key}`)}
-              className="flex items-center gap-2  border border-gray-300 px-3 py-1 rounded-md transition-colors duration-100 hover:text-orange-600 hover:border-orange-500"
+              onClick={() => navigate(`/measurements/add/${record._id}`)}
+              className="flex items-center gap-1 border border-gray-300 px-2 py-1 rounded text-xs transition-colors hover:text-orange-600 hover:border-orange-500 cursor-pointer"
+              title="Add Measurement"
             >
-              <Redo className="w-4 h-4" />
-              Add Measurement
+              <Redo className="w-3.5 h-3.5" />
             </button>
           )}
 
           {record.measurement && (
             <>
               <Button
-                onClick={() => navigate(`/measurements/edit/${record.key}`)}
-                className="border text-yellow-600"
+                size="small"
+                onClick={() => navigate(`/measurements/edit/${record._id}`)}
+                title="Edit Measurement"
               >
-                <Pencil className="w-4 h-4" />
-                Edit Measurement
+                <Redo className="w-3.5 h-3.5 text-yellow-600" />
               </Button>
-
               <Button
-                onClick={() => navigate(`/measurements/${record.key}`)}
-                className="border text-gray-600"
+                size="small"
+                onClick={() => navigate(`/measurements/${record._id}`)}
+                title="View Measurement"
               >
-                <Eye className="w-4 h-4" />
+                <Eye className="w-3.5 h-3.5 text-gray-600" />
               </Button>
             </>
           )}
 
           <button
-            onClick={() => {
-              if (
-                window.confirm("Are you sure you want to delete this customer?")
-              ) {
-                deleteMutation.mutate(record._id);
-                console.log(`Customer with ID ${record._id} deleted`);
-              }
-            }}
-            className="flex items-center gap-1 hover:text-red-600 hover:underline cursor-pointer border border-gray-300 p-1 px-3 rounded hover:border-red-500 transition-colors"
+            onClick={() =>
+              setDeleteModal({ open: true, id: record._id, name: record.name })
+            }
+            className="p-1.5 border border-gray-300 rounded hover:text-red-600 hover:border-red-500 transition-colors cursor-pointer"
+            title="Delete"
           >
-            <Trash className="w-4 h-4" />
+            <Trash className="w-3.5 h-3.5" />
           </button>
         </div>
       ),
@@ -260,28 +161,78 @@ const CustomerListingPage = () => {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
         <SectionHeading
           title="Customers"
-          subtitle="Search and manage customers below"
+          subtitle="Manage all your customers"
         />
 
-        <div className="sm:w-auto w-full">
-          <CustomButton
-            title="Add New Customer"
-            to="/customer/add"
-            Icon={Redo}
-          />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center">
+            <Input
+              placeholder="Search name, phone, ID..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onPressEnter={handleSearch}
+              style={{ width: 220 }}
+              suffix={<Search className="size-4 text-gray-400" />}
+            />
+            <Button onClick={handleSearch} className="ml-1">
+              Search
+            </Button>
+            {search && (
+              <Button onClick={handleReset} type="link">
+                Reset
+              </Button>
+            )}
+          </div>
+
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-900 transition-colors cursor-pointer"
+          >
+            <Plus size={16} />
+            Add Customer
+          </button>
         </div>
       </div>
 
       {/* Table */}
       <Table
-        loading={loading}
+        rowKey="_id"
+        loading={isLoading}
         columns={columns}
-        dataSource={data}
-        pagination={{ pageSize: 10 }}
+        dataSource={customers}
         scroll={{ x: true }}
+        pagination={{
+          current: page,
+          pageSize: pageSize,
+          total: pagination.total || 0,
+          showSizeChanger: true,
+          pageSizeOptions: ["10", "20", "50"],
+          showTotal: (total) => `Total ${total} customers`,
+          onChange: (p, ps) => {
+            setPage(p);
+            setPageSize(ps);
+          },
+        }}
+      />
+
+      {/* Modals */}
+      <CustomerFormModal
+        isOpen={formModalOpen}
+        onClose={() => {
+          setFormModalOpen(false);
+          setEditCustomer(null);
+        }}
+        editCustomer={editCustomer}
+      />
+
+      <DeleteConfirmModal
+        isOpen={deleteModal.open}
+        onClose={() => setDeleteModal({ open: false, id: null, name: "" })}
+        customerId={deleteModal.id}
+        customerName={deleteModal.name}
       />
     </div>
   );

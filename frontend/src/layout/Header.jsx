@@ -1,14 +1,39 @@
-import { Link } from "react-router";
-import { X, UserRound, LogOut } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { X, UserRound, LogOut, Shield, Store, ChevronDown, KeyRound, Menu } from "lucide-react";
 import useLogout from "../hooks/useLogout";
 import { useSidebar } from "../context/SidebarContext";
-import menu from "../assets/menu.png";
 import useGetAuth from "../hooks/useGetAuth";
+import ChangePasswordModal from "../components/ChangePasswordModal";
+
+const ROLE_LABELS = {
+  super_admin: "Super Admin",
+  owner: "Owner",
+  staff: "Staff",
+};
+
+const ROLE_COLORS = {
+  super_admin: "bg-purple-100 text-purple-700",
+  owner: "bg-blue-100 text-blue-700",
+  staff: "bg-green-100 text-green-700",
+};
 
 const Header = () => {
   const { logoutMutation } = useLogout();
-
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { data: authUser } = useGetAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
@@ -18,51 +43,77 @@ const Header = () => {
     }
   };
 
-  const { data: authUser } = useGetAuth();
-
   return (
-    <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999 lg:border-b">
-      <div className="flex flex-col items-center justify-between grow lg:flex-row lg:px-6">
-        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 sm:gap-4  lg:border-b-0 lg:px-0 lg:py-4">
-          {/* 1 Menu Button */}
+    <>
+      <header className="sticky top-0 flex items-center justify-between w-full bg-white px-4 py-2 sm:px-6 sm:py-2.5 z-40">
+        <button
+          onClick={handleToggle}
+          className="flex items-center justify-center w-10 h-10 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+          aria-label="Toggle Sidebar"
+        >
+          {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+
+        <div className="relative" ref={dropdownRef}>
           <button
-            className="flex items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999 lg:flex lg:h-11 lg:w-11 lg:border cursor-pointer hover:bg-gray-50"
-            onClick={handleToggle}
-            aria-label="Toggle Sidebar"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
           >
-            {isMobileOpen ? (
-              <X size={24} />
-            ) : (
-              <img src={menu} className="w-6 h-6" />
-            )}
-          </button>
-          {/* Menu Button End */}
-
-          <div className="flex items-center justify-end gap-3">
-            {/* 2 User */}
-            <Link
-              to="/"
-              className="hidden sm:flex items-center gap-3 p-2 rounded-md"
-            >
-              <div>
-                <UserRound className="w-5 h-5" />
-              </div>
-
-              <div className="flex flex-col text-sm leading-tight">
-                <span className="font-medium text-gray-800">
-                  {authUser?.fullName}
-                </span>
-                <span className="text-gray-500 text-xs">{authUser?.email}</span>
-              </div>
-            </Link>
-
-            <div className="cursor-pointer hover:text-gray-700 pr-2">
-              <LogOut size={20} onClick={() => logoutMutation()} />
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 overflow-hidden">
+              <UserRound size={18} className="text-gray-600" />
             </div>
-          </div>
+            <div className="hidden sm:block text-left">
+              <p className="text-sm font-medium text-gray-900 leading-tight">{authUser?.fullName}</p>
+              <p className="text-xs text-gray-500 leading-tight">{authUser?.email}</p>
+            </div>
+            <ChevronDown size={16} className={`hidden sm:block text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 overflow-hidden">
+                    <UserRound size={20} className="text-gray-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">{authUser?.fullName}</p>
+                    <p className="text-xs text-gray-500">{authUser?.email}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    setPasswordModalOpen(true);
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <KeyRound size={16} />
+                  Change Password
+                </button>
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    logoutMutation();
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-    </header>
+      </header>
+
+      <ChangePasswordModal
+        isOpen={passwordModalOpen}
+        onClose={() => setPasswordModalOpen(false)}
+      />
+    </>
   );
 };
 
