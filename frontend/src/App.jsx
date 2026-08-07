@@ -30,7 +30,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AdminDashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
-const ShopPage = lazy(() => import("./pages/admin/ShopPage"));
+const ShopPage = lazy(() => import("./pages/Admin/ShopPage/ShopPage"));
 const ManageUsersPage = lazy(() => import("./pages/admin/ManageUsersPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 
@@ -151,6 +151,7 @@ const App = () => {
 
       <Toaster
         position="bottom-center"
+        containerStyle={{ zIndex: 9999999 }}
         toastOptions={{
           style: {
             background: "#363636",

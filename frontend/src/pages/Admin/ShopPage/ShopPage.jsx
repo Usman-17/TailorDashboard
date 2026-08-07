@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import moment from "moment";
 import toast from "react-hot-toast";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   SquarePen,
   X,
@@ -15,18 +14,22 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import CustomTable from "../../components/CustomTable";
-import CustomInput from "../../components/CustomInput";
-import useGetAllShops from "../../hooks/useGetAllShops";
-import CustomSelect from "../../components/CustomSelect";
-import CustomUpload from "../../components/CustomUpload";
-import useGlobalFilter from "../../hooks/useGlobalFilter";
-import SectionHeading from "../../components/SectionHeading";
-import CustomDatePicker from "../../components/CustomDatePicker";
-import ActionButtons from "../../components/ActionButtons";
-import FullScreenModal from "../../components/FullScreenModal";
-import SummaryCard from "../../components/SummaryCard";
+import CustomTable from "../../../components/CustomTable";
+import CustomInput from "../../../components/CustomInput";
+import useGetAllShops from "../../../hooks/useGetAllShops";
+import CustomSelect from "../../../components/CustomSelect";
+import CustomUpload from "../../../components/CustomUpload";
+import useGlobalFilter from "../../../hooks/useGlobalFilter";
+import SectionHeading from "../../../components/SectionHeading";
+import CustomDatePicker from "../../../components/CustomDatePicker";
+import ActionButtons from "../../../components/ActionButtons";
+import FullScreenModal from "../../../components/FullScreenModal";
+import SummaryCard from "../../../components/SummaryCard";
+
+import ReceivePaymentModal from "./ReceivePaymentModal";
+import PaymentHistoryModal from "./PaymentHistoryModal";
 
 const PLAN_BADGE = {
   monthly: "bg-blue-100 text-blue-700",
@@ -316,7 +319,9 @@ const ShopPage = () => {
     e.preventDefault();
     if (!validate()) return;
     if (editingShop) {
-      updateShop({ id: editingShop._id, data: { ...form, logo: logoFile } });
+      // Strip subscription fields — those are managed via Receive Payment
+      const { subscriptionPlan: _sp, subscriptionAmount: _sa, subscriptionDuration: _sd, subscriptionStart: _ss, subscriptionExpiry: _se, amountReceived: _ar, ...editPayload } = form;
+      updateShop({ id: editingShop._id, data: { ...editPayload, logo: logoFile } });
     } else {
       createShop({ ...form, logo: logoFile });
     }
@@ -451,12 +456,8 @@ const ShopPage = () => {
         };
         const now = moment();
         const expiryDate = record.rawExpiry ? moment(record.rawExpiry) : null;
-        const isPastExpiry = expiryDate
-          ? expiryDate.isBefore(now, "day")
-          : false;
-        const daysUntilExpiry = expiryDate
-          ? expiryDate.diff(now, "days")
-          : null;
+        const isPastExpiry = expiryDate ? expiryDate.isBefore(now, "day") : false;
+        const daysUntilExpiry = expiryDate ? expiryDate.diff(now, "days") : null;
 
         let statusText = v ? v.charAt(0).toUpperCase() + v.slice(1) : "Active";
         let colorClass = colors[v] || colors.active;
@@ -544,7 +545,7 @@ const ShopPage = () => {
             isSelected={statusFilter === card.id}
             onClick={() =>
               setStatusFilter(
-                statusFilter === card.id && card.id !== "all" ? "all" : card.id,
+                statusFilter === card.id && card.id !== "all" ? "all" : card.id
               )
             }
           />
@@ -654,6 +655,8 @@ const ShopPage = () => {
             <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
               Shop Details
             </h3>
+            {!editingShop && (
+            <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <CustomSelect
                 id="subscriptionPlan"
@@ -757,6 +760,9 @@ const ShopPage = () => {
                 }}
               />
             </div>
+            </>
+            )}
+            {!editingShop && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
               <CustomInput
                 id="amountReceived"
@@ -781,6 +787,7 @@ const ShopPage = () => {
                 </div>
               </div>
             </div>
+            )}
             <div className="mt-4">
               <CustomSelect
                 id="isActive"
@@ -848,20 +855,7 @@ const ShopPage = () => {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
-              Notes
-            </h3>
-            <CustomInput
-              id="notes"
-              label="Notes"
-              type="textarea"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              placeholder="Any additional notes (optional)"
-              rows={3}
-            />
-          </div>
+
         </form>
       </FullScreenModal>
 
@@ -887,205 +881,6 @@ const ShopPage = () => {
         />
       )}
     </div>
-  );
-};
-
-const ReceivePaymentModal = ({ shop, open, onClose, onSubmit, isPending }) => {
-  const [form, setForm] = useState({
-    subscriptionPlan: shop?.subscriptionPlan || "monthly",
-    amount: 0,
-    paymentMethod: "cash",
-    referenceNo: "",
-    notes: "",
-  });
-
-  useEffect(() => {
-    if (shop) {
-      setForm({
-        subscriptionPlan: shop.subscriptionPlan || "monthly",
-        amount: 0,
-        paymentMethod: "cash",
-        referenceNo: "",
-        notes: "",
-      });
-    }
-  }, [shop]);
-
-  if (!shop) return null;
-
-  return (
-    <FullScreenModal
-      open={open}
-      onClose={onClose}
-      title="Receive Payment"
-      subtitle={shop.name}
-      showClose={false}
-      actions={
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2 text-sm rounded-full hover:bg-gray-100 transition cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            disabled={isPending || !form.amount}
-            onClick={() => onSubmit(form)}
-            className="px-5 py-2 text-sm bg-[var(--secondary-color)] text-white rounded-full hover:opacity-90 transition cursor-pointer disabled:opacity-50"
-          >
-            {isPending ? "Processing..." : "Receive Payment"}
-          </button>
-        </div>
-      }
-    >
-      <div className="grid gap-4 px-6">
-        <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="text-gray-500">Shop</span>
-            <p className="font-medium text-gray-900">{shop.name}</p>
-          </div>
-          <div>
-            <span className="text-gray-500">Current Plan</span>
-            <p className="font-medium text-gray-900 capitalize">
-              {shop.subscriptionPlan}
-            </p>
-          </div>
-          <div>
-            <span className="text-gray-500">Current Expiry</span>
-            <p className="font-medium text-gray-900">
-              {shop.subscriptionExpiry
-                ? dayjs(shop.subscriptionExpiry).format("DD MMM YYYY")
-                : "N/A"}
-            </p>
-          </div>
-        </div>
-
-        <hr className="border-gray-200" />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CustomSelect
-            id="subscriptionPlan"
-            label="Subscription Plan"
-            required
-            value={form.subscriptionPlan}
-            onChange={(val) => setForm({ ...form, subscriptionPlan: val })}
-            options={[
-              { label: "Monthly", value: "monthly" },
-              { label: "Quarterly (3 Months)", value: "quarterly" },
-              { label: "Half Yearly (6 Months)", value: "half-yearly" },
-              { label: "Yearly (12 Months)", value: "yearly" },
-            ]}
-            allowClear={false}
-          />
-          <CustomInput
-            id="amount"
-            label="Subscription Amount (Rs.)"
-            type="number"
-            value={shop.subscriptionAmount || 0}
-            disabled
-          />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CustomInput
-            id="amount"
-            label="Payment Received (Rs.)"
-            type="number"
-            required
-            value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-            placeholder="0"
-          />
-          <CustomSelect
-            id="paymentMethod"
-            label="Payment Method"
-            value={form.paymentMethod}
-            onChange={(val) => setForm({ ...form, paymentMethod: val })}
-            options={[
-              { label: "Cash", value: "cash" },
-              { label: "JazzCash", value: "jazzcash" },
-              { label: "EasyPaisa", value: "easypaisa" },
-              { label: "Bank Transfer", value: "bank" },
-              { label: "Other", value: "other" },
-            ]}
-            allowClear={false}
-          />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <CustomInput
-            id="referenceNo"
-            label="Reference No"
-            value={form.referenceNo}
-            onChange={(e) => setForm({ ...form, referenceNo: e.target.value })}
-            placeholder="Optional"
-          />
-          <CustomInput
-            id="notes"
-            label="Notes"
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            placeholder="Optional"
-          />
-        </div>
-      </div>
-    </FullScreenModal>
-  );
-};
-
-const PaymentHistoryModal = ({ shop, open, onClose, data, isLoading }) => {
-  if (!shop) return null;
-
-  return (
-    <FullScreenModal
-      open={open}
-      onClose={onClose}
-      title="Payment History"
-      subtitle={shop.name}
-      showClose
-    >
-      <div className="px-6">
-        {isLoading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--secondary-color)]" />
-          </div>
-        ) : data?.payments?.length === 0 ? (
-          <p className="text-center text-gray-400 py-10">
-            No payments recorded yet
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {data?.payments?.map((p) => (
-              <div
-                key={p._id}
-                className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[var(--secondary-color)]/10 flex items-center justify-center">
-                    <Wallet
-                      size={16}
-                      className="text-[var(--secondary-color)]"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      Rs. {p.amount.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {dayjs(p.createdAt).format("DD MMM YYYY")} &middot;{" "}
-                      {p.paymentMethod} &middot; {p.subscriptionPlan}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
-                  Paid
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </FullScreenModal>
   );
 };
 
