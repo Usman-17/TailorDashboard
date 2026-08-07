@@ -1,4 +1,5 @@
 import { Loader, Settings, SquarePen, Trash2 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 
 const ActionButtons = ({
   record,
@@ -10,8 +11,10 @@ const ActionButtons = ({
   onEdit,
   onDelete,
   onSettings,
-  darkMode = false,
+  darkMode: darkModeProp,
 }) => {
+  const themeContext = useTheme();
+  const darkMode = darkModeProp ?? themeContext?.isDarkMode ?? false;
   return (
     <div className="flex items-center justify-center gap-2">
       {/* Settings Button */}

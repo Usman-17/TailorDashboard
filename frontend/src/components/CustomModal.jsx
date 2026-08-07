@@ -1,13 +1,16 @@
 import { useEffect } from "react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "../context/ThemeContext";
 
 const CustomModal = ({
   isOpen,
-  isDarkMode,
+  isDarkMode: isDarkModeProp,
   className = "w-[90%] max-w-lg",
   fullScreen = false,
   children,
 }) => {
+  const themeContext = useTheme();
+  const isDarkMode = isDarkModeProp ?? themeContext?.isDarkMode ?? false;
   useEffect(() => {
     if (!isOpen) return;
 

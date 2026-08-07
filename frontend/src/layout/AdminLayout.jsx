@@ -16,12 +16,12 @@ const AdminLayoutContent = () => {
         <Backdrop />
       </div>
       <div
-        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-x-hidden ${
+        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
           isExpanded || isHovered ? "lg:ml-[190px]" : "lg:ml-[60px]"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />
-        <div className="p-2 mx-auto max-w-(--breakpoint-2xl) md:p-4">
+        <div className="p-2 mx-auto max-w-(--breakpoint-2xl) md:p-4 overflow-x-hidden">
           <Outlet />
         </div>
       </div>

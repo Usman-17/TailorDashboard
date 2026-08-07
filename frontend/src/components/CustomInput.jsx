@@ -33,13 +33,13 @@ const CustomInput = ({
       {label && (
         <label
           htmlFor={id}
-          className="block text-sm font-medium mb-1 text-gray-700"
+          className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide"
         >
           {label}{" "}
           {required ? (
             <span className="text-red-500 font-semibold">*</span>
           ) : (
-            <span className="text-xs font-normal text-gray-400">
+            <span className="text-xs font-normal text-gray-400 dark:text-purple-300/50">
               (Optional)
             </span>
           )}
@@ -48,7 +48,7 @@ const CustomInput = ({
 
       <div className="relative flex items-center">
         {Icon && (
-          <div className="absolute left-3 transition-colors duration-300 text-gray-400">
+          <div className="absolute left-3.5 transition-colors duration-300 text-gray-400 dark:text-purple-300/60">
             <Icon size={16} />
           </div>
         )}
@@ -63,11 +63,11 @@ const CustomInput = ({
             name={id}
             rows={rows || 4}
             spellCheck={spellCheck}
-            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3"} pr-3 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none resize-none
+            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3.5"} pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none resize-none
           ${
             error
-              ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
-              : "!bg-white hover:!border-gray-400 focus:!border-(--secondary-color) focus:!shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
+              ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.2)]"
+              : "bg-white dark:bg-[#0f0d1b] hover:border-gray-400 dark:hover:border-purple-400 dark:hover:shadow-[0_0_12px_rgba(168,85,247,0.18)] focus:border-[var(--secondary-color)] dark:focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(168,85,247,0.25)]"
           }
           ${disabled ? "cursor-not-allowed opacity-60" : ""}
         `}
@@ -87,11 +87,11 @@ const CustomInput = ({
             maxLength={maxLength}
             name={id}
             spellCheck={spellCheck}
-            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3"} pr-3 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none
+            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3.5"} pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none
           ${
             error
-              ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
-              : "!bg-white hover:!border-gray-400 focus:!border-(--secondary-color) focus:!shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
+              ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.2)]"
+              : "bg-white dark:bg-[#0f0d1b] hover:border-gray-400 dark:hover:border-purple-400 dark:hover:shadow-[0_0_12px_rgba(168,85,247,0.18)] focus:border-[var(--secondary-color)] dark:focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(168,85,247,0.25)]"
           }
           ${disabled ? "cursor-not-allowed opacity-60" : ""}
         `}

@@ -67,28 +67,28 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const inputClass = (field) =>
-    `w-full border px-3 py-2.5 rounded-lg text-sm text-gray-900 pr-10 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-      errors[field] ? "border-red-500" : "border-gray-300"
+    `w-full border px-3 py-2.5 rounded-lg text-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-[#141025] pr-10 focus:ring-2 focus:ring-purple-500 focus:outline-none ${
+      errors[field] ? "border-red-500" : "border-gray-300 dark:border-gray-700"
     }`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={handleClose} />
-      <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4">
+      <div className="fixed inset-0 bg-black/50" onClick={handleClose} />
+      <div className="relative bg-white dark:bg-[#1a162e] rounded-2xl shadow-xl w-full max-w-md mx-4 border border-gray-100 dark:border-gray-800">
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 p-1 rounded-lg hover:bg-gray-100 cursor-pointer"
+          className="absolute top-4 right-4 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
         >
-          <X className="size-5 text-gray-500" />
+          <X className="size-5 text-gray-500 dark:text-gray-400" />
         </button>
 
         <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900">Change Password</h3>
-          <p className="text-sm text-gray-500 mt-1">Enter your current and new password below.</p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Change Password</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Enter your current and new password below.</p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Current Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Current Password</label>
               <div className="relative">
                 <input
                   type={showPasswords ? "text" : "password"}
@@ -103,7 +103,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">New Password</label>
               <div className="relative">
                 <input
                   type={showPasswords ? "text" : "password"}
@@ -118,7 +118,7 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm New Password</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Confirm New Password</label>
               <div className="relative">
                 <input
                   type={showPasswords ? "text" : "password"}
@@ -132,12 +132,12 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
               {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={showPasswords}
                 onChange={(e) => setShowPasswords(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-gray-300 dark:border-gray-700"
               />
               Show passwords
             </label>
@@ -146,14 +146,14 @@ const ChangePasswordModal = ({ isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+                className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className="flex-1 px-4 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-50 cursor-pointer transition-colors"
+                className="flex-1 px-4 py-2.5 bg-purple-600 dark:bg-purple-700 text-white rounded-lg text-sm font-medium hover:bg-purple-700 dark:hover:bg-purple-600 disabled:opacity-50 cursor-pointer transition-colors"
               >
                 {mutation.isPending ? "Saving..." : "Save"}
               </button>

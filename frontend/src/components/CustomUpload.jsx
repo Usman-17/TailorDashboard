@@ -1,17 +1,20 @@
 import { Inbox } from "lucide-react";
 import { Upload } from "antd";
 import { useState, useEffect } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 const CustomUpload = ({
   value,
   onChange,
   previewHeight = 160,
   multiple = false,
-  darkMode = false,
+  darkMode: darkModeProp,
   label = "Image",
   title = "Choose File or Drag & Drop",
   description = "Upload a single image",
 }) => {
+  const themeContext = useTheme();
+  const darkMode = darkModeProp ?? themeContext?.isDarkMode ?? false;
   const [previewImage, setPreviewImage] = useState(value || null);
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { Empty, Table } from "antd";
 import SearchBar from "./SearchBar";
 import TableErrorState from "./TableErrorState";
+import { useTheme } from "../context/ThemeContext";
 
 const CustomTable = ({
   loading,
@@ -10,7 +11,7 @@ const CustomTable = ({
   onSearchChange,
   searchPlaceholder = "Search...",
   totalLabel = "Total Records",
-  isDarkMode = false,
+  isDarkMode: isDarkModeProp,
   rowSelection,
   rowKey,
   footer,
@@ -27,6 +28,8 @@ const CustomTable = ({
   childrenColumnName = "childrenRows",
   ...props
 }) => {
+  const themeContext = useTheme();
+  const isDarkMode = isDarkModeProp ?? themeContext?.isDarkMode ?? false;
   const data = isError ? [] : dataSource;
   const totalCount = data?.length || 0;
 

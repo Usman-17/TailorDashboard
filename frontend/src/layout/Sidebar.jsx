@@ -97,7 +97,7 @@ const Sidebar = () => {
           {nav.subItems ? (
             <button
               onClick={() => handleSubmenuToggle(index, menuType)}
-              className="flex items-center gap-2.5 ml-2 overflow-hidden text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
+              className="flex items-center gap-2.5 ml-2 overflow-hidden text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer"
             >
               <span className="[&>svg]:size-[18px]">{nav.icon}</span>
               {(isExpanded || isHovered || isMobileOpen) && (
@@ -120,8 +120,8 @@ const Sidebar = () => {
                 to={nav.path}
                 className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${
                   isActive(nav.path)
-                    ? "bg-gray-100 text-gray-900 font-medium"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                    ? "bg-gray-100 dark:bg-purple-900/40 text-gray-900 dark:text-purple-300 font-medium"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60"
                 }`}
               >
                 <span className="[&>svg]:size-[18px]">{nav.icon}</span>
@@ -152,8 +152,8 @@ const Sidebar = () => {
                       to={subItem.path}
                       className={`flex justify-between items-center px-2.5 py-1.5 rounded text-[12px] transition-colors ${
                         isActive(subItem.path)
-                          ? "bg-gray-100 text-gray-900 font-medium"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+                          ? "bg-gray-100 dark:bg-purple-900/40 text-gray-900 dark:text-purple-300 font-medium"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60"
                       }`}
                     >
                       {subItem.name}
@@ -172,7 +172,7 @@ const Sidebar = () => {
     <aside
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`fixed top-0 left-0 h-screen mt-5 lg:mt-0 px-3 bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 ease-in-out z-50
+      className={`fixed top-0 left-0 h-screen mt-5 lg:mt-0 px-3 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out z-50
         ${
           isExpanded || isMobileOpen
             ? "w-[190px]"

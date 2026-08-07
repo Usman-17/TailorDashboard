@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
 /* === Base Theme Variables === */
 :root {
   --bg-color: #fff;
@@ -56,7 +58,7 @@
   --table-header-bg: #141025;
   --table-border: #2a2738;
   --hover-bg: #1f1c34;
-  --sidebar-bg: #0d0c1a;
+  --sidebar-bg: #141025;
 
   /* Text Colors */
   --text-primary: #e0d7ff;
@@ -90,6 +92,42 @@
   --breadcrumb-link-hover: var(--secondary-color);
   --breadcrumb-divider: #6b7280;
 }
+
+/* Global Dark Theme overrides for standard utility classes */
+[data-theme="dark"] .bg-white {
+  background-color: #141025 !important;
+}
+[data-theme="dark"] .bg-gray-50 {
+  background-color: #1a162e !important;
+}
+[data-theme="dark"] .bg-gray-100 {
+  background-color: #201b38 !important;
+}
+[data-theme="dark"] .border-gray-100,
+[data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-300 {
+  border-color: #27223c !important;
+}
+[data-theme="dark"] .text-gray-900,
+[data-theme="dark"] .text-gray-800 {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .text-gray-500 {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .hover\:bg-gray-100:hover,
+[data-theme="dark"] .hover\:bg-gray-50:hover {
+  background-color: #27223c !important;
+}
+[data-theme="dark"] .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+[data-theme="dark"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27223c !important;
+}
+
 
 /* ======== Global Base Styles ======== */
 body {
@@ -984,6 +1022,63 @@ input:-webkit-autofill:focus {
 
 .my-custom-datepicker .ant-picker-suffix {
   color: #6b7280 !important;
+}
+
+/* === Dark Mode overrides for Custom Select and Custom DatePicker === */
+[data-theme="dark"] .my-custom-select .ant-select-selector {
+  background-color: #1e1935 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #423768 !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-selector:hover {
+  border-color: #8143ec !important;
+}
+
+[data-theme="dark"] .my-custom-select.ant-select-focused .ant-select-selector,
+[data-theme="dark"] .my-custom-select.ant-select-open .ant-select-selector {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25) !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-selection-item {
+  color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-selection-placeholder {
+  color: #9d8ec4 !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-arrow {
+  color: #b3a5db !important;
+}
+
+[data-theme="dark"] .my-custom-datepicker.ant-picker {
+  background: #1e1935 !important;
+  border: 1.5px solid #423768 !important;
+}
+
+[data-theme="dark"] .my-custom-datepicker.ant-picker:hover {
+  border-color: #8143ec !important;
+}
+
+[data-theme="dark"] .my-custom-datepicker.ant-picker-focused {
+  border-color: #c084fc !important;
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25) !important;
+}
+
+[data-theme="dark"] .my-custom-datepicker .ant-picker-input > input {
+  color: #ffffff !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] .my-custom-datepicker .ant-picker-input > input::placeholder {
+  color: #9d8ec4 !important;
+}
+
+[data-theme="dark"] .my-custom-datepicker .ant-picker-suffix {
+  color: #b3a5db !important;
 }
 
 /* Multi-select Tags Modern Styling */

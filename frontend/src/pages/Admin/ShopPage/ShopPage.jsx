@@ -578,7 +578,7 @@ const ShopPage = () => {
             <button
               type="button"
               onClick={closeModal}
-              className="px-5 py-2 text-sm rounded-full hover:bg-gray-100 transition cursor-pointer"
+              className="px-6 py-2.5 text-sm font-medium text-gray-700 dark:text-purple-200/80 rounded-full hover:bg-gray-100 dark:hover:bg-purple-900/30 transition-all cursor-pointer"
             >
               Cancel
             </button>
@@ -586,7 +586,7 @@ const ShopPage = () => {
               type="button"
               disabled={isPending || isUpdating}
               onClick={(e) => handleSubmit(e)}
-              className="px-5 py-2 text-sm bg-[var(--secondary-color)] text-white rounded-full hover:opacity-90 transition cursor-pointer disabled:opacity-50"
+              className="px-7 py-2.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-full shadow-lg shadow-purple-600/30 hover:shadow-purple-600/40 transition-all cursor-pointer disabled:opacity-50"
             >
               {isPending || isUpdating
                 ? editingShop
@@ -602,14 +602,18 @@ const ShopPage = () => {
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="grid gap-3 px-2"
+          className="space-y-6 px-1 sm:px-3 py-2"
           noValidate
         >
-          <div className="border-b border-gray-200 pb-3">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
-              Owner Account
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Section 1: Owner Account */}
+          <div className="bg-gray-50/70 dark:bg-[#18142a]/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-gray-200/80 dark:border-purple-500/20 shadow-sm dark:shadow-purple-950/20 transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200/60 dark:border-purple-500/20">
+              <span className="w-1.5 h-4 bg-purple-600 dark:bg-purple-400 rounded-full"></span>
+              <h3 className="text-xs font-bold text-gray-800 dark:text-purple-300 uppercase tracking-wider">
+                Owner Account
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <CustomInput
                 id="shopName"
                 label="Shop Name"
@@ -651,13 +655,17 @@ const ShopPage = () => {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
-              Shop Details
-            </h3>
+          {/* Section 2: Shop Details */}
+          <div className="bg-gray-50/70 dark:bg-[#18142a]/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-gray-200/80 dark:border-purple-500/20 shadow-sm dark:shadow-purple-950/20 transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200/60 dark:border-purple-500/20">
+              <span className="w-1.5 h-4 bg-purple-600 dark:bg-purple-400 rounded-full"></span>
+              <h3 className="text-xs font-bold text-gray-800 dark:text-purple-300 uppercase tracking-wider">
+                Shop Details
+              </h3>
+            </div>
             {!editingShop && (
             <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <CustomSelect
                 id="subscriptionPlan"
                 label="Subscription Plan"
@@ -839,10 +847,14 @@ const ShopPage = () => {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
-              Shop Logo
-            </h3>
+          {/* Section 3: Shop Logo */}
+          <div className="bg-gray-50/70 dark:bg-[#18142a]/90 backdrop-blur-md rounded-2xl p-4 sm:p-6 border border-gray-200/80 dark:border-purple-500/20 shadow-sm dark:shadow-purple-950/20 transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200/60 dark:border-purple-500/20">
+              <span className="w-1.5 h-4 bg-purple-600 dark:bg-purple-400 rounded-full"></span>
+              <h3 className="text-xs font-bold text-gray-800 dark:text-purple-300 uppercase tracking-wider">
+                Shop Logo
+              </h3>
+            </div>
             <div className="overflow-hidden rounded-xl">
               <CustomUpload
                 value={logoFile ? URL.createObjectURL(logoFile) : null}
@@ -854,8 +866,6 @@ const ShopPage = () => {
               />
             </div>
           </div>
-
-
         </form>
       </FullScreenModal>
 

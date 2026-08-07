@@ -50,7 +50,7 @@ const FullScreenModal = ({
           exit={{ opacity: 0 }}
         >
           <Motion.div
-            className="absolute top-0 right-0 bottom-0 bg-white text-gray-800 overflow-y-auto no-scrollbar pointer-events-auto"
+            className="absolute top-0 right-0 bottom-0 bg-white dark:bg-[#0d0a1d] text-gray-800 dark:text-gray-100 overflow-y-auto no-scrollbar pointer-events-auto"
             style={{
               left: !isMobileOpen ? (isExpanded || isHovered ? 190 : 60) : 0,
             }}
@@ -59,26 +59,26 @@ const FullScreenModal = ({
             exit={{ opacity: 0, x: 20 }}
           >
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-6 py-4 bg-white z-10 shrink-0 border-b border-gray-200">
+              <div className="flex items-center justify-between px-6 py-4.5 bg-white dark:bg-[#120e24] z-10 shrink-0 border-b border-gray-200 dark:border-purple-500/20 shadow-xs">
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+                  <h2 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">{title}</h2>
                   {subtitle && (
-                    <p className="text-xs text-gray-500">{subtitle}</p>
+                    <p className="text-xs text-gray-500 dark:text-purple-300/70 font-medium mt-0.5">{subtitle}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3">
                   {showClose && (
                     <button
                       onClick={onClose}
-                      className="p-2 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-purple-900/30 transition-colors cursor-pointer"
                     >
-                      <X size={18} className="text-gray-500" />
+                      <X size={18} className="text-gray-500 dark:text-purple-300/70" />
                     </button>
                   )}
                   {actions}
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-4">{children}</div>
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/40 dark:bg-[#0d0a1d]">{children}</div>
             </div>
           </Motion.div>
         </Motion.div>
