@@ -16,7 +16,6 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { Loader } from "lucide-react";
 
 import DashboardPage from "./pages/DashboardPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AddCustomerPage from "./pages/AddCustomerPage";
 import CustomerListingPage from "./pages/CustomerListingPage";
 import AddMeasurementPage from "./pages/AddMeasurementPage";
@@ -30,10 +29,10 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const ShopListingPage = lazy(() => import("./pages/ShopListingPage"));
-const ShopFormPage = lazy(() => import("./pages/ShopFormPage"));
-const ManageUsersPage = lazy(() => import("./pages/ManageUsersPage"));
-const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage"));
+const AdminDashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
+const ShopPage = lazy(() => import("./pages/admin/ShopPage"));
+const ManageUsersPage = lazy(() => import("./pages/admin/ManageUsersPage"));
+const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -93,11 +92,9 @@ const App = () => {
             }
           >
             <Route index element={<AdminDashboardPage />} />
-            <Route path="shops" element={<ShopListingPage />} />
-            <Route path="shops/create" element={<ShopFormPage />} />
-            <Route path="shops/edit/:id" element={<ShopFormPage />} />
+            <Route path="shops" element={<ShopPage />} />
             <Route path="users" element={<ManageUsersPage />} />
-            <Route path="settings" element={<AdminSettingsPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* Tailor (Owner/Staff) routes */}
