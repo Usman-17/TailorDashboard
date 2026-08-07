@@ -1,7 +1,7 @@
 import Shop, { SUBSCRIPTION_PLAN } from "../models/shop.model.js";
 import User, { ROLES } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import { v2 as cloudinary } from "cloudinary";
+import { uploadImage, deleteImage } from "../utils/uploadImage.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^(\+?92|0)?[3]\d{9}$/;
@@ -30,8 +30,10 @@ export const getAllShops = async (req, res) => {
 
     const filter = {};
 
-    if (status === "active") filter.isActive = true;
-    if (status === "inactive") filter.isActive = false;
+    if (status === "active") filter.isActive = "active";
+    if (status === "inactive") filter.isActive = { $ne: "active" };
+    if (status === "expired") filter.isActive = "expired";
+    if (status === "suspended") filter.isActive = "suspended";
 
     if (plan && Object.values(SUBSCRIPTION_PLAN).includes(plan)) {
       filter.subscriptionPlan = plan;
@@ -193,30 +195,37 @@ export const createOwner = async (req, res) => {
     const {
       fullName,
       email,
-      password,
       mobile,
       shopName,
-      shopPhone,
-      shopEmail,
       subscriptionPlan,
       subscriptionAmount,
+      subscriptionDuration,
+      subscriptionStart,
+      subscriptionExpiry,
+      isActive,
+      amountReceived,
+      notes,
+      address: addressRaw,
     } = req.body;
 
-    if (!fullName || !email || !password || !mobile || !shopName) {
+    const address = typeof addressRaw === "string" ? JSON.parse(addressRaw) : addressRaw;
+    const password = "123456789";
+
+    if (!fullName || !email || !mobile || !shopName) {
       return res.status(400).json({
-        error: "fullName, email, password, mobile, and shopName are required",
+        error: "fullName, email, mobile, and shopName are required",
+      });
+    }
+
+    if (!address || !address.city) {
+      return res.status(400).json({
+        error: "City is required",
       });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid owner email format" });
-    }
-
-    if (password.length < 8) {
-      return res
-        .status(400)
-        .json({ error: "Password must be at least 8 characters long" });
     }
 
     if (mobile.length !== 11) {
@@ -233,15 +242,6 @@ export const createOwner = async (req, res) => {
             ? "Email is already taken"
             : "Phone number is already taken",
       });
-    }
-
-    if (shopEmail) {
-      const existingShop = await Shop.findOne({ email: shopEmail });
-      if (existingShop) {
-        return res.status(409).json({
-          error: "A shop with this email already exists",
-        });
-      }
     }
 
     const salt = await bcrypt.genSalt(12);
@@ -271,10 +271,17 @@ export const createOwner = async (req, res) => {
           {
             name: shopName,
             owner: user._id,
-            phone: shopPhone || mobile,
-            email: shopEmail || `${email.split("@")[0]}-shop@tailor.local`,
-            subscriptionPlan: subscriptionPlan || "free",
-            subscriptionAmount: Number(subscriptionAmount) || 0,
+            phone: mobile,
+            email: email,
+            subscriptionPlan: subscriptionPlan || "monthly",
+            subscriptionAmount: Number(subscriptionAmount) || 1000,
+            amountReceived: Number(amountReceived) || 0,
+            subscriptionDuration: subscriptionDuration || null,
+            subscriptionStart: subscriptionStart || null,
+            subscriptionExpiry: subscriptionExpiry || null,
+            isActive: isActive || "active",
+            notes: notes || "",
+            address: address || {},
           },
         ],
         { session }
@@ -286,6 +293,13 @@ export const createOwner = async (req, res) => {
       await session.commitTransaction();
 
       const populated = await shops[0].populate("owner", "fullName email mobile");
+
+      let logo = null;
+      if (req.files && req.files.logo) {
+        logo = await uploadImage(req.files.logo, "shop-logos");
+        populated.logo = logo;
+        await populated.save();
+      }
 
       return res.status(201).json({
         message: "Owner account and shop created successfully",
@@ -313,43 +327,44 @@ export const createOwner = async (req, res) => {
 export const updateShop = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, email, address, settings, isActive, subscriptionPlan, subscriptionAmount } = req.body;
+    const {
+      shopName,
+      phone,
+      email,
+      address: addressRaw,
+      isActive,
+      subscriptionPlan,
+      subscriptionAmount,
+      subscriptionDuration,
+      subscriptionStart,
+      subscriptionExpiry,
+      amountReceived,
+      notes,
+    } = req.body;
+
+    const address = typeof addressRaw === "string" ? JSON.parse(addressRaw) : addressRaw;
 
     const shop = await Shop.findById(id);
     if (!shop) {
       return res.status(404).json({ error: "Shop not found" });
     }
 
-    if (email && email.toLowerCase() !== shop.email) {
-      if (!EMAIL_REGEX.test(email)) {
-        return res.status(400).json({ error: "Invalid email format" });
-      }
-      const existingEmail = await Shop.findOne({
-        email: email.toLowerCase(),
-        _id: { $ne: id },
-      });
-      if (existingEmail) {
-        return res.status(409).json({
-          error: "A shop with this email already exists",
-        });
-      }
-    }
-
-    if (name !== undefined) shop.name = name;
+    if (shopName !== undefined) shop.name = shopName;
     if (phone !== undefined) shop.phone = phone;
     if (email !== undefined) shop.email = email;
     if (address !== undefined) shop.address = address;
     if (isActive !== undefined) shop.isActive = isActive;
     if (subscriptionPlan !== undefined) shop.subscriptionPlan = subscriptionPlan;
     if (subscriptionAmount !== undefined) shop.subscriptionAmount = Number(subscriptionAmount);
+    if (subscriptionDuration !== undefined) shop.subscriptionDuration = subscriptionDuration || null;
+    if (subscriptionStart !== undefined) shop.subscriptionStart = subscriptionStart || null;
+    if (subscriptionExpiry !== undefined) shop.subscriptionExpiry = subscriptionExpiry || null;
+    if (amountReceived !== undefined) shop.amountReceived = Number(amountReceived) || 0;
+    if (notes !== undefined) shop.notes = notes;
 
-    if (settings) {
-      if (settings.currency !== undefined)
-        shop.settings.currency = settings.currency;
-      if (settings.taxRate !== undefined)
-        shop.settings.taxRate = settings.taxRate;
-      if (settings.timezone !== undefined)
-        shop.settings.timezone = settings.timezone;
+    if (req.files && req.files.logo) {
+      await deleteImage(shop.logo);
+      shop.logo = await uploadImage(req.files.logo, "shop-logos");
     }
 
     const updated = await shop.save();
@@ -382,15 +397,16 @@ export const updateSubscription = async (req, res) => {
       return res.status(404).json({ error: "Shop not found" });
     }
 
-    if (plan === "free") {
-      shop.deactivateSubscription();
-    } else {
+    if (plan === "custom") {
       if (!durationMonths || durationMonths < 1 || durationMonths > 60) {
         return res.status(400).json({
           error: "Duration must be between 1 and 60 months",
         });
       }
       shop.activateSubscription(plan, durationMonths);
+    } else {
+      const months = { monthly: 1, quarterly: 3, "half-yearly": 6, yearly: 12 };
+      shop.activateSubscription(plan, months[plan] || 1);
     }
 
     const updated = await shop.save();
@@ -415,37 +431,11 @@ export const uploadLogo = async (req, res) => {
       return res.status(400).json({ error: "No logo file provided" });
     }
 
-    const file = req.files.logo;
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
-    if (!allowedTypes.includes(file.mimetype)) {
-      return res.status(400).json({
-        error: "Only JPEG, PNG, WebP, and SVG files are allowed",
-      });
-    }
+    await deleteImage(shop.logo);
 
-    if (file.size > 5 * 1024 * 1024) {
-      return res
-        .status(400)
-        .json({ error: "File size must be less than 5MB" });
-    }
+    const logo = await uploadImage(req.files.logo, "shop-logos");
 
-    if (shop.logo && shop.logo.publicId) {
-      await cloudinary.uploader.destroy(shop.logo.publicId);
-    }
-
-    const b64 = Buffer.from(file.data).toString("base64");
-    const dataURI = `data:${file.mimetype};base64,${b64}`;
-
-    const result = await cloudinary.uploader.upload(dataURI, {
-      folder: "shop-logos",
-      transformation: [{ width: 300, height: 300, crop: "limit" }],
-    });
-
-    shop.logo = {
-      url: result.secure_url,
-      publicId: result.public_id,
-    };
-
+    shop.logo = logo;
     await shop.save();
 
     return res.status(200).json({
@@ -476,9 +466,7 @@ export const deleteShop = async (req, res) => {
         $unset: { shop: "" },
       }, { session });
 
-      if (shop.logo && shop.logo.publicId) {
-        await cloudinary.uploader.destroy(shop.logo.publicId);
-      }
+      await deleteImage(shop.logo);
 
       await Shop.findByIdAndDelete(id, { session });
 
@@ -507,11 +495,17 @@ export const toggleShopStatus = async (req, res) => {
       return res.status(404).json({ error: "Shop not found" });
     }
 
-    shop.isActive = !shop.isActive;
+    const { status } = req.body;
+
+    if (!status || !["active", "suspended", "expired"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+
+    shop.isActive = status;
     await shop.save();
 
     return res.status(200).json({
-      message: `Shop ${shop.isActive ? "activated" : "deactivated"} successfully`,
+      message: `Shop ${status} successfully`,
       isActive: shop.isActive,
     });
   } catch (error) {
@@ -526,13 +520,15 @@ export const getShopStats = async (req, res) => {
     const [
       totalShops,
       activeShops,
-      inactiveShops,
+      expiredShops,
+      suspendedShops,
       planCounts,
       expiringThisMonth,
     ] = await Promise.all([
       Shop.countDocuments(),
-      Shop.countDocuments({ isActive: true }),
-      Shop.countDocuments({ isActive: false }),
+      Shop.countDocuments({ isActive: "active" }),
+      Shop.countDocuments({ isActive: "expired" }),
+      Shop.countDocuments({ isActive: "suspended" }),
       Shop.aggregate([
         { $group: { _id: "$subscriptionPlan", count: { $sum: 1 } } },
       ]),
@@ -548,7 +544,8 @@ export const getShopStats = async (req, res) => {
     return res.status(200).json({
       totalShops,
       activeShops,
-      inactiveShops,
+      expiredShops,
+      suspendedShops,
       expiringThisMonth,
       byPlan: planCounts.reduce((acc, item) => {
         acc[item._id] = item.count;

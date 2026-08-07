@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
 const SUBSCRIPTION_PLAN = {
-  FREE: "free",
-  BASIC: "basic",
-  PREMIUM: "premium",
-  ENTERPRISE: "enterprise",
+  MONTHLY: "monthly",
+  QUARTERLY: "quarterly",
+  HALF_YEARLY: "half-yearly",
+  YEARLY: "yearly",
+  CUSTOM: "custom",
 };
 
 const shopSchema = new mongoose.Schema(
@@ -59,13 +60,25 @@ const shopSchema = new mongoose.Schema(
     subscriptionPlan: {
       type: String,
       enum: Object.values(SUBSCRIPTION_PLAN),
-      default: SUBSCRIPTION_PLAN.FREE,
+      default: SUBSCRIPTION_PLAN.MONTHLY,
     },
 
     subscriptionAmount: {
       type: Number,
       default: 0,
       min: 0,
+    },
+
+    amountReceived: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    subscriptionDuration: {
+      type: Number,
+      default: null,
+      min: 1,
     },
 
     subscriptionStart: {
@@ -79,8 +92,15 @@ const shopSchema = new mongoose.Schema(
     },
 
     isActive: {
-      type: Boolean,
-      default: true,
+      type: String,
+      enum: ["active", "expired", "suspended"],
+      default: "active",
+    },
+
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
     settings: {
@@ -104,7 +124,6 @@ shopSchema.pre("save", function (next) {
 });
 
 shopSchema.virtual("isSubscriptionActive").get(function () {
-  if (this.subscriptionPlan === SUBSCRIPTION_PLAN.FREE) return true;
   if (!this.subscriptionExpiry) return false;
   return this.subscriptionExpiry > new Date();
 });
@@ -119,9 +138,10 @@ shopSchema.methods.activateSubscription = function (plan, durationMonths) {
 };
 
 shopSchema.methods.deactivateSubscription = function () {
-  this.subscriptionPlan = SUBSCRIPTION_PLAN.FREE;
+  this.subscriptionPlan = SUBSCRIPTION_PLAN.MONTHLY;
   this.subscriptionStart = null;
   this.subscriptionExpiry = null;
+  this.subscriptionDuration = null;
 };
 
 shopSchema.index({ owner: 1 });
