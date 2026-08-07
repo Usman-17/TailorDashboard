@@ -17,6 +17,7 @@ import orderRoutes from "./routes/order.route.js";
 import expenseRoutes from "./routes/expense.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import paymentRoutes from "./routes/payment.route.js";
+import reportsRoutes from "./routes/reports.route.js";
 import { syncMissingShopPayments } from "./controllers/shop.controller.js";
 
 const app = express();
@@ -37,7 +38,7 @@ app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "/tmp/",
-  })
+  }),
 );
 
 app.use(
@@ -45,7 +46,7 @@ app.use(
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
-  })
+  }),
 );
 
 app.use("/api/auth", authRoutes);
@@ -56,6 +57,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
