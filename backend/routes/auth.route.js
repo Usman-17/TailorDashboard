@@ -3,6 +3,7 @@ const router = express.Router();
 
 import {
   seedSuperAdmin,
+  createSuperAdmin,
   createOwner,
   createStaff,
   login,
@@ -15,6 +16,7 @@ import {
   removeStaff,
   forgotPassword,
   resetPassword,
+  updateUserStatus,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middlewares/authMiddleware.js";
 import { authorize, isOwnerOrAdmin } from "../middlewares/roleMiddleware.js";
@@ -27,10 +29,16 @@ router.put("/reset-password/:token", resetPassword);
 
 // Super Admin only
 router.post(
+  "/create-super-admin",
+  protectRoute,
+  authorize("super_admin"),
+  createSuperAdmin,
+);
+router.post(
   "/create-owner",
   protectRoute,
   authorize("super_admin"),
-  createOwner
+  createOwner,
 );
 router.post("/seed-admin", seedSuperAdmin);
 
@@ -41,12 +49,7 @@ router.get("/user", protectRoute, getUser);
 router.put("/profile/update", protectRoute, updateProfile);
 
 // Staff management (Owner or Super Admin only)
-router.post(
-  "/create-staff",
-  protectRoute,
-  isOwnerOrAdmin,
-  createStaff
-);
+router.post("/create-staff", protectRoute, isOwnerOrAdmin, createStaff);
 router.get("/staff", protectRoute, isOwnerOrAdmin, getAllStaff);
 router.delete("/staff/:id", protectRoute, isOwnerOrAdmin, removeStaff);
 
@@ -65,7 +68,15 @@ router.get(
     } catch (error) {
       res.status(500).json({ error: "Internal Server Error" });
     }
-  }
+  },
+);
+
+// Super Admin: update user status
+router.put(
+  "/admin/users/:id/status",
+  protectRoute,
+  authorize("super_admin"),
+  updateUserStatus,
 );
 
 export default router;

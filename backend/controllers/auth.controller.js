@@ -99,6 +99,104 @@ export const seedSuperAdmin = async (req, res) => {
   }
 };
 
+// POST /api/auth/create-super-admin (Super Admin only)
+export const createSuperAdmin = async (req, res) => {
+  try {
+    const { fullName, email, password, mobile } = req.body;
+
+    if (!fullName || !email || !password || !mobile) {
+      return res
+        .status(400)
+        .json({ error: "Full Name, email, password, and mobile are required" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Invalid email format" });
+    }
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 8 characters long" });
+    }
+
+    if (mobile.length !== 11) {
+      return res
+        .status(400)
+        .json({ error: "Mobile number must be 11 digits" });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
+    if (existingUser) {
+      return res.status(409).json({
+        error:
+          existingUser.email === email
+            ? "Email is already taken"
+            : "Phone number is already taken",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const admin = await User.create({
+      fullName,
+      email,
+      mobile,
+      password: hashedPassword,
+      role: ROLES.SUPER_ADMIN,
+      shop: null,
+    });
+
+    res.status(201).json({
+      message: "Super Admin created successfully",
+      user: sanitizeUser(admin),
+    });
+  } catch (error) {
+    console.error("Error in createSuperAdmin:", error.message);
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "A user with this email or phone already exists",
+      });
+    }
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// PUT /api/auth/admin/users/:id/status (Super Admin only)
+export const updateUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (id === req.user._id.toString()) {
+      return res.status(400).json({ error: "You cannot change your own status" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    user.isActive = typeof isActive === "boolean" ? isActive : !user.isActive;
+
+    if (!user.isActive) {
+      user.refreshTokens = [];
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: `User ${user.isActive ? "activated" : "deactivated"} successfully`,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Error in updateUserStatus:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 // POST /api/auth/create-owner (Super Admin only)
 export const createOwner = async (req, res) => {
   try {
