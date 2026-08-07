@@ -141,7 +141,6 @@ userSchema.methods.cleanExpiredRefreshTokens = function () {
   );
 };
 
-userSchema.index({ email: 1 });
 userSchema.index({ role: 1, shop: 1 });
 
 const User = mongoose.model("User", userSchema);

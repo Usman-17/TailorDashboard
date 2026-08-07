@@ -144,8 +144,6 @@ shopSchema.methods.deactivateSubscription = function () {
   this.subscriptionDuration = null;
 };
 
-shopSchema.index({ owner: 1 });
-shopSchema.index({ slug: 1 });
 shopSchema.index({ isActive: 1 });
 shopSchema.index({ subscriptionExpiry: 1 });
 

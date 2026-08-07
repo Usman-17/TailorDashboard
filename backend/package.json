@@ -16,6 +16,7 @@
     "cloudinary": "^2.10.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.21",
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
     "express-fileupload": "^1.5.2",

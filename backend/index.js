@@ -16,6 +16,7 @@ import measurementsRoutes from "./routes/measurement.route.js";
 import orderRoutes from "./routes/order.route.js";
 import expenseRoutes from "./routes/expense.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
+import paymentRoutes from "./routes/payment.route.js";
 
 const app = express();
 dotenv.config();
@@ -53,6 +54,7 @@ app.use("/api/measurements", measurementsRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
