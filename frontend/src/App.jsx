@@ -33,6 +33,7 @@ const AdminDashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
 const ShopPage = lazy(() => import("./pages/Admin/ShopPage/ShopPage"));
 const ManageUsersPage = lazy(() => import("./pages/admin/ManageUsersPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const ReportsPage = lazy(() => import("./pages/Admin/ReportsPage"));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -94,6 +95,7 @@ const App = () => {
             <Route index element={<AdminDashboardPage />} />
             <Route path="shops" element={<ShopPage />} />
             <Route path="users" element={<ManageUsersPage />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 
