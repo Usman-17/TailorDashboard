@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Store,
   Users,
-  Settings,
   BarChart2,
 } from "lucide-react";
 
@@ -35,11 +34,6 @@ const adminNavItems = [
     name: "Reports",
     icon: <BarChart2 />,
     path: "/admin/reports",
-  },
-  {
-    name: "Settings",
-    icon: <Settings />,
-    path: "/admin/settings",
   },
 ];
 
