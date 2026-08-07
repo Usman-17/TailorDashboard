@@ -16,7 +16,11 @@ export const getDashboardStats = async (req, res) => {
     const shopFilter = isSuperAdmin ? {} : { shopId: user.shop };
 
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const endOfDay = new Date(startOfDay);
     endOfDay.setHours(23, 59, 59, 999);
 
@@ -37,19 +41,39 @@ export const getDashboardStats = async (req, res) => {
       cancelledOrders,
       todayDeliveries,
       overdueOrders,
-      monthlyRevenue,
+      monthlyRevenueAgg,
       monthlyExpenses,
       activeStaff,
       totalShops,
-      activeShops,
+      todayPaymentsAgg,
     ] = await Promise.all([
       Customer.countDocuments({ ...shopFilter, isDeleted: { $ne: true } }),
       Order.countDocuments({ ...shopFilter, isDeleted: { $ne: true } }),
-      Order.countDocuments({ ...shopFilter, status: ORDER_STATUS.PENDING, isDeleted: { $ne: true } }),
-      Order.countDocuments({ ...shopFilter, status: ORDER_STATUS.IN_PROGRESS, isDeleted: { $ne: true } }),
-      Order.countDocuments({ ...shopFilter, status: ORDER_STATUS.READY, isDeleted: { $ne: true } }),
-      Order.countDocuments({ ...shopFilter, status: ORDER_STATUS.DELIVERED, isDeleted: { $ne: true } }),
-      Order.countDocuments({ ...shopFilter, status: ORDER_STATUS.CANCELLED, isDeleted: { $ne: true } }),
+      Order.countDocuments({
+        ...shopFilter,
+        status: ORDER_STATUS.PENDING,
+        isDeleted: { $ne: true },
+      }),
+      Order.countDocuments({
+        ...shopFilter,
+        status: ORDER_STATUS.IN_PROGRESS,
+        isDeleted: { $ne: true },
+      }),
+      Order.countDocuments({
+        ...shopFilter,
+        status: ORDER_STATUS.READY,
+        isDeleted: { $ne: true },
+      }),
+      Order.countDocuments({
+        ...shopFilter,
+        status: ORDER_STATUS.DELIVERED,
+        isDeleted: { $ne: true },
+      }),
+      Order.countDocuments({
+        ...shopFilter,
+        status: ORDER_STATUS.CANCELLED,
+        isDeleted: { $ne: true },
+      }),
       Order.countDocuments({
         ...shopFilter,
         status: { $in: [ORDER_STATUS.READY, ORDER_STATUS.IN_PROGRESS] },
@@ -92,14 +116,66 @@ export const getDashboardStats = async (req, res) => {
         { $group: { _id: null, total: { $sum: "$totalAmount" } } },
       ]),
       isSuperAdmin
-        ? User.countDocuments({ role: { $in: [ROLES.OWNER, ROLES.STAFF] }, isActive: true })
-        : User.countDocuments({ shop: user.shop, role: ROLES.STAFF, isActive: true }),
+        ? User.countDocuments({
+            role: { $in: [ROLES.OWNER, ROLES.STAFF] },
+            isActive: true,
+          })
+        : User.countDocuments({
+            shop: user.shop,
+            role: ROLES.STAFF,
+            isActive: true,
+          }),
       isSuperAdmin ? Shop.countDocuments({}) : Promise.resolve(0),
-      isSuperAdmin ? Shop.countDocuments({ isActive: true }) : Promise.resolve(0),
+      isSuperAdmin
+        ? Payment.aggregate([
+            {
+              $match: {
+                createdAt: { $gte: startOfDay, $lte: endOfDay },
+              },
+            },
+            { $group: { _id: null, total: { $sum: "$amount" } } },
+          ])
+        : Promise.resolve([]),
     ]);
 
-    const revenue = monthlyRevenue[0]?.total || 0;
-    const expenses = isSuperAdmin ? 0 : (monthlyExpenses[0]?.total || 0);
+    const revenue = monthlyRevenueAgg[0]?.total || 0;
+    const todaysCollection = todayPaymentsAgg[0]?.total || 0;
+    const expenses = isSuperAdmin ? 0 : monthlyExpenses[0]?.total || 0;
+
+    let activeShopsCount = 0;
+    let expiringSoonShopsCount = 0;
+    let expiredShopsCount = 0;
+    let suspendedShopsCount = 0;
+
+    if (isSuperAdmin) {
+      const shops = await Shop.find({})
+        .select("isActive subscriptionExpiry")
+        .lean();
+      shops.forEach((shop) => {
+        const expiryDate = shop.subscriptionExpiry
+          ? new Date(shop.subscriptionExpiry)
+          : null;
+        const isPastExpiry = expiryDate ? expiryDate < now : false;
+        const diffMs = expiryDate ? expiryDate - now : null;
+        const daysUntilExpiry =
+          diffMs !== null ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : null;
+
+        if (shop.isActive === "suspended") {
+          suspendedShopsCount++;
+        } else if (shop.isActive === "expired" || isPastExpiry) {
+          expiredShopsCount++;
+        } else if (shop.isActive === "active") {
+          activeShopsCount++;
+          if (
+            daysUntilExpiry !== null &&
+            daysUntilExpiry >= 0 &&
+            daysUntilExpiry <= 7
+          ) {
+            expiringSoonShopsCount++;
+          }
+        }
+      });
+    }
 
     let totalIncomeAllTime = 0;
     if (isSuperAdmin) {
@@ -116,7 +192,13 @@ export const getDashboardStats = async (req, res) => {
       }
     } else {
       const shopIncome = await Order.aggregate([
-        { $match: { ...shopFilter, status: ORDER_STATUS.DELIVERED, isDeleted: { $ne: true } } },
+        {
+          $match: {
+            ...shopFilter,
+            status: ORDER_STATUS.DELIVERED,
+            isDeleted: { $ne: true },
+          },
+        },
         { $group: { _id: null, total: { $sum: "$totalAmount" } } },
       ]);
       totalIncomeAllTime = shopIncome[0]?.total || 0;
@@ -133,12 +215,16 @@ export const getDashboardStats = async (req, res) => {
       todayDeliveries,
       overdueOrders,
       monthlyRevenue: revenue,
+      todaysCollection,
       monthlyExpenses: expenses,
       netProfit: revenue - expenses,
       totalIncome: totalIncomeAllTime,
       activeStaff,
       totalShops,
-      activeShops,
+      activeShops: activeShopsCount,
+      expiringSoonShops: expiringSoonShopsCount,
+      expiredShops: expiredShopsCount,
+      suspendedShops: suspendedShopsCount,
     });
   } catch (error) {
     console.error("Error in getDashboardStats:", error.message);
@@ -175,7 +261,7 @@ export const getChartData = async (req, res) => {
             isDeleted: { $ne: true },
           });
           return { month: m.label, count };
-        })
+        }),
       ),
       Promise.all(
         months.map(async (m) => {
@@ -203,7 +289,7 @@ export const getChartData = async (req, res) => {
             ]);
             return { month: m.label, total: result[0]?.total || 0 };
           }
-        })
+        }),
       ),
       Order.aggregate([
         { $match: { ...shopFilter, isDeleted: { $ne: true } } },
@@ -257,7 +343,13 @@ export const getUpcomingDeliveries = async (req, res) => {
 
     const orders = await Order.find({
       ...shopFilter,
-      status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.READY] },
+      status: {
+        $in: [
+          ORDER_STATUS.PENDING,
+          ORDER_STATUS.IN_PROGRESS,
+          ORDER_STATUS.READY,
+        ],
+      },
       deliveryDate: { $gte: now },
       isDeleted: { $ne: true },
     })
@@ -280,7 +372,10 @@ export const getLatestCustomers = async (req, res) => {
     const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
     const shopFilter = isSuperAdmin ? {} : { shopId: user.shop };
 
-    const customers = await Customer.find({ ...shopFilter, isDeleted: { $ne: true } })
+    const customers = await Customer.find({
+      ...shopFilter,
+      isDeleted: { $ne: true },
+    })
       .sort({ createdAt: -1 })
       .limit(8)
       .lean();
@@ -288,6 +383,39 @@ export const getLatestCustomers = async (req, res) => {
     return res.status(200).json(customers);
   } catch (error) {
     console.error("Error in getLatestCustomers:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// GET /api/dashboard/admin-recent-payments
+export const getAdminRecentPayments = async (req, res) => {
+  try {
+    const payments = await Payment.find()
+      .populate("shop", "name logo owner")
+      .populate("recordedBy", "fullName")
+      .sort({ createdAt: -1 })
+      .limit(6)
+      .lean();
+
+    return res.status(200).json(payments);
+  } catch (error) {
+    console.error("Error in getAdminRecentPayments:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// GET /api/dashboard/admin-upcoming-renewals
+export const getAdminUpcomingRenewals = async (req, res) => {
+  try {
+    const shops = await Shop.find()
+      .populate("owner", "fullName mobile email")
+      .sort({ subscriptionExpiry: 1 })
+      .limit(6)
+      .lean();
+
+    return res.status(200).json(shops);
+  } catch (error) {
+    console.error("Error in getAdminUpcomingRenewals:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
