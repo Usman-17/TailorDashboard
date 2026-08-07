@@ -951,6 +951,41 @@ input:-webkit-autofill:focus {
   color: var(--secondary-color) !important;
 }
 
+.my-custom-datepicker .ant-picker-input > input {
+  font-family: "Outfit", sans-serif !important;
+  color: #111827 !important;
+  font-size: 14px !important;
+}
+
+.my-custom-datepicker .ant-picker-input > input::placeholder {
+  color: #9ca3af !important;
+}
+
+.my-custom-datepicker.ant-picker {
+  background: #ffffff !important;
+  border: 1.5px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  height: 40px !important;
+  padding: 0 12px !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04) !important;
+  transition: all 0.2s ease !important;
+}
+
+.my-custom-datepicker.ant-picker:hover {
+  border-color: #9ca3af !important;
+}
+
+.my-custom-datepicker.ant-picker-focused,
+.my-custom-datepicker.ant-picker:hover {
+  border-color: var(--secondary-color) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary-color) 15%, transparent) !important;
+  outline: none !important;
+}
+
+.my-custom-datepicker .ant-picker-suffix {
+  color: #6b7280 !important;
+}
+
 /* Multi-select Tags Modern Styling */
 .ant-select-multiple .ant-select-selection-item {
   background: color-mix(

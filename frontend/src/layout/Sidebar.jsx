@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useSidebar } from "../context/SidebarContext";
 import {
   ChevronDownIcon,
@@ -10,7 +11,6 @@ import {
   SquareChartGantt,
   TrendingUp,
 } from "lucide-react";
-import useGetAuth from "../hooks/useGetAuth";
 
 import logo from "../assets/logo.png";
 import logo_icon from "../assets/s-logo.png";
@@ -55,7 +55,6 @@ const tailorNavItems = [
 const Sidebar = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
-  const { data: authUser } = useGetAuth();
 
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [subMenuHeight, setSubMenuHeight] = useState({});
@@ -63,7 +62,7 @@ const Sidebar = () => {
 
   const isActive = useCallback(
     (path) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   useEffect(() => {
@@ -176,10 +175,10 @@ const Sidebar = () => {
       className={`fixed top-0 left-0 h-screen mt-5 lg:mt-0 px-3 bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 ease-in-out z-50
         ${
           isExpanded || isMobileOpen
-            ? "w-[220px]"
+            ? "w-[190px]"
             : isHovered
-            ? "w-[220px]"
-            : "w-[60px]"
+              ? "w-[190px]"
+              : "w-[60px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -200,9 +199,7 @@ const Sidebar = () => {
             <div>
               <h2
                 className={`mb-2 text-[10px] uppercase flex leading-[16px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "justify-center"
-                    : "justify-start"
+                  !isExpanded && !isHovered ? "justify-center" : "justify-start"
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
@@ -216,7 +213,6 @@ const Sidebar = () => {
           </div>
         </nav>
       </div>
-
     </aside>
   );
 };

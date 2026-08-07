@@ -44,26 +44,22 @@ const FullScreenModal = ({
     <AnimatePresence>
       {open && (
         <Motion.div
-          className="fixed inset-0 z-[999999] flex items-center justify-center pointer-events-none"
+          className="fixed inset-0 z-[999999] pointer-events-none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <Motion.div
-            className="w-full h-full bg-white text-gray-800 overflow-y-auto no-scrollbar pointer-events-auto"
+            className="absolute top-0 right-0 bottom-0 bg-white text-gray-800 overflow-y-auto no-scrollbar pointer-events-auto"
             style={{
-              marginLeft: !isMobileOpen
-                ? isExpanded || isHovered
-                  ? 220
-                  : 56
-                : 0,
+              left: !isMobileOpen ? (isExpanded || isHovered ? 190 : 60) : 0,
             }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
           >
-            <div className="p-6 flex flex-col min-h-full">
-              <div className="flex items-center justify-between mb-4 sticky top-0 bg-white z-10 pb-4 border-b border-gray-100">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between px-6 py-4 bg-white z-10 shrink-0 border-b border-gray-200">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">{title}</h2>
                   {subtitle && (
@@ -82,7 +78,7 @@ const FullScreenModal = ({
                   {actions}
                 </div>
               </div>
-              <div className="flex-1">{children}</div>
+              <div className="flex-1 overflow-y-auto p-4">{children}</div>
             </div>
           </Motion.div>
         </Motion.div>

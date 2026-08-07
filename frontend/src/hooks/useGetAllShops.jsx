@@ -23,6 +23,9 @@ const useGetAllShops = () => {
         owner: shop.owner?.fullName || "N/A",
         subscriptionPlan: shop.subscriptionPlan,
         subscriptionAmount: shop.subscriptionAmount || 0,
+        subscriptionExpiry: shop.subscriptionExpiry
+          ? moment(shop.subscriptionExpiry).format("DD MMM YYYY")
+          : null,
         isActive: shop.isActive,
         city: shop.address?.city || "-",
         createdAt: moment(shop.createdAt).format("DD MMM YYYY"),

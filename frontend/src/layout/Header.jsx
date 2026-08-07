@@ -1,8 +1,19 @@
 import { useState, useRef, useEffect } from "react";
-import { X, UserRound, LogOut, Shield, Store, ChevronDown, KeyRound, Menu } from "lucide-react";
+import {
+  X,
+  UserRound,
+  LogOut,
+  Shield,
+  Store,
+  ChevronDown,
+  KeyRound,
+  Menu,
+} from "lucide-react";
+
 import useLogout from "../hooks/useLogout";
-import { useSidebar } from "../context/SidebarContext";
 import useGetAuth from "../hooks/useGetAuth";
+
+import { useSidebar } from "../context/SidebarContext";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 
 const ROLE_LABELS = {
@@ -45,7 +56,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 flex items-center justify-between w-full bg-white px-4 py-2 sm:px-6 sm:py-2.5 z-40">
+      <header className="sticky top-0 flex items-center justify-between w-full bg-white px-3 py-1.5 sm:px-4 sm:py-2 z-40">
         <button
           onClick={handleToggle}
           className="flex items-center justify-center w-10 h-10 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
@@ -63,10 +74,17 @@ const Header = () => {
               <UserRound size={18} className="text-gray-600" />
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-gray-900 leading-tight">{authUser?.fullName}</p>
-              <p className="text-xs text-gray-500 leading-tight">{authUser?.email}</p>
+              <p className="text-sm font-medium text-gray-900 leading-tight">
+                {authUser?.fullName}
+              </p>
+              <p className="text-xs text-gray-500 leading-tight">
+                {authUser?.email}
+              </p>
             </div>
-            <ChevronDown size={16} className={`hidden sm:block text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+            <ChevronDown
+              size={16}
+              className={`hidden sm:block text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+            />
           </button>
 
           {dropdownOpen && (
@@ -77,7 +95,9 @@ const Header = () => {
                     <UserRound size={20} className="text-gray-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{authUser?.fullName}</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {authUser?.fullName}
+                    </p>
                     <p className="text-xs text-gray-500">{authUser?.email}</p>
                   </div>
                 </div>

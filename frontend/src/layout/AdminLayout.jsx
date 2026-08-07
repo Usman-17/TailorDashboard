@@ -17,11 +17,11 @@ const AdminLayoutContent = () => {
       </div>
       <div
         className={`flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-x-hidden ${
-          isExpanded || isHovered ? "lg:ml-[220px]" : "lg:ml-[60px]"
+          isExpanded || isHovered ? "lg:ml-[190px]" : "lg:ml-[60px]"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+        <div className="p-2 mx-auto max-w-(--breakpoint-2xl) md:p-4">
           <Outlet />
         </div>
       </div>

@@ -2,8 +2,8 @@ import dayjs from "dayjs";
 import moment from "moment";
 import toast from "react-hot-toast";
 import { useState, useRef, useEffect } from "react";
-import { SquarePen, X } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { SquarePen, X, MoreHorizontal, Wallet, ScrollText } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import CustomTable from "../../components/CustomTable";
 import CustomInput from "../../components/CustomInput";
@@ -50,6 +50,13 @@ const PLAN_MONTHS = {
   yearly: 12,
 };
 
+const PLAN_PRICES = {
+  monthly: 1000,
+  quarterly: 2500,
+  "half-yearly": 4500,
+  yearly: 8000,
+};
+
 const getExpiryDate = (startDate, plan, duration) => {
   if (!startDate) return "";
   const start = dayjs(startDate);
@@ -68,6 +75,8 @@ const ShopPage = () => {
   const [logoFile, setLogoFile] = useState(null);
   const [editingShop, setEditingShop] = useState(null);
   const [loadingShopId, setLoadingShopId] = useState(null);
+  const [receivePaymentShop, setReceivePaymentShop] = useState(null);
+  const [paymentHistoryShop, setPaymentHistoryShop] = useState(null);
   const formRef = useRef(null);
 
   const queryClient = useQueryClient();
@@ -138,6 +147,38 @@ const ShopPage = () => {
       closeModal();
     },
     onError: (error) => toast.error(error.message),
+  });
+
+  const { mutate: receivePayment, isPending: isReceiving } = useMutation({
+    mutationFn: async ({ shopId, data }) => {
+      const res = await fetch(`/api/payments/receive/${shopId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Failed to record payment");
+      return result;
+    },
+    onSuccess: () => {
+      toast.success("Payment recorded successfully");
+      queryClient.invalidateQueries({ queryKey: ["shops"] });
+      setReceivePaymentShop(null);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const { data: paymentHistoryData, isLoading: isLoadingPayments } = useQuery({
+    queryKey: ["payments", paymentHistoryShop?._id],
+    queryFn: async () => {
+      const res = await fetch(`/api/payments/shop/${paymentHistoryShop._id}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch payments");
+      return res.json();
+    },
+    enabled: !!paymentHistoryShop,
   });
 
   const validate = () => {
@@ -223,7 +264,14 @@ const ShopPage = () => {
   }, [editingShop]);
 
   const columns = [
-    { title: "Sr.", key: "sr", width: 60, render: (_, __, index) => index + 1 },
+    {
+      title: "Sr.",
+      key: "sr",
+      width: 60,
+      align: "center",
+      sorter: (a, b) => a.sr - b.sr,
+      render: (_, record) => record.sr,
+    },
     {
       title: "Shop Name",
       dataIndex: "name",
@@ -236,18 +284,6 @@ const ShopPage = () => {
       dataIndex: "owner",
       key: "owner",
       sorter: (a, b) => a.owner.localeCompare(b.owner),
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-      sorter: (a, b) => a.email.localeCompare(b.email),
-    },
-    {
-      title: "Phone",
-      dataIndex: "phone",
-      key: "phone",
-      sorter: (a, b) => a.phone.localeCompare(b.phone),
     },
     {
       title: "City",
@@ -270,11 +306,20 @@ const ShopPage = () => {
       ),
     },
     {
-      title: "Amount",
+      title: "Subscription",
       dataIndex: "subscriptionAmount",
       key: "subscriptionAmount",
       sorter: (a, b) => a.subscriptionAmount - b.subscriptionAmount,
       render: (v) => `Rs. ${v.toLocaleString()}`,
+    },
+    {
+      title: "Due Date",
+      dataIndex: "subscriptionExpiry",
+      key: "subscriptionExpiry",
+      sorter: (a, b) =>
+        moment(a.subscriptionExpiry, "DD MMM YYYY").unix() -
+        moment(b.subscriptionExpiry, "DD MMM YYYY").unix(),
+      render: (v) => v || "-",
     },
     {
       title: "Status",
@@ -288,46 +333,57 @@ const ShopPage = () => {
           suspended: "bg-red-100 text-red-700",
         };
         return (
-          <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${colors[v] || colors.active}`}>
+          <span
+            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${colors[v] || colors.active}`}
+          >
             {v ? v.charAt(0).toUpperCase() + v.slice(1) : "Active"}
           </span>
         );
       },
     },
     {
-      title: "Created",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      sorter: (a, b) =>
-        moment(a.createdAt, "DD MMM YYYY").unix() -
-        moment(b.createdAt, "DD MMM YYYY").unix(),
-    },
-    {
       title: "Actions",
       key: "actions",
+      align: "center",
       render: (_, record) => (
-        <ActionButtons
-          record={record}
-          isEditLoading={loadingShopId === record._id}
-          onEdit={(r) => setEditingShop(r)}
-        />
+        <div className="flex items-center justify-center gap-2">
+          <ActionButtons
+            record={record}
+            isEditLoading={loadingShopId === record._id}
+            onEdit={(r) => setEditingShop(r)}
+          />
+          <button
+            title="Receive Payment"
+            onClick={() => setReceivePaymentShop(record)}
+            className="p-2 rounded-full border border-gray-300 text-green-600 hover:bg-green-50 hover:text-green-500 transition cursor-pointer"
+          >
+            <Wallet size={16} />
+          </button>
+          <button
+            title="Payment History"
+            onClick={() => setPaymentHistoryShop(record)}
+            className="p-2 rounded-full border border-gray-300 text-blue-600 hover:bg-blue-50 hover:text-blue-500 transition cursor-pointer"
+          >
+            <ScrollText size={16} />
+          </button>
+        </div>
       ),
     },
   ];
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-3 px-1 py-2 border-b border-gray-200">
         <SectionHeading
           title="Shops"
-          subtitle="All tailor shops on the platform"
+          subtitle="Manage subscriptions, payments, and shop access"
         />
         <button
           onClick={() => {
             setEditingShop(null);
             setShowModal(true);
           }}
-          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-black hover:bg-neutral-900 text-sm transition cursor-pointer text-white"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-sm font-medium transition cursor-pointer text-white shadow-sm"
         >
           <SquarePen size={16} />
           Add Shop
@@ -338,7 +394,7 @@ const ShopPage = () => {
         rowKey="_id"
         loading={isLoading}
         columns={columns}
-        dataSource={filtered}
+        dataSource={filtered.map((item, index) => ({ ...item, sr: index + 1 }))}
         globalSearch={search}
         onSearchChange={setSearch}
         searchPlaceholder="Search name, owner, email, phone..."
@@ -349,7 +405,11 @@ const ShopPage = () => {
         open={showModal}
         onClose={closeModal}
         title={editingShop ? "Edit Shop" : "Create Shop & Owner"}
-        subtitle={editingShop ? "Update shop details" : "Add a new owner account and shop"}
+        subtitle={
+          editingShop
+            ? "Update shop details"
+            : "Add a new owner account and shop"
+        }
         showClose={false}
         actions={
           <div className="flex items-center gap-3">
@@ -366,7 +426,13 @@ const ShopPage = () => {
               onClick={(e) => handleSubmit(e)}
               className="px-5 py-2 text-sm bg-[var(--secondary-color)] text-white rounded-full hover:opacity-90 transition cursor-pointer disabled:opacity-50"
             >
-              {isPending || isUpdating ? (editingShop ? "Updating..." : "Creating...") : (editingShop ? "Update" : "Create")}
+              {isPending || isUpdating
+                ? editingShop
+                  ? "Updating..."
+                  : "Creating..."
+                : editingShop
+                  ? "Update"
+                  : "Create"}
             </button>
           </div>
         }
@@ -374,14 +440,23 @@ const ShopPage = () => {
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="grid gap-4 px-6"
+          className="grid gap-3 px-2"
           noValidate
         >
-          <div className="border-b pb-4 mb-2">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-3">
+          <div className="border-b border-gray-200 pb-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
               Owner Account
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <CustomInput
+                id="shopName"
+                label="Shop Name"
+                required
+                value={form.shopName}
+                onChange={(e) => setForm({ ...form, shopName: e.target.value })}
+                placeholder="My Tailor Shop"
+                error={errors.shopName}
+              />
               <CustomInput
                 id="fullName"
                 label="Full Name"
@@ -415,19 +490,10 @@ const ShopPage = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
               Shop Details
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <CustomInput
-                id="shopName"
-                label="Shop Name"
-                required
-                value={form.shopName}
-                onChange={(e) => setForm({ ...form, shopName: e.target.value })}
-                placeholder="My Tailor Shop"
-                error={errors.shopName}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <CustomSelect
                 id="subscriptionPlan"
                 label="Subscription Plan"
@@ -442,6 +508,8 @@ const ShopPage = () => {
                   setForm({
                     ...form,
                     subscriptionPlan: val,
+                    subscriptionAmount:
+                      PLAN_PRICES[val] || form.subscriptionAmount,
                     subscriptionExpiry: expiry,
                   });
                 }}
@@ -454,9 +522,7 @@ const ShopPage = () => {
                 ]}
                 allowClear={false}
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              {form.subscriptionPlan === "custom" && (
+              {form.subscriptionPlan === "custom" ? (
                 <CustomInput
                   id="subscriptionDuration"
                   label="Duration (Months)"
@@ -478,20 +544,21 @@ const ShopPage = () => {
                   }}
                   placeholder="e.g. 5"
                 />
+              ) : (
+                <CustomInput
+                  id="subscriptionAmount"
+                  label="Subscription Amount (Rs.)"
+                  type="number"
+                  required
+                  value={form.subscriptionAmount}
+                  onChange={(e) =>
+                    setForm({ ...form, subscriptionAmount: e.target.value })
+                  }
+                  placeholder="1000"
+                />
               )}
-              <CustomInput
-                id="subscriptionAmount"
-                label="Subscription Amount (Rs.)"
-                type="number"
-                required
-                value={form.subscriptionAmount}
-                onChange={(e) =>
-                  setForm({ ...form, subscriptionAmount: e.target.value })
-                }
-                placeholder="1000"
-              />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
               <CustomDatePicker
                 id="subscriptionStart"
                 label="Start Date"
@@ -570,10 +637,10 @@ const ShopPage = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
               Shop Address
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <CustomInput
                 id="street"
                 label="Street Address"
@@ -604,8 +671,8 @@ const ShopPage = () => {
             </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-3">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
               Shop Logo
             </h3>
             <div className="overflow-hidden rounded-xl">
@@ -621,7 +688,7 @@ const ShopPage = () => {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase mb-2">
               Notes
             </h3>
             <CustomInput
@@ -636,7 +703,228 @@ const ShopPage = () => {
           </div>
         </form>
       </FullScreenModal>
+
+      {receivePaymentShop && (
+        <ReceivePaymentModal
+          shop={receivePaymentShop}
+          open={!!receivePaymentShop}
+          onClose={() => setReceivePaymentShop(null)}
+          onSubmit={(data) =>
+            receivePayment({ shopId: receivePaymentShop._id, data })
+          }
+          isPending={isReceiving}
+        />
+      )}
+
+      {paymentHistoryShop && (
+        <PaymentHistoryModal
+          shop={paymentHistoryShop}
+          open={!!paymentHistoryShop}
+          onClose={() => setPaymentHistoryShop(null)}
+          data={paymentHistoryData}
+          isLoading={isLoadingPayments}
+        />
+      )}
     </div>
+  );
+};
+
+const ReceivePaymentModal = ({ shop, open, onClose, onSubmit, isPending }) => {
+  const [form, setForm] = useState({
+    subscriptionPlan: shop?.subscriptionPlan || "monthly",
+    amount: 0,
+    paymentMethod: "cash",
+    referenceNo: "",
+    notes: "",
+  });
+
+  useEffect(() => {
+    if (shop) {
+      setForm({
+        subscriptionPlan: shop.subscriptionPlan || "monthly",
+        amount: 0,
+        paymentMethod: "cash",
+        referenceNo: "",
+        notes: "",
+      });
+    }
+  }, [shop]);
+
+  if (!shop) return null;
+
+  return (
+    <FullScreenModal
+      open={open}
+      onClose={onClose}
+      title="Receive Payment"
+      subtitle={shop.name}
+      showClose={false}
+      actions={
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2 text-sm rounded-full hover:bg-gray-100 transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={isPending || !form.amount}
+            onClick={() => onSubmit(form)}
+            className="px-5 py-2 text-sm bg-[var(--secondary-color)] text-white rounded-full hover:opacity-90 transition cursor-pointer disabled:opacity-50"
+          >
+            {isPending ? "Processing..." : "Receive Payment"}
+          </button>
+        </div>
+      }
+    >
+      <div className="grid gap-4 px-6">
+        <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-3 gap-4 text-sm">
+          <div>
+            <span className="text-gray-500">Shop</span>
+            <p className="font-medium text-gray-900">{shop.name}</p>
+          </div>
+          <div>
+            <span className="text-gray-500">Current Plan</span>
+            <p className="font-medium text-gray-900 capitalize">
+              {shop.subscriptionPlan}
+            </p>
+          </div>
+          <div>
+            <span className="text-gray-500">Current Expiry</span>
+            <p className="font-medium text-gray-900">
+              {shop.subscriptionExpiry
+                ? dayjs(shop.subscriptionExpiry).format("DD MMM YYYY")
+                : "N/A"}
+            </p>
+          </div>
+        </div>
+
+        <hr className="border-gray-200" />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CustomSelect
+            id="subscriptionPlan"
+            label="Subscription Plan"
+            required
+            value={form.subscriptionPlan}
+            onChange={(val) => setForm({ ...form, subscriptionPlan: val })}
+            options={[
+              { label: "Monthly", value: "monthly" },
+              { label: "Quarterly (3 Months)", value: "quarterly" },
+              { label: "Half Yearly (6 Months)", value: "half-yearly" },
+              { label: "Yearly (12 Months)", value: "yearly" },
+            ]}
+            allowClear={false}
+          />
+          <CustomInput
+            id="amount"
+            label="Subscription Amount (Rs.)"
+            type="number"
+            value={shop.subscriptionAmount || 0}
+            disabled
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CustomInput
+            id="amount"
+            label="Payment Received (Rs.)"
+            type="number"
+            required
+            value={form.amount}
+            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            placeholder="0"
+          />
+          <CustomSelect
+            id="paymentMethod"
+            label="Payment Method"
+            value={form.paymentMethod}
+            onChange={(val) => setForm({ ...form, paymentMethod: val })}
+            options={[
+              { label: "Cash", value: "cash" },
+              { label: "JazzCash", value: "jazzcash" },
+              { label: "EasyPaisa", value: "easypaisa" },
+              { label: "Bank Transfer", value: "bank" },
+              { label: "Other", value: "other" },
+            ]}
+            allowClear={false}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <CustomInput
+            id="referenceNo"
+            label="Reference No"
+            value={form.referenceNo}
+            onChange={(e) => setForm({ ...form, referenceNo: e.target.value })}
+            placeholder="Optional"
+          />
+          <CustomInput
+            id="notes"
+            label="Notes"
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            placeholder="Optional"
+          />
+        </div>
+      </div>
+    </FullScreenModal>
+  );
+};
+
+const PaymentHistoryModal = ({ shop, open, onClose, data, isLoading }) => {
+  if (!shop) return null;
+
+  return (
+    <FullScreenModal
+      open={open}
+      onClose={onClose}
+      title="Payment History"
+      subtitle={shop.name}
+      showClose
+    >
+      <div className="px-6">
+        {isLoading ? (
+          <div className="flex justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--secondary-color)]" />
+          </div>
+        ) : data?.payments?.length === 0 ? (
+          <p className="text-center text-gray-400 py-10">
+            No payments recorded yet
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {data?.payments?.map((p) => (
+              <div
+                key={p._id}
+                className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:bg-gray-50 transition"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-[var(--secondary-color)]/10 flex items-center justify-center">
+                    <Wallet
+                      size={16}
+                      className="text-[var(--secondary-color)]"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Rs. {p.amount.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {dayjs(p.createdAt).format("DD MMM YYYY")} &middot;{" "}
+                      {p.paymentMethod} &middot; {p.subscriptionPlan}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                  Paid
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </FullScreenModal>
   );
 };
 

@@ -1,9 +1,10 @@
-import { Outlet, Navigate } from "react-router-dom";
-import useGetAuth from "../hooks/useGetAuth";
 import { Loader } from "lucide-react";
+import { Outlet, Navigate } from "react-router-dom";
+
+import useGetAuth from "../hooks/useGetAuth";
 import Header from "./Header";
-import Backdrop from "./Backdrop";
 import Sidebar from "./Sidebar";
+import Backdrop from "./Backdrop";
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
 
 const TailorLayoutContent = () => {
@@ -17,7 +18,7 @@ const TailorLayoutContent = () => {
       </div>
       <div
         className={`flex-1 min-w-0 transition-all duration-300 ease-in-out overflow-x-hidden ${
-          isExpanded || isHovered ? "lg:ml-[220px]" : "lg:ml-[60px]"
+          isExpanded || isHovered ? "lg:ml-[190px]" : "lg:ml-[60px]"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />

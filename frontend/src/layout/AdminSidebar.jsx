@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useSidebar } from "../context/SidebarContext";
 import {
   ChevronDownIcon,
@@ -9,7 +10,6 @@ import {
   Users,
   Settings,
 } from "lucide-react";
-import useGetAuth from "../hooks/useGetAuth";
 
 import logo from "../assets/logo.png";
 import logo_icon from "../assets/s-logo.png";
@@ -40,7 +40,6 @@ const adminNavItems = [
 const AdminSidebar = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
-  const { data: authUser } = useGetAuth();
 
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [subMenuHeight, setSubMenuHeight] = useState({});
@@ -48,7 +47,7 @@ const AdminSidebar = () => {
 
   const isActive = useCallback(
     (path) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   useEffect(() => {
@@ -104,7 +103,7 @@ const AdminSidebar = () => {
             nav.path && (
               <Link
                 to={nav.path}
-                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors ${
+                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors cursor-pointer ${
                   isActive(nav.path)
                     ? "bg-gray-100 text-gray-900 font-medium"
                     : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
@@ -136,7 +135,7 @@ const AdminSidebar = () => {
                   <li key={subItem.name}>
                     <Link
                       to={subItem.path}
-                      className={`flex justify-between items-center px-2.5 py-1.5 rounded text-[12px] transition-colors ${
+                      className={`flex justify-between items-center px-2.5 py-1.5 rounded text-[12px] transition-colors cursor-pointer ${
                         isActive(subItem.path)
                           ? "bg-gray-100 text-gray-900 font-medium"
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
@@ -161,10 +160,10 @@ const AdminSidebar = () => {
       className={`fixed top-0 left-0 h-screen mt-5 lg:mt-0 px-3 bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 ease-in-out z-50
         ${
           isExpanded || isMobileOpen
-            ? "w-[220px]"
+            ? "w-[190px]"
             : isHovered
-            ? "w-[220px]"
-            : "w-[60px]"
+              ? "w-[190px]"
+              : "w-[60px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -185,9 +184,7 @@ const AdminSidebar = () => {
             <div>
               <h2
                 className={`mb-2 text-[10px] uppercase flex leading-[16px] text-gray-400 ${
-                  !isExpanded && !isHovered
-                    ? "justify-center"
-                    : "justify-start"
+                  !isExpanded && !isHovered ? "justify-center" : "justify-start"
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
@@ -201,7 +198,6 @@ const AdminSidebar = () => {
           </div>
         </nav>
       </div>
-
     </aside>
   );
 };

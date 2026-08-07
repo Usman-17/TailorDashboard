@@ -63,16 +63,12 @@ const CustomInput = ({
             name={id}
             rows={rows || 4}
             spellCheck={spellCheck}
-            className={`${inputClassName} w-full rounded-lg border ${
-              Icon ? "pl-10" : "pl-3"
-            } pr-2 py-2 transition-all duration-200 shadow-sm
-          focus:outline-none placeholder:text-sm text-sm sm:text-[15px]
+            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3"} pr-3 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none resize-none
           ${
             error
-              ? "border-red-500 focus:ring-2 focus:ring-red-200"
-              : "bg-white border-gray-200 hover:border-gray-400 focus:border-(--secondary-color) focus:ring-2 focus:ring-[color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
+              ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+              : "!bg-white hover:!border-gray-400 focus:!border-(--secondary-color) focus:!shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
           }
-          text-gray-900 placeholder-gray-400
           ${disabled ? "cursor-not-allowed opacity-60" : ""}
         `}
           />
@@ -91,16 +87,12 @@ const CustomInput = ({
             maxLength={maxLength}
             name={id}
             spellCheck={spellCheck}
-            className={`${inputClassName} w-full rounded-lg border ${
-              Icon ? "pl-10" : "pl-3"
-            } pr-2 py-2 transition-all duration-200 shadow-sm
-          focus:outline-none placeholder:text-sm text-sm sm:text-[15px]
+            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3"} pr-3 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none
           ${
             error
-              ? "border-red-500 focus:ring-2 focus:ring-red-200"
-              : "bg-white border-gray-200 hover:border-gray-400 focus:border-(--secondary-color) focus:ring-2 focus:ring-[color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
+              ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+              : "!bg-white hover:!border-gray-400 focus:!border-(--secondary-color) focus:!shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
           }
-          text-gray-900 placeholder-gray-400
           ${disabled ? "cursor-not-allowed opacity-60" : ""}
         `}
           />
