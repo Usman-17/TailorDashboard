@@ -9,6 +9,13 @@ const PLAN_MONTHS = {
   yearly: 12,
 };
 
+const PLAN_PRICES = {
+  monthly: 1000,
+  quarterly: 2500,
+  "half-yearly": 4500,
+  yearly: 8000,
+};
+
 // POST /api/payments/receive
 export const receivePayment = async (req, res) => {
   try {
@@ -45,8 +52,13 @@ export const receivePayment = async (req, res) => {
     shop.subscriptionPlan = subscriptionPlan;
     shop.subscriptionStart = startFrom;
     shop.subscriptionExpiry = newExpiry;
-    shop.subscriptionAmount = Number(shop.subscriptionAmount) + Number(amount);
-    shop.amountReceived = Number(shop.amountReceived) + Number(amount);
+    if (PLAN_PRICES[subscriptionPlan]) {
+      shop.subscriptionAmount = PLAN_PRICES[subscriptionPlan];
+    }
+    shop.amountReceived = Number(shop.amountReceived || 0) + Number(amount);
+    if (shop.isActive === "expired") {
+      shop.isActive = "active";
+    }
     await shop.save();
 
     const payment = await Payment.create({

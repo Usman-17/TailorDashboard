@@ -4,6 +4,7 @@ import Customer from "../models/customer.model.js";
 import Shop from "../models/shop.model.js";
 import User from "../models/user.model.js";
 import Expense from "../models/expense.model.js";
+import Payment from "../models/payment.model.js";
 import { ROLES } from "../models/user.model.js";
 
 // GET /api/dashboard/stats
@@ -61,17 +62,26 @@ export const getDashboardStats = async (req, res) => {
         deliveryDate: { $lt: now },
         isDeleted: { $ne: true },
       }),
-      Order.aggregate([
-        {
-          $match: {
-            ...shopFilter,
-            status: ORDER_STATUS.DELIVERED,
-            updatedAt: { $gte: startOfMonth, $lte: endOfMonth },
-            isDeleted: { $ne: true },
-          },
-        },
-        { $group: { _id: null, total: { $sum: "$totalAmount" } } },
-      ]),
+      isSuperAdmin
+        ? Payment.aggregate([
+            {
+              $match: {
+                createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+              },
+            },
+            { $group: { _id: null, total: { $sum: "$amount" } } },
+          ])
+        : Order.aggregate([
+            {
+              $match: {
+                ...shopFilter,
+                status: ORDER_STATUS.DELIVERED,
+                updatedAt: { $gte: startOfMonth, $lte: endOfMonth },
+                isDeleted: { $ne: true },
+              },
+            },
+            { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+          ]),
       Expense.aggregate([
         {
           $match: {
@@ -89,14 +99,21 @@ export const getDashboardStats = async (req, res) => {
     ]);
 
     const revenue = monthlyRevenue[0]?.total || 0;
-    const expenses = monthlyExpenses[0]?.total || 0;
+    const expenses = isSuperAdmin ? 0 : (monthlyExpenses[0]?.total || 0);
 
     let totalIncomeAllTime = 0;
     if (isSuperAdmin) {
-      const allIncome = await Shop.aggregate([
-        { $group: { _id: null, total: { $sum: "$subscriptionAmount" } } },
+      const paymentAgg = await Payment.aggregate([
+        { $group: { _id: null, total: { $sum: "$amount" } } },
       ]);
-      totalIncomeAllTime = allIncome[0]?.total || 0;
+      if (paymentAgg.length > 0 && paymentAgg[0]?.total !== undefined) {
+        totalIncomeAllTime = paymentAgg[0].total;
+      } else {
+        const shopAgg = await Shop.aggregate([
+          { $group: { _id: null, total: { $sum: "$amountReceived" } } },
+        ]);
+        totalIncomeAllTime = shopAgg[0]?.total || 0;
+      }
     } else {
       const shopIncome = await Order.aggregate([
         { $match: { ...shopFilter, status: ORDER_STATUS.DELIVERED, isDeleted: { $ne: true } } },
@@ -162,18 +179,30 @@ export const getChartData = async (req, res) => {
       ),
       Promise.all(
         months.map(async (m) => {
-          const result = await Order.aggregate([
-            {
-              $match: {
-                ...shopFilter,
-                status: ORDER_STATUS.DELIVERED,
-                updatedAt: { $gte: m.start, $lte: m.end },
-                isDeleted: { $ne: true },
+          if (isSuperAdmin) {
+            const result = await Payment.aggregate([
+              {
+                $match: {
+                  createdAt: { $gte: m.start, $lte: m.end },
+                },
               },
-            },
-            { $group: { _id: null, total: { $sum: "$totalAmount" } } },
-          ]);
-          return { month: m.label, total: result[0]?.total || 0 };
+              { $group: { _id: null, total: { $sum: "$amount" } } },
+            ]);
+            return { month: m.label, total: result[0]?.total || 0 };
+          } else {
+            const result = await Order.aggregate([
+              {
+                $match: {
+                  ...shopFilter,
+                  status: ORDER_STATUS.DELIVERED,
+                  updatedAt: { $gte: m.start, $lte: m.end },
+                  isDeleted: { $ne: true },
+                },
+              },
+              { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+            ]);
+            return { month: m.label, total: result[0]?.total || 0 };
+          }
         })
       ),
       Order.aggregate([

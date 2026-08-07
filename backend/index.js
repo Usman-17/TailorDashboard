@@ -17,6 +17,7 @@ import orderRoutes from "./routes/order.route.js";
 import expenseRoutes from "./routes/expense.route.js";
 import dashboardRoutes from "./routes/dashboard.route.js";
 import paymentRoutes from "./routes/payment.route.js";
+import { syncMissingShopPayments } from "./controllers/shop.controller.js";
 
 const app = express();
 dotenv.config();
@@ -66,4 +67,5 @@ app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
   await dbConnect();
   await seedSuperAdmin(null, null);
+  await syncMissingShopPayments();
 });

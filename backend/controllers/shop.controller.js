@@ -1,10 +1,36 @@
 import Shop, { SUBSCRIPTION_PLAN } from "../models/shop.model.js";
 import User, { ROLES } from "../models/user.model.js";
+import Payment from "../models/payment.model.js";
 import bcrypt from "bcryptjs";
 import { uploadImage, deleteImage } from "../utils/uploadImage.js";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^(\+?92|0)?[3]\d{9}$/;
+
+export const syncMissingShopPayments = async () => {
+  try {
+    const shops = await Shop.find({ amountReceived: { $gt: 0 } });
+    for (const shop of shops) {
+      const paymentCount = await Payment.countDocuments({ shop: shop._id });
+      if (paymentCount === 0) {
+        await Payment.create({
+          shop: shop._id,
+          amount: shop.amountReceived,
+          paymentMethod: "cash",
+          referenceNo: "",
+          notes: "Initial payment on shop creation",
+          subscriptionPlan: shop.subscriptionPlan || "monthly",
+          previousExpiry: shop.subscriptionStart || new Date(),
+          newExpiry: shop.subscriptionExpiry || new Date(),
+          recordedBy: shop.owner,
+        });
+        console.log(`Synced missing initial payment record for shop: ${shop.name}`);
+      }
+    }
+  } catch (err) {
+    console.error("Error syncing missing shop payments:", err.message);
+  }
+};
 
 const sanitizeShop = (shop) => {
   const obj = shop.toObject ? shop.toObject() : { ...shop };
@@ -299,6 +325,22 @@ export const createOwner = async (req, res) => {
         logo = await uploadImage(req.files.logo, "shop-logos");
         populated.logo = logo;
         await populated.save();
+      }
+
+      // Auto-create a Payment record if an initial amount was received on shop creation
+      const initialAmount = Number(amountReceived) || 0;
+      if (initialAmount > 0) {
+        await Payment.create({
+          shop: shops[0]._id,
+          amount: initialAmount,
+          paymentMethod: "cash",
+          referenceNo: "",
+          notes: "Initial payment on shop creation",
+          subscriptionPlan: subscriptionPlan || "monthly",
+          previousExpiry: subscriptionStart ? new Date(subscriptionStart) : new Date(),
+          newExpiry: subscriptionExpiry ? new Date(subscriptionExpiry) : new Date(),
+          recordedBy: req.user._id,
+        });
       }
 
       return res.status(201).json({
