@@ -1,9 +1,20 @@
 import dayjs from "dayjs";
 import moment from "moment";
 import toast from "react-hot-toast";
-import { useState, useRef, useEffect } from "react";
-import { SquarePen, X, MoreHorizontal, Wallet, ScrollText } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  SquarePen,
+  X,
+  MoreHorizontal,
+  Wallet,
+  ScrollText,
+  Store,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  XCircle,
+} from "lucide-react";
 
 import CustomTable from "../../components/CustomTable";
 import CustomInput from "../../components/CustomInput";
@@ -15,6 +26,7 @@ import SectionHeading from "../../components/SectionHeading";
 import CustomDatePicker from "../../components/CustomDatePicker";
 import ActionButtons from "../../components/ActionButtons";
 import FullScreenModal from "../../components/FullScreenModal";
+import SummaryCard from "../../components/SummaryCard";
 
 const PLAN_BADGE = {
   monthly: "bg-blue-100 text-blue-700",
@@ -69,6 +81,7 @@ const getExpiryDate = (startDate, plan, duration) => {
 
 const ShopPage = () => {
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
@@ -82,7 +95,111 @@ const ShopPage = () => {
   const queryClient = useQueryClient();
   const { data: shops = [], isLoading } = useGetAllShops();
 
-  const filtered = useGlobalFilter(shops, search, [
+  const summaryStats = useMemo(() => {
+    const total = shops.length;
+    let active = 0;
+    let expired = 0;
+    let expiringSoon = 0;
+    let suspended = 0;
+    let totalRev = 0;
+
+    const now = moment();
+
+    shops.forEach((shop) => {
+      totalRev += Number(shop.subscriptionAmount) || 0;
+
+      const expiryDate = shop.rawExpiry ? moment(shop.rawExpiry) : null;
+      const isPastExpiry = expiryDate ? expiryDate.isBefore(now, "day") : false;
+      const daysUntilExpiry = expiryDate ? expiryDate.diff(now, "days") : null;
+
+      if (shop.isActive === "suspended") {
+        suspended++;
+      } else if (shop.isActive === "expired" || isPastExpiry) {
+        expired++;
+      } else if (shop.isActive === "active") {
+        active++;
+        if (
+          daysUntilExpiry !== null &&
+          daysUntilExpiry >= 0 &&
+          daysUntilExpiry <= 7
+        ) {
+          expiringSoon++;
+        }
+      }
+    });
+
+    return { total, active, expired, expiringSoon, suspended, totalRev };
+  }, [shops]);
+
+  const statCards = [
+    {
+      id: "all",
+      title: "Total Shops",
+      count: summaryStats.total,
+      icon: Store,
+      color: "#6366F1",
+    },
+    {
+      id: "active",
+      title: "Active",
+      count: summaryStats.active,
+      icon: CheckCircle2,
+      color: "#10B981",
+    },
+    {
+      id: "expiring_soon",
+      title: "Expiring Soon",
+      count: summaryStats.expiringSoon,
+      icon: Clock,
+      color: "#F59E0B",
+    },
+    {
+      id: "expired",
+      title: "Expired",
+      count: summaryStats.expired,
+      icon: AlertTriangle,
+      color: "#EF4444",
+    },
+    {
+      id: "suspended",
+      title: "Suspended",
+      count: summaryStats.suspended,
+      icon: XCircle,
+      color: "#6B7280",
+    },
+  ];
+
+  const statusFiltered = useMemo(() => {
+    if (statusFilter === "all") return shops;
+    const now = moment();
+    return shops.filter((shop) => {
+      const expiryDate = shop.rawExpiry ? moment(shop.rawExpiry) : null;
+      const isPastExpiry = expiryDate ? expiryDate.isBefore(now, "day") : false;
+      const daysUntilExpiry = expiryDate ? expiryDate.diff(now, "days") : null;
+
+      if (statusFilter === "active") {
+        return shop.isActive === "active" && !isPastExpiry;
+      }
+      if (statusFilter === "expired") {
+        return shop.isActive === "expired" || isPastExpiry;
+      }
+      if (statusFilter === "expiring_soon") {
+        return (
+          shop.isActive === "active" &&
+          !isPastExpiry &&
+          daysUntilExpiry !== null &&
+          daysUntilExpiry >= 0 &&
+          daysUntilExpiry <= 7
+        );
+      }
+      if (statusFilter === "suspended") {
+        return shop.isActive === "suspended";
+      }
+      return true;
+    });
+  }, [shops, statusFilter]);
+
+  const filtered = useGlobalFilter(statusFiltered, search, [
     "name",
     "owner",
     "email",
@@ -326,17 +443,42 @@ const ShopPage = () => {
       dataIndex: "isActive",
       key: "isActive",
       sorter: (a, b) => (a.isActive || "").localeCompare(b.isActive || ""),
-      render: (v) => {
+      render: (v, record) => {
         const colors = {
           active: "bg-green-100 text-green-700",
           expired: "bg-yellow-100 text-yellow-700",
           suspended: "bg-red-100 text-red-700",
         };
+        const now = moment();
+        const expiryDate = record.rawExpiry ? moment(record.rawExpiry) : null;
+        const isPastExpiry = expiryDate
+          ? expiryDate.isBefore(now, "day")
+          : false;
+        const daysUntilExpiry = expiryDate
+          ? expiryDate.diff(now, "days")
+          : null;
+
+        let statusText = v ? v.charAt(0).toUpperCase() + v.slice(1) : "Active";
+        let colorClass = colors[v] || colors.active;
+
+        if (v === "active" && isPastExpiry) {
+          statusText = "Expired";
+          colorClass = "bg-yellow-100 text-yellow-700";
+        } else if (
+          v === "active" &&
+          daysUntilExpiry !== null &&
+          daysUntilExpiry >= 0 &&
+          daysUntilExpiry <= 7
+        ) {
+          statusText = `Expiring (${daysUntilExpiry}d)`;
+          colorClass = "bg-amber-100 text-amber-700 font-semibold";
+        }
+
         return (
           <span
-            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${colors[v] || colors.active}`}
+            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${colorClass}`}
           >
-            {v ? v.charAt(0).toUpperCase() + v.slice(1) : "Active"}
+            {statusText}
           </span>
         );
       },
@@ -388,6 +530,25 @@ const ShopPage = () => {
           <SquarePen size={16} />
           Add Shop
         </button>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 my-5">
+        {statCards.map((card) => (
+          <SummaryCard
+            key={card.id}
+            icon={card.icon}
+            title={card.title}
+            count={card.count}
+            color={card.color}
+            isSelected={statusFilter === card.id}
+            onClick={() =>
+              setStatusFilter(
+                statusFilter === card.id && card.id !== "all" ? "all" : card.id,
+              )
+            }
+          />
+        ))}
       </div>
 
       <CustomTable

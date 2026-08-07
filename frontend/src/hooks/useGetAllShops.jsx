@@ -23,6 +23,8 @@ const useGetAllShops = () => {
         owner: shop.owner?.fullName || "N/A",
         subscriptionPlan: shop.subscriptionPlan,
         subscriptionAmount: shop.subscriptionAmount || 0,
+        rawExpiry: shop.subscriptionExpiry,
+        rawStart: shop.subscriptionStart,
         subscriptionExpiry: shop.subscriptionExpiry
           ? moment(shop.subscriptionExpiry).format("DD MMM YYYY")
           : null,
