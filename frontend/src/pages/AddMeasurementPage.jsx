@@ -113,7 +113,7 @@ const AddMeasurementPage = () => {
       toast.success(
         `Measurements ${measurement ? "updated" : "added"} successfully`
       );
-      navigate("/customer/manage");
+      navigate("/customers");
     },
     onError: (err) => {
       toast.error(err.message || "Failed to save measurements");
@@ -146,7 +146,7 @@ const AddMeasurementPage = () => {
         <div className="sm:w-auto w-full">
           <CustomButton
             title="Manage All Customers"
-            to="/customer/manage"
+            to="/customers"
             Icon={Undo}
           />
         </div>

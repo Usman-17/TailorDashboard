@@ -17,7 +17,7 @@ const AdminLayoutContent = () => {
       </div>
       <div
         className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
-          isExpanded || isHovered ? "lg:ml-[190px]" : "lg:ml-[60px]"
+          isExpanded || isHovered ? "lg:ml-[230px]" : "lg:ml-[68px]"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />

@@ -39,7 +39,7 @@ const MeasurementPage = () => {
         <div className="sm:w-auto w-full">
           <CustomButton
             title="Manage All Measurements"
-            to="/customer/manage"
+            to="/customers"
             Icon={Undo}
           />
         </div>

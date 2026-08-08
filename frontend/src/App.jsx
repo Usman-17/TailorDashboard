@@ -16,8 +16,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { Loader } from "lucide-react";
 
 import DashboardPage from "./pages/DashboardPage";
-import AddCustomerPage from "./pages/AddCustomerPage";
-import CustomerListingPage from "./pages/CustomerListingPage";
+import CustomersPage from "./pages/Tailor/CustomersPage/CustomersPage";
 import AddMeasurementPage from "./pages/AddMeasurementPage";
 import MeasurementPage from "./pages/MeasurementPage";
 import AddOrdersPage from "./pages/AddOrdersPage";
@@ -109,9 +108,7 @@ const App = () => {
             }
           >
             <Route index element={<DashboardPage />} />
-            <Route path="customer/add" element={<AddCustomerPage />} />
-            <Route path="customer/edit/:id" element={<AddCustomerPage />} />
-            <Route path="customer/manage" element={<CustomerListingPage />} />
+            <Route path="customers" element={<CustomersPage />} />
             <Route
               path="measurements/add/:customerId"
               element={<AddMeasurementPage />}

@@ -5,39 +5,51 @@ import { useSidebar } from "../context/SidebarContext";
 import {
   ChevronDownIcon,
   Ellipsis,
-  LayoutDashboard,
-  Store,
   Users,
-  BarChart2,
+  LayoutDashboard,
+  ShoppingBag,
+  SquareChartGantt,
+  TrendingUp,
 } from "lucide-react";
 
 import logo from "../assets/logo.png";
 import logo_icon from "../assets/s-logo.png";
 
-const adminNavItems = [
+const tailorNavItems = [
   {
     name: "Dashboard",
     icon: <LayoutDashboard />,
-    path: "/admin",
+    path: "/",
   },
   {
-    name: "Manage Shops",
-    icon: <Store />,
-    path: "/admin/shops",
-  },
-  {
-    name: "Manage Users",
+    name: "Customers",
     icon: <Users />,
-    path: "/admin/users",
+    path: "/customers",
   },
   {
-    name: "Reports",
-    icon: <BarChart2 />,
-    path: "/admin/reports",
+    name: "Manage Orders",
+    icon: <ShoppingBag />,
+    subItems: [
+      { name: "Add Order", path: "/orders/add" },
+      { name: "Manage Orders", path: "/orders/manage" },
+    ],
+  },
+  {
+    name: "Manage Expenses",
+    icon: <SquareChartGantt />,
+    subItems: [
+      { name: "Add Expenses", path: "/expenses/add" },
+      { name: "Manage Expenses", path: "/expenses/manage" },
+    ],
+  },
+  {
+    name: "Manage Sale",
+    icon: <TrendingUp />,
+    path: "/sale",
   },
 ];
 
-const AdminSidebar = () => {
+const Sidebar = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
 
@@ -117,7 +129,7 @@ const AdminSidebar = () => {
               nav.path && (
                 <Link
                   to={nav.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                     isActive(nav.path)
                       ? "bg-purple-600 text-white font-medium shadow-md shadow-purple-500/25 dark:bg-purple-600 dark:text-white"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60"
@@ -152,7 +164,7 @@ const AdminSidebar = () => {
                     <li key={subItem.name}>
                       <Link
                         to={subItem.path}
-                        className={`flex justify-between items-center px-3 py-2 rounded-lg text-[12.5px] whitespace-nowrap transition-all cursor-pointer ${
+                        className={`flex justify-between items-center px-3 py-2 rounded-lg text-[12.5px] whitespace-nowrap transition-all ${
                           isActive(subItem.path)
                             ? "bg-purple-600 text-white font-medium shadow-sm shadow-purple-500/20 dark:bg-purple-600 dark:text-white"
                             : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60"
@@ -187,7 +199,7 @@ const AdminSidebar = () => {
         lg:translate-x-0`}
     >
       <div className="h-14 sm:h-16 flex items-center justify-center mb-2">
-        <Link to="/admin" className="hidden sm:flex items-center justify-center">
+        <Link to="/" className="hidden sm:flex items-center justify-center">
           {isExpanded || isHovered || isMobileOpen ? (
             <img
               src={logo}
@@ -218,12 +230,12 @@ const AdminSidebar = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Admin Panel"
+                  "Main Menu"
                 ) : (
                   <Ellipsis size={14} />
                 )}
               </h2>
-              {renderMenuItems(adminNavItems, "main")}
+              {renderMenuItems(tailorNavItems, "main")}
             </div>
           </div>
         </nav>
@@ -232,4 +244,4 @@ const AdminSidebar = () => {
   );
 };
 
-export default AdminSidebar;
+export default Sidebar;

@@ -52,7 +52,7 @@ const FullScreenModal = ({
           <Motion.div
             className="absolute top-0 right-0 bottom-0 bg-white dark:bg-[#0d0a1d] text-gray-800 dark:text-gray-100 overflow-y-auto no-scrollbar pointer-events-auto"
             style={{
-              left: !isMobileOpen ? (isExpanded || isHovered ? 190 : 60) : 0,
+              left: !isMobileOpen ? (isExpanded || isHovered ? 230 : 68) : 0,
             }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
