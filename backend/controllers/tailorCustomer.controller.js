@@ -1,4 +1,4 @@
-import Customer from "../models/customer.model.js";
+import TailorCustomer from "../models/tailorCustomer.model.js";
 import Measurement from "../models/measurement.model.js";
 import Counter from "../models/counter.model.js";
 
@@ -8,69 +8,25 @@ const validatePhone = (phone) => {
   if (!phone) return "Phone number is required";
   if (typeof phone !== "string") return "Phone must be a string";
   const cleaned = phone.replace(/[\s\-()]/g, "");
-  if (!PHONE_REGEX.test(cleaned)) return "Invalid Pakistani phone number format";
+  if (!PHONE_REGEX.test(cleaned))
+    return "Invalid Pakistani phone number format";
   return null;
-};
-
-const sanitizeCustomer = (customer) => {
-  const obj = customer.toObject ? customer.toObject() : { ...customer };
-  delete obj.isDeleted;
-  delete obj.deletedAt;
-  return obj;
 };
 
 // GET /api/customers/all
 export const getAllCustomers = async (req, res) => {
   try {
     const { shopId } = req;
-    const {
-      page = 1,
-      limit = 20,
-      search = "",
-      sortBy = "createdAt",
-      order = "desc",
-    } = req.query;
 
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-    const skip = (pageNum - 1) * limitNum;
+    const customers = await TailorCustomer.find({ shopId })
+      .populate("measurement")
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const filter = { shopId };
-
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { customerId: { $regex: search, $options: "i" } },
-      ];
-    }
-
-    const allowedSorts = ["name", "phone", "customerId", "createdAt"];
-    const sortField = allowedSorts.includes(sortBy) ? sortBy : "createdAt";
-    const sortOrder = order === "asc" ? 1 : -1;
-
-    const [customers, total] = await Promise.all([
-      Customer.find(filter)
-        .populate("measurement")
-        .sort({ [sortField]: sortOrder })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      Customer.countDocuments(filter),
-    ]);
-
-    return res.status(200).json({
-      customers,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum),
-      },
-    });
+    return res.status(200).json({ customers });
   } catch (error) {
     console.error("Error in getAllCustomers:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -78,35 +34,15 @@ export const getAllCustomers = async (req, res) => {
 export const getDeletedCustomers = async (req, res) => {
   try {
     const { shopId } = req;
-    const { page = 1, limit = 20 } = req.query;
 
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
-    const skip = (pageNum - 1) * limitNum;
+    const customers = await TailorCustomer.find({ shopId, isDeleted: true })
+      .sort({ deletedAt: -1 })
+      .lean();
 
-    const filter = { shopId, isDeleted: true };
-
-    const [customers, total] = await Promise.all([
-      Customer.find(filter)
-        .sort({ deletedAt: -1 })
-        .skip(skip)
-        .limit(limitNum)
-        .lean(),
-      Customer.countDocuments(filter),
-    ]);
-
-    return res.status(200).json({
-      customers,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages: Math.ceil(total / limitNum),
-      },
-    });
+    return res.status(200).json({ customers });
   } catch (error) {
     console.error("Error in getDeletedCustomers:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -116,7 +52,7 @@ export const getCustomer = async (req, res) => {
     const { id } = req.params;
     const { shopId } = req;
 
-    const customer = await Customer.findOne({ _id: id, shopId })
+    const customer = await TailorCustomer.findOne({ _id: id, shopId })
       .populate("measurement")
       .populate("orders");
 
@@ -127,7 +63,7 @@ export const getCustomer = async (req, res) => {
     return res.status(200).json(customer);
   } catch (error) {
     console.error("Error in getCustomer:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -135,7 +71,7 @@ export const getCustomer = async (req, res) => {
 export const addCustomer = async (req, res) => {
   try {
     const { shopId } = req;
-    const { name, phone, email, address, notes } = req.body;
+    const { name, phone, notes } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Customer name is required" });
@@ -148,16 +84,24 @@ export const addCustomer = async (req, res) => {
 
     const cleanedPhone = phone.replace(/[\s\-()]/g, "");
 
+    const existing = await TailorCustomer.findOne({
+      shopId,
+      phone: cleanedPhone,
+    });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ error: "A customer with this phone number already exists" });
+    }
+
     const customerNum = await Counter.getNextValue(shopId, "customer");
     const customerId = `C${String(customerNum).padStart(4, "0")}`;
 
-    const customer = await Customer.create({
+    const customer = await TailorCustomer.create({
       customerId,
       shopId,
       name: name.trim(),
       phone: cleanedPhone,
-      email: email || undefined,
-      address: address || undefined,
       notes: notes || "",
     });
 
@@ -168,7 +112,7 @@ export const addCustomer = async (req, res) => {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({ error: `This ${field} already exists` });
     }
-    return res.status(500).json({ error: error.message || "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -177,9 +121,9 @@ export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
     const { shopId } = req;
-    const { name, phone, email, address, notes } = req.body;
+    const { name, phone, notes } = req.body;
 
-    const customer = await Customer.findOne({ _id: id, shopId });
+    const customer = await TailorCustomer.findOne({ _id: id, shopId });
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
@@ -191,12 +135,22 @@ export const updateCustomer = async (req, res) => {
       }
 
       const cleanedPhone = phone.replace(/[\s\-()]/g, "");
+
+      const existing = await TailorCustomer.findOne({
+        shopId,
+        phone: cleanedPhone,
+        _id: { $ne: id },
+      });
+      if (existing) {
+        return res
+          .status(400)
+          .json({ error: "A customer with this phone number already exists" });
+      }
+
       customer.phone = cleanedPhone;
     }
 
     if (name !== undefined) customer.name = name.trim();
-    if (email !== undefined) customer.email = email || null;
-    if (address !== undefined) customer.address = address;
     if (notes !== undefined) customer.notes = notes;
 
     const updated = await customer.save();
@@ -207,7 +161,7 @@ export const updateCustomer = async (req, res) => {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({ error: `This ${field} already exists` });
     }
-    return res.status(500).json({ error: error.message || "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -217,7 +171,7 @@ export const deleteCustomer = async (req, res) => {
     const { id } = req.params;
     const { shopId } = req;
 
-    const customer = await Customer.findOne({ _id: id, shopId });
+    const customer = await TailorCustomer.findOne({ _id: id, shopId });
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
@@ -229,7 +183,7 @@ export const deleteCustomer = async (req, res) => {
     return res.status(200).json({ message: "Customer moved to trash" });
   } catch (error) {
     console.error("Error in deleteCustomer:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -239,18 +193,18 @@ export const permanentDeleteCustomer = async (req, res) => {
     const { id } = req.params;
     const { shopId } = req;
 
-    const customer = await Customer.findOne({ _id: id, shopId });
+    const customer = await TailorCustomer.findOne({ _id: id, shopId });
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
 
     await Measurement.deleteOne({ customer: id });
-    await Customer.findByIdAndDelete(id);
+    await TailorCustomer.findByIdAndDelete(id);
 
     return res.status(200).json({ message: "Customer permanently deleted" });
   } catch (error) {
     console.error("Error in permanentDeleteCustomer:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -260,7 +214,7 @@ export const restoreCustomer = async (req, res) => {
     const { id } = req.params;
     const { shopId } = req;
 
-    const customer = await Customer.findOne({
+    const customer = await TailorCustomer.findOne({
       _id: id,
       shopId,
       isDeleted: true,
@@ -276,6 +230,6 @@ export const restoreCustomer = async (req, res) => {
     return res.status(200).json(customer);
   } catch (error) {
     console.error("Error in restoreCustomer:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };

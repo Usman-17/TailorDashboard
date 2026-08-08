@@ -11,7 +11,7 @@ import { seedSuperAdmin } from "./controllers/auth.controller.js";
 
 import authRoutes from "./routes/auth.route.js";
 import shopRoutes from "./routes/shop.route.js";
-import customerRoutes from "./routes/customer.route.js";
+import tailorCustomerRoutes from "./routes/tailorCustomer.route.js";
 import measurementsRoutes from "./routes/measurement.route.js";
 import orderRoutes from "./routes/order.route.js";
 import expenseRoutes from "./routes/expense.route.js";
@@ -51,7 +51,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/shops", shopRoutes);
-app.use("/api/customers", customerRoutes);
+app.use("/api/customers", tailorCustomerRoutes);
 app.use("/api/measurements", measurementsRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/expenses", expenseRoutes);
