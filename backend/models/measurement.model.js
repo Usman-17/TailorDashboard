@@ -15,6 +15,16 @@ const measurementSchema = new mongoose.Schema(
       required: [true, "Customer is required"],
     },
 
+    // Lower type
+    lower: {
+      type: {
+        type: String,
+        enum: ["shalwar", "trouser"],
+        default: "shalwar",
+        required: true,
+      },
+    },
+
     // Kameez
     length: { type: Number, required: true, min: 0 },
     shoulder: { type: Number, required: true, min: 0 },
@@ -27,7 +37,7 @@ const measurementSchema = new mongoose.Schema(
     bicep: { type: Number, required: true, min: 0 },
     cuff: { type: Number, required: true, min: 0 },
 
-    // Shalwar
+    // Shalwar / Trouser (same fields)
     shalwarLength: { type: Number, required: true, min: 0 },
     shalwarWaist: { type: Number, required: true, min: 0 },
     shalwarHip: { type: Number, required: true, min: 0 },
@@ -45,7 +55,7 @@ const measurementSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 measurementSchema.index({ shopId: 1, customer: 1 }, { unique: true });

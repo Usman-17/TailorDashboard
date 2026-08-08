@@ -1,5 +1,5 @@
-import Customer from "../models/customer.model.js";
 import Measurement from "../models/measurement.model.js";
+import TailorCustomer from "../models/tailorCustomer.model.js";
 
 const MEASUREMENT_FIELDS = [
   "length",
@@ -33,7 +33,7 @@ export const getAllMeasurements = async (req, res) => {
     const filter = { shopId };
 
     if (search) {
-      const customers = await Customer.find({
+      const customers = await TailorCustomer.find({
         shopId,
         $or: [
           { name: { $regex: search, $options: "i" } },
@@ -96,7 +96,7 @@ export const addMeasurement = async (req, res) => {
     const { customerId } = req.params;
     const { shopId } = req;
 
-    const customer = await Customer.findOne({ _id: customerId, shopId });
+    const customer = await TailorCustomer.findOne({ _id: customerId, shopId });
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
@@ -112,7 +112,7 @@ export const addMeasurement = async (req, res) => {
     }
 
     const missingFields = MEASUREMENT_FIELDS.filter(
-      (field) => req.body[field] === undefined || req.body[field] === null
+      (field) => req.body[field] === undefined || req.body[field] === null,
     );
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -121,6 +121,19 @@ export const addMeasurement = async (req, res) => {
     }
 
     const measurementData = { shopId, customer: customerId };
+
+    // Handle lower type
+    if (req.body.lower && req.body.lower.type) {
+      if (!["shalwar", "trouser"].includes(req.body.lower.type)) {
+        return res
+          .status(400)
+          .json({
+            error: "Invalid lower type. Must be 'shalwar' or 'trouser'",
+          });
+      }
+      measurementData.lower = { type: req.body.lower.type };
+    }
+
     for (const field of MEASUREMENT_FIELDS) {
       const value = Number(req.body[field]);
       if (isNaN(value) || value < 0) {
@@ -136,7 +149,7 @@ export const addMeasurement = async (req, res) => {
 
     const measurement = await Measurement.create(measurementData);
 
-    await Customer.findByIdAndUpdate(customerId, {
+    await TailorCustomer.findByIdAndUpdate(customerId, {
       measurement: measurement._id,
     });
 
@@ -178,6 +191,18 @@ export const updateMeasurement = async (req, res) => {
       }
     }
 
+    // Handle lower type
+    if (req.body.lower && req.body.lower.type) {
+      if (!["shalwar", "trouser"].includes(req.body.lower.type)) {
+        return res
+          .status(400)
+          .json({
+            error: "Invalid lower type. Must be 'shalwar' or 'trouser'",
+          });
+      }
+      measurement.lower = { type: req.body.lower.type };
+    }
+
     if (req.body.remarks !== undefined) {
       measurement.remarks = req.body.remarks;
     }
@@ -204,13 +229,15 @@ export const deleteMeasurement = async (req, res) => {
       return res.status(404).json({ error: "Measurement not found" });
     }
 
-    await Customer.findByIdAndUpdate(customerId, {
+    await TailorCustomer.findByIdAndUpdate(customerId, {
       $unset: { measurement: "" },
     });
 
     await Measurement.findByIdAndDelete(measurement._id);
 
-    return res.status(200).json({ message: "Measurement deleted successfully" });
+    return res
+      .status(200)
+      .json({ message: "Measurement deleted successfully" });
   } catch (error) {
     console.error("Error in deleteMeasurement:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
