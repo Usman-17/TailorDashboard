@@ -22,13 +22,19 @@ export const SHALWAR_FIELDS = [
 
 export const ALL_FIELDS = [...KAMEEZ_FIELDS, ...SHALWAR_FIELDS];
 
-export const initialMeasurementState = ALL_FIELDS.reduce(
-  (acc, f) => {
+export const LOWER_TYPES = [
+  { value: "shalwar", label: "Shalwar" },
+  { value: "trouser", label: "Trouser" },
+];
+
+export const initialMeasurementState = {
+  lowerType: "shalwar",
+  ...ALL_FIELDS.reduce((acc, f) => {
     acc[f] = "";
     return acc;
-  },
-  { remarks: "" },
-);
+  }, {}),
+  remarks: "",
+};
 
 export const URDU_LABELS = {
   length: "لمبائی",
@@ -41,16 +47,38 @@ export const URDU_LABELS = {
   armHole: "بازو کا سوراخ",
   bicep: "بازو",
   cuff: "کف",
-  shalwarLength: "شلوار لمبائی",
-  shalwarWaist: "شلوار کمر",
-  shalwarHip: "شلوار کولہ",
+  shalwarLength: "لمبائی",
+  shalwarWaist: "کمر",
+  shalwarHip: "کولہ",
   thigh: "ران",
   knee: "گھٹنا",
   bottom: "دھرا",
 };
 
-export const labelWithUrdu = (field) => {
-  const english = field.replace(/([A-Z])/g, " $1");
+const TROUSER_LABELS = {
+  shalwarLength: "Length",
+  shalwarWaist: "Waist",
+  shalwarHip: "Hip",
+};
+
+const SHALWAR_LABELS = {
+  shalwarLength: "Length",
+  shalwarWaist: "Waist",
+  shalwarHip: "Hip",
+};
+
+export const labelWithUrdu = (field, lowerType = "shalwar") => {
+  const isLowerField = SHALWAR_FIELDS.includes(field);
+
+  let english;
+  if (isLowerField && lowerType === "trouser") {
+    english = TROUSER_LABELS[field] || field.replace(/([A-Z])/g, " $1");
+  } else if (isLowerField) {
+    english = SHALWAR_LABELS[field] || field.replace(/([A-Z])/g, " $1");
+  } else {
+    english = field.replace(/([A-Z])/g, " $1");
+  }
+
   const urdu = URDU_LABELS[field] || "";
   return { english, urdu };
 };

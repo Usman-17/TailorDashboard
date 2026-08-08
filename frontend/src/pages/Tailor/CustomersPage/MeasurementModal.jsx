@@ -1,5 +1,6 @@
-import { useRef, useEffect } from "react";
+import moment from "moment";
 import toast from "react-hot-toast";
+import { useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import CustomInput from "../../../components/CustomInput";
@@ -10,6 +11,7 @@ import {
   KAMEEZ_FIELDS,
   SHALWAR_FIELDS,
   ALL_FIELDS,
+  LOWER_TYPES,
   initialMeasurementState,
   labelWithUrdu,
 } from "./measurementFields";
@@ -45,6 +47,9 @@ const MeasurementModal = ({
       Object.keys(cleaned).forEach((key) => {
         cleaned[key] = existingMeasurement[key] ?? "";
       });
+      if (existingMeasurement.lower?.type) {
+        cleaned.lowerType = existingMeasurement.lower.type;
+      }
       setMeasureForm(cleaned);
     } else if (open) {
       setMeasureForm({ ...initialMeasurementState });
@@ -58,11 +63,16 @@ const MeasurementModal = ({
         ? `/api/measurements/update/${customerId}`
         : `/api/measurements/add/${customerId}`;
 
+      const payload = {
+        ...data,
+        lower: { type: data.lowerType },
+      };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -94,8 +104,11 @@ const MeasurementModal = ({
     saveMeasurement(measureForm);
   };
 
+  const lowerType = measureForm.lowerType || "shalwar";
+  const lowerTitle = lowerType === "trouser" ? "Trouser" : "Shalwar";
+
   const FieldLabel = ({ field }) => {
-    const { english, urdu } = labelWithUrdu(field);
+    const { english, urdu } = labelWithUrdu(field, lowerType);
     return (
       <div className="flex items-center justify-between mb-1">
         <span className="font-medium text-sm text-gray-700 dark:text-gray-300 capitalize">
@@ -112,7 +125,7 @@ const MeasurementModal = ({
 
   const renderViewFields = (fields) =>
     fields.map((field) => {
-      const { english, urdu } = labelWithUrdu(field);
+      const { english, urdu } = labelWithUrdu(field, lowerType);
       return (
         <div
           key={field}
@@ -144,7 +157,7 @@ const MeasurementModal = ({
           type="number"
           step="any"
           required
-          placeholder={`${labelWithUrdu(field).english} size`}
+          placeholder={`${labelWithUrdu(field, lowerType).english} size`}
           value={measureForm[field]}
           onChange={(e) =>
             setMeasureForm({ ...measureForm, [field]: e.target.value })
@@ -184,14 +197,24 @@ const MeasurementModal = ({
         </div>
       ) : mode === "view" ? (
         <div className="space-y-6">
+          {existingMeasurement?.createdAt && (
+            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+              <span className="font-medium">Created:</span>
+              <span>
+                {moment(existingMeasurement.createdAt).format("DD MMM YYYY")}
+              </span>
+            </div>
+          )}
           <Section title="Kameez">{renderViewFields(KAMEEZ_FIELDS)}</Section>
-          <Section title="Shalwar">{renderViewFields(SHALWAR_FIELDS)}</Section>
+          <Section title={`${lowerTitle} Measurements`}>
+            {renderViewFields(SHALWAR_FIELDS)}
+          </Section>
           {existingMeasurement?.remarks && (
             <div>
               <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
                 Remarks
               </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1a1129] border border-gray-200 dark:border-gray-700 rounded-md p-3 text-right">
+              <p className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1a1129] border border-gray-200 dark:border-gray-700 rounded-md p-3">
                 {existingMeasurement.remarks}
               </p>
             </div>
@@ -200,7 +223,41 @@ const MeasurementModal = ({
       ) : (
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           <Section title="Kameez">{renderFormFields(KAMEEZ_FIELDS)}</Section>
-          <Section title="Shalwar">{renderFormFields(SHALWAR_FIELDS)}</Section>
+
+          <div>
+            <div className="flex items-center justify-between mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
+              <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {lowerTitle} Measurements
+              </h3>
+              <div className="flex items-center gap-4">
+                {LOWER_TYPES.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+                  >
+                    <input
+                      type="radio"
+                      name="lowerType"
+                      value={opt.value}
+                      checked={measureForm.lowerType === opt.value}
+                      onChange={(e) =>
+                        setMeasureForm({
+                          ...measureForm,
+                          lowerType: e.target.value,
+                        })
+                      }
+                      className="w-4 h-4 text-purple-600 border-gray-300 dark:border-gray-700 focus:ring-purple-500 cursor-pointer"
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {renderFormFields(SHALWAR_FIELDS)}
+            </div>
+          </div>
+
           <div>
             <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
               Remarks

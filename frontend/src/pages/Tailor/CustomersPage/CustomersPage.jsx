@@ -295,17 +295,10 @@ const CustomersPage = () => {
                 : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
             }`}
           >
-            {count > 0 ? `${count} Order${count > 1 ? "s" : ""}` : "No Orders"}
+            {count} Order{count !== 1 ? "s" : ""}
           </span>
         );
       },
-    },
-    {
-      title: "Updated At",
-      dataIndex: "updatedAt",
-      key: "updatedAt",
-      sorter: (a, b) => moment(a.updatedAt).unix() - moment(b.updatedAt).unix(),
-      render: (v) => (v ? moment(v).format("DD MMM YYYY") : "-"),
     },
     {
       title: "Actions",
@@ -324,7 +317,7 @@ const CustomersPage = () => {
           {!record.measurement && (
             <button
               onClick={() => openMeasureModal(record, "add")}
-              className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-[#1a1129] border-[#3b1f5a] text-orange-500 hover:enabled:text-orange-400 cursor-pointer"
+              className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:text-orange-400 cursor-pointer"
               title="Add Measurement"
             >
               <Ruler size={16} />
@@ -335,14 +328,14 @@ const CustomersPage = () => {
             <>
               <button
                 onClick={() => openMeasureModal(record, "edit")}
-                className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-[#1a1129] border-[#3b1f5a] text-yellow-500 hover:enabled:text-yellow-400 cursor-pointer"
+                className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:text-yellow-400 cursor-pointer"
                 title="Edit Measurement"
               >
                 <Ruler size={16} />
               </button>
               <button
                 onClick={() => openMeasureModal(record, "view")}
-                className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-[#1a1129] border-[#3b1f5a] text-blue-500 hover:enabled:text-blue-400 cursor-pointer"
+                className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:text-blue-400 cursor-pointer"
                 title="View Measurement"
               >
                 <Eye size={16} />
