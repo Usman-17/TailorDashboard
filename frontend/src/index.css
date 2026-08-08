@@ -8,6 +8,7 @@
   --bg-color: #fff;
   --primary-color: #000000;
   --secondary-color: #8143ec;
+  accent-color: var(--secondary-color);
   --table-bg: var(--bg-color);
   --table-header-bg: #f7f7f8;
   --table-border: #e2e2e2;
@@ -127,7 +128,6 @@
 [data-theme="dark"] .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
   border-color: #27223c !important;
 }
-
 
 /* ======== Global Base Styles ======== */
 body {
@@ -1016,7 +1016,8 @@ input:-webkit-autofill:focus {
 .my-custom-datepicker.ant-picker-focused,
 .my-custom-datepicker.ant-picker:hover {
   border-color: var(--secondary-color) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--secondary-color) 15%, transparent) !important;
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--secondary-color) 15%, transparent) !important;
   outline: none !important;
 }
 
@@ -1073,7 +1074,10 @@ input:-webkit-autofill:focus {
   font-weight: 500 !important;
 }
 
-[data-theme="dark"] .my-custom-datepicker .ant-picker-input > input::placeholder {
+[data-theme="dark"]
+  .my-custom-datepicker
+  .ant-picker-input
+  > input::placeholder {
   color: #9d8ec4 !important;
 }
 

@@ -1,18 +1,28 @@
-import { useState } from "react";
 import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import LoadingSpinner from "../components/LoadingSpinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const LoginPage = () => {
   const [isShow, setIsShow] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
 
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const validate = () => {
     const newErrors = {};
@@ -31,11 +41,11 @@ const LoginPage = () => {
   };
 
   const { mutate: loginMutation, isPending } = useMutation({
-    mutationFn: async ({ email, password }) => {
+    mutationFn: async ({ email, password, rememberMe }) => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
 
       const data = await res.json();
@@ -50,6 +60,12 @@ const LoginPage = () => {
     onSuccess: (data) => {
       queryClient.setQueryData(["authUser"], data.user);
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
+
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
 
       const role = data.user.role;
       if (role === "super_admin") {
@@ -71,7 +87,7 @@ const LoginPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    loginMutation({ email, password });
+    loginMutation({ email, password, rememberMe });
   };
 
   return (
@@ -120,7 +136,7 @@ const LoginPage = () => {
               </label>
               <Link
                 to="/forgot-password"
-                className="ml-auto inline-block text-sm font-semibold hover:text-blue-700 dark:hover:text-blue-400 hover:underline transition duration-75 ease-in-out"
+                className="ml-auto inline-block text-sm font-semibold hover:text-purple-700 dark:hover:text-purple-400 hover:underline transition duration-75 ease-in-out"
               >
                 Forgot password?
               </Link>
@@ -162,8 +178,25 @@ const LoginPage = () => {
             )}
           </div>
 
+          {/* Remember Me */}
+          <div className="flex items-center gap-2">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-purple-600 accent-purple-600 focus:ring-purple-500 cursor-pointer"
+            />
+            <label
+              htmlFor="rememberMe"
+              className="text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none"
+            >
+              Remember me
+            </label>
+          </div>
+
           {/* Submit */}
-          <div className="mt-3">
+          <div className="mt-1">
             <button
               type="submit"
               className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-full transition cursor-pointer select-none font-medium disabled:opacity-50"

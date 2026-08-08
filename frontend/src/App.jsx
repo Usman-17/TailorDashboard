@@ -29,10 +29,10 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const AdminDashboardPage = lazy(() => import("./pages/admin/DashboardPage"));
+const AdminDashboardPage = lazy(() => import("./pages/Admin/DashboardPage"));
 const ShopPage = lazy(() => import("./pages/Admin/ShopPage/ShopPage"));
-const ManageUsersPage = lazy(() => import("./pages/admin/ManageUsersPage"));
-const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const ManageUsersPage = lazy(() => import("./pages/Admin/ManageUsersPage"));
+const SettingsPage = lazy(() => import("./pages/Admin/SettingsPage"));
 const ReportsPage = lazy(() => import("./pages/Admin/ReportsPage"));
 
 const ScrollToTop = () => {
