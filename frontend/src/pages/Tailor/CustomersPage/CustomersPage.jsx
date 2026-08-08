@@ -1,6 +1,5 @@
 import moment from "moment";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -9,7 +8,6 @@ import {
   Ruler,
   UserCheck,
   UserPlus,
-  ClipboardList,
   Eye,
   X,
 } from "lucide-react";
@@ -25,6 +23,9 @@ import SummaryCard from "../../../components/SummaryCard";
 import ActionButtons from "../../../components/ActionButtons";
 import SectionHeading from "../../../components/SectionHeading";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
+
+import MeasurementModal from "./MeasurementModal";
+import { initialMeasurementState } from "./measurementFields";
 // Imports End----
 
 const PHONE_REGEX = /^(\+?92|0)?[3]\d{9}$/;
@@ -53,8 +54,13 @@ const CustomersPage = () => {
     id: null,
     name: "",
   });
+  const [measureModal, setMeasureModal] = useState({
+    open: false,
+    mode: "add",
+    customer: null,
+  });
+  const [measureForm, setMeasureForm] = useState(initialMeasurementState);
 
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data, isLoading } = useGetAllCustomers();
 
@@ -137,6 +143,14 @@ const CustomersPage = () => {
     });
     setErrors({});
     setFormModalOpen(true);
+  };
+
+  const openMeasureModal = (customer, mode) => {
+    setMeasureModal({ open: true, mode, customer });
+  };
+
+  const closeMeasureModal = () => {
+    setMeasureModal({ open: false, mode: "add", customer: null });
   };
 
   const summaryStats = useMemo(() => {
@@ -268,6 +282,25 @@ const CustomersPage = () => {
         ),
     },
     {
+      title: "Orders",
+      key: "orders",
+      sorter: (a, b) => (a.orders?.length || 0) - (b.orders?.length || 0),
+      render: (_, record) => {
+        const count = record.orders?.length || 0;
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              count > 0
+                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+            }`}
+          >
+            {count > 0 ? `${count} Order${count > 1 ? "s" : ""}` : "No Orders"}
+          </span>
+        );
+      },
+    },
+    {
       title: "Updated At",
       dataIndex: "updatedAt",
       key: "updatedAt",
@@ -290,7 +323,7 @@ const CustomersPage = () => {
 
           {!record.measurement && (
             <button
-              onClick={() => navigate(`/measurements/add/${record._id}`)}
+              onClick={() => openMeasureModal(record, "add")}
               className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-[#1a1129] border-[#3b1f5a] text-orange-500 hover:enabled:text-orange-400 cursor-pointer"
               title="Add Measurement"
             >
@@ -301,14 +334,14 @@ const CustomersPage = () => {
           {record.measurement && (
             <>
               <button
-                onClick={() => navigate(`/measurements/edit/${record._id}`)}
+                onClick={() => openMeasureModal(record, "edit")}
                 className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-[#1a1129] border-[#3b1f5a] text-yellow-500 hover:enabled:text-yellow-400 cursor-pointer"
                 title="Edit Measurement"
               >
-                <ClipboardList size={16} />
+                <Ruler size={16} />
               </button>
               <button
-                onClick={() => navigate(`/measurements/${record._id}`)}
+                onClick={() => openMeasureModal(record, "view")}
                 className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-[#1a1129] border-[#3b1f5a] text-blue-500 hover:enabled:text-blue-400 cursor-pointer"
                 title="View Measurement"
               >
@@ -445,6 +478,15 @@ const CustomersPage = () => {
           </form>
         </div>
       </CustomModal>
+
+      <MeasurementModal
+        open={measureModal.open}
+        onClose={closeMeasureModal}
+        mode={measureModal.mode}
+        customer={measureModal.customer}
+        measureForm={measureForm}
+        setMeasureForm={setMeasureForm}
+      />
 
       <DeleteConfirmModal
         isOpen={deleteModal.open}

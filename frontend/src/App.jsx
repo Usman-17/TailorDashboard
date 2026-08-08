@@ -1,3 +1,6 @@
+import { Loader } from "lucide-react";
+import { Toaster } from "react-hot-toast";
+import { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -5,20 +8,18 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
-import useGetAuth from "./hooks/useGetAuth";
+
 import "react-loading-skeleton/dist/skeleton.css";
-import { lazy, Suspense, useEffect } from "react";
+
+import useGetAuth from "./hooks/useGetAuth";
+
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import AdminLayout from "./layout/AdminLayout";
 import TailorLayout from "./layout/Layout";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { Loader } from "lucide-react";
 
 import DashboardPage from "./pages/DashboardPage";
 import CustomersPage from "./pages/Tailor/CustomersPage/CustomersPage";
-import AddMeasurementPage from "./pages/AddMeasurementPage";
-import MeasurementPage from "./pages/MeasurementPage";
 import AddOrdersPage from "./pages/AddOrdersPage";
 import OrdersListingPage from "./pages/OrdersListingPage";
 import SalePage from "./pages/SalePage";
@@ -33,6 +34,7 @@ const ShopPage = lazy(() => import("./pages/Admin/ShopPage/ShopPage"));
 const ManageUsersPage = lazy(() => import("./pages/Admin/ManageUsersPage"));
 const SettingsPage = lazy(() => import("./pages/Admin/SettingsPage"));
 const ReportsPage = lazy(() => import("./pages/Admin/ReportsPage"));
+// Imports End-----
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -109,18 +111,6 @@ const App = () => {
           >
             <Route index element={<DashboardPage />} />
             <Route path="customers" element={<CustomersPage />} />
-            <Route
-              path="measurements/add/:customerId"
-              element={<AddMeasurementPage />}
-            />
-            <Route
-              path="measurements/edit/:customerId"
-              element={<AddMeasurementPage />}
-            />
-            <Route
-              path="measurements/:customerId"
-              element={<MeasurementPage />}
-            />
             <Route path="orders/add" element={<AddOrdersPage />} />
             <Route path="orders/manage" element={<OrdersListingPage />} />
             <Route path="sale" element={<SalePage />} />

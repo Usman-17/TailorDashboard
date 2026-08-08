@@ -63,7 +63,7 @@ const CustomInput = ({
             name={id}
             rows={rows || 4}
             spellCheck={spellCheck}
-            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3.5"} pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none resize-none
+            className={`${inputClassName} w-full ${Icon ? "pl-10" : "px-3.5"} pr-3.5 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none resize-none
           ${
             error
               ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.2)]"

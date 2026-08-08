@@ -59,7 +59,7 @@ const FullScreenModal = ({
             exit={{ opacity: 0, x: 20 }}
           >
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-6 py-4.5 bg-white dark:bg-[#120e24] z-10 shrink-0 border-b border-gray-200 dark:border-purple-500/20 shadow-xs">
+              <div className="flex items-center justify-between px-6 py-2.5 bg-white dark:bg-[#120e24] z-10 shrink-0 border-b border-gray-200 dark:border-purple-500/20 shadow-xs">
                 <div>
                   <h2 className="text-xl font-extrabold text-gray-900 dark:text-white tracking-tight">{title}</h2>
                   {subtitle && (
