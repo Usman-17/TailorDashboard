@@ -23,18 +23,20 @@ const measurementSchema = new mongoose.Schema(
     hip: { type: Number, required: true, min: 0 },
     neck: { type: Number, required: true, min: 0 },
     sleeveLength: { type: Number, required: true, min: 0 },
-    wrist: { type: Number, required: true, min: 0 },
+    armHole: { type: Number, required: true, min: 0 },
     bicep: { type: Number, required: true, min: 0 },
+    cuff: { type: Number, required: true, min: 0 },
 
     // Shalwar
     shalwarLength: { type: Number, required: true, min: 0 },
+    shalwarWaist: { type: Number, required: true, min: 0 },
+    shalwarHip: { type: Number, required: true, min: 0 },
     thigh: { type: Number, required: true, min: 0 },
     knee: { type: Number, required: true, min: 0 },
     bottom: { type: Number, required: true, min: 0 },
-    pantWaist: { type: Number, required: true, min: 0 },
 
-    // Extra
-    extraNotes: {
+    // Remarks
+    remarks: {
       type: String,
       trim: true,
       maxlength: 500,

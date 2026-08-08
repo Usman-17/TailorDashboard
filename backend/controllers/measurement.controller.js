@@ -9,13 +9,15 @@ const MEASUREMENT_FIELDS = [
   "hip",
   "neck",
   "sleeveLength",
-  "wrist",
+  "armHole",
   "bicep",
+  "cuff",
   "shalwarLength",
+  "shalwarWaist",
+  "shalwarHip",
   "thigh",
   "knee",
   "bottom",
-  "pantWaist",
 ];
 
 // GET /api/measurements/all
@@ -128,8 +130,8 @@ export const addMeasurement = async (req, res) => {
       }
       measurementData[field] = value;
     }
-    if (req.body.extraNotes !== undefined) {
-      measurementData.extraNotes = req.body.extraNotes;
+    if (req.body.remarks !== undefined) {
+      measurementData.remarks = req.body.remarks;
     }
 
     const measurement = await Measurement.create(measurementData);
@@ -146,7 +148,7 @@ export const addMeasurement = async (req, res) => {
         .status(409)
         .json({ error: "Measurement already exists for this customer" });
     }
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -176,8 +178,8 @@ export const updateMeasurement = async (req, res) => {
       }
     }
 
-    if (req.body.extraNotes !== undefined) {
-      measurement.extraNotes = req.body.extraNotes;
+    if (req.body.remarks !== undefined) {
+      measurement.remarks = req.body.remarks;
     }
 
     const updated = await measurement.save();
