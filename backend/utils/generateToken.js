@@ -5,37 +5,33 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
 export const generateAccessToken = (userId, role, shopId) => {
-  return jwt.sign(
-    { userId, role, shopId },
-    process.env.JWT_SECRET,
-    { expiresIn: ACCESS_TOKEN_EXPIRY }
-  );
+  return jwt.sign({ userId, role, shopId }, process.env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
 };
 
 export const generateRefreshToken = (userId) => {
-  return jwt.sign(
-    { userId },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: REFRESH_TOKEN_EXPIRY }
-  );
+  return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
+  });
 };
 
-export const setAccessCookie = (token, res) => {
+export const setAccessCookie = (token, res, rememberMe = false) => {
   res.cookie("access_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 8 * 60 * 60 * 1000,
+    maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 8 * 60 * 60 * 1000,
   });
 };
 
-export const setRefreshCookie = (token, res) => {
+export const setRefreshCookie = (token, res, rememberMe = false) => {
   res.cookie("refresh_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/api/auth/refresh",
-    maxAge: REFRESH_TOKEN_MAX_AGE,
+    maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : REFRESH_TOKEN_MAX_AGE,
   });
 };
 

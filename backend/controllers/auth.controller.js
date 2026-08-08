@@ -16,16 +16,16 @@ import { sendEmail } from "../utils/sendEmail.js";
 const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || "5");
 const LOCK_TIME = parseInt(process.env.LOCK_TIME || "900000");
 
-const signTokens = (user, res, req) => {
+const signTokens = (user, res, req, rememberMe = false) => {
   const accessToken = generateAccessToken(
     user._id,
     user.role,
-    user.shop || null
+    user.shop || null,
   );
   const refreshToken = generateRefreshToken(user._id);
 
-  setAccessCookie(accessToken, res);
-  setRefreshCookie(refreshToken, res);
+  setAccessCookie(accessToken, res, rememberMe);
+  setRefreshCookie(refreshToken, res, rememberMe);
 
   user.addRefreshToken(refreshToken, req);
   user.lastLogin = new Date();
@@ -53,7 +53,10 @@ export const seedSuperAdmin = async (req, res) => {
 
     if (!email || !password) {
       if (res) {
-        return res.status(400).json({ error: "SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD must be set in .env" });
+        return res.status(400).json({
+          error:
+            "SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD must be set in .env",
+        });
       }
       return null;
     }
@@ -122,9 +125,7 @@ export const createSuperAdmin = async (req, res) => {
     }
 
     if (mobile.length !== 11) {
-      return res
-        .status(400)
-        .json({ error: "Mobile number must be 11 digits" });
+      return res.status(400).json({ error: "Mobile number must be 11 digits" });
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
@@ -171,7 +172,9 @@ export const updateUserStatus = async (req, res) => {
     const { isActive } = req.body;
 
     if (id === req.user._id.toString()) {
-      return res.status(400).json({ error: "You cannot change your own status" });
+      return res
+        .status(400)
+        .json({ error: "You cannot change your own status" });
     }
 
     const user = await User.findById(id);
@@ -228,9 +231,7 @@ export const createOwner = async (req, res) => {
     }
 
     if (mobile.length !== 11) {
-      return res
-        .status(400)
-        .json({ error: "Mobile number must be 11 digits" });
+      return res.status(400).json({ error: "Mobile number must be 11 digits" });
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
@@ -269,7 +270,7 @@ export const createOwner = async (req, res) => {
             role: ROLES.OWNER,
           },
         ],
-        { session }
+        { session },
       );
 
       const user = users[0];
@@ -283,7 +284,7 @@ export const createOwner = async (req, res) => {
             email: shopEmail || `${email.split("@")[0]}-shop@tailor.local`,
           },
         ],
-        { session }
+        { session },
       );
 
       user.shop = shops[0]._id;
@@ -375,16 +376,14 @@ export const createStaff = async (req, res) => {
 // POST /api/auth/login
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({ error: "Email and password are required" });
+      return res.status(400).json({ error: "Email and password are required" });
     }
 
     const user = await User.findOne({ email }).select(
-      "+password +loginAttempts +lockUntil"
+      "+password +loginAttempts +lockUntil",
     );
 
     if (!user) {
@@ -418,7 +417,7 @@ export const login = async (req, res) => {
     user.loginAttempts = 0;
     user.lockUntil = undefined;
 
-    signTokens(user, res, req);
+    signTokens(user, res, req, rememberMe);
     await user.save();
 
     res.status(200).json({
@@ -448,7 +447,7 @@ export const refreshTokenController = async (req, res) => {
     }
 
     const user = await User.findById(decoded.userId).select(
-      "+loginAttempts +lockUntil"
+      "+loginAttempts +lockUntil",
     );
 
     if (!user) {
@@ -543,13 +542,11 @@ export const updateProfile = async (req, res) => {
     if (currentPassword && newPassword) {
       const isPasswordMatched = await bcrypt.compare(
         currentPassword,
-        user.password
+        user.password,
       );
 
       if (!isPasswordMatched) {
-        return res
-          .status(400)
-          .json({ error: "Current password is incorrect" });
+        return res.status(400).json({ error: "Current password is incorrect" });
       }
 
       if (newPassword.length < 8) {
