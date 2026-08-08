@@ -13,9 +13,9 @@ import useGetAllUsers from "../../hooks/useGetAllUsers";
 // Imports End-----
 
 const ROLE_BADGE = {
-  super_admin: "bg-red-100 text-red-700",
-  owner: "bg-blue-100 text-blue-700",
-  staff: "bg-green-100 text-green-700",
+  super_admin: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+  owner: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  staff: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
 };
 
 const ManageUsersPage = () => {
@@ -145,21 +145,29 @@ const ManageUsersPage = () => {
       dataIndex: "fullName",
       key: "fullName",
       sorter: (a, b) => (a.fullName || "").localeCompare(b.fullName || ""),
-      render: (v) => <span className="font-medium text-gray-900">{v}</span>,
+      render: (v) => (
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {v}
+        </span>
+      ),
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
       sorter: (a, b) => (a.email || "").localeCompare(b.email || ""),
-      render: (v) => <span className="text-gray-600">{v}</span>,
+      render: (v) => (
+        <span className="text-gray-600 dark:text-gray-400">{v}</span>
+      ),
     },
     {
       title: "Mobile",
       dataIndex: "mobile",
       key: "mobile",
       sorter: (a, b) => (a.mobile || "").localeCompare(b.mobile || ""),
-      render: (v) => <span className="text-gray-600">{v}</span>,
+      render: (v) => (
+        <span className="text-gray-600 dark:text-gray-400">{v}</span>
+      ),
     },
     {
       title: "Role",
@@ -169,7 +177,8 @@ const ManageUsersPage = () => {
       render: (v) => (
         <span
           className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${
-            ROLE_BADGE[v] || "bg-gray-100 text-gray-600"
+            ROLE_BADGE[v] ||
+            "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
           }`}
         >
           {v ? v.replace("_", " ") : "-"}
@@ -181,7 +190,9 @@ const ManageUsersPage = () => {
       dataIndex: "shop",
       key: "shop",
       sorter: (a, b) => (a.shop || "").localeCompare(b.shop || ""),
-      render: (v) => <span className="text-gray-600">{v}</span>,
+      render: (v) => (
+        <span className="text-gray-600 dark:text-gray-400">{v}</span>
+      ),
     },
     {
       title: "Status",
@@ -201,13 +212,15 @@ const ManageUsersPage = () => {
             title={`Click to toggle status (${v ? "Active" : "Inactive"})`}
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold cursor-pointer transition-all hover:scale-105 active:scale-95 border ${
               v
-                ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200"
-                : "bg-red-100 text-red-700 border-red-300 hover:bg-red-200"
+                ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700 dark:hover:bg-green-800/50"
+                : "bg-red-100 text-red-700 border-red-300 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700 dark:hover:bg-red-800/50"
             } ${isUpdatingThis ? "opacity-50 cursor-wait" : ""}`}
           >
             <span
               className={`size-1.5 rounded-full ${
-                v ? "bg-green-600 animate-pulse" : "bg-red-600"
+                v
+                  ? "bg-green-600 dark:bg-green-400 animate-pulse"
+                  : "bg-red-600 dark:bg-red-400"
               }`}
             />
             {isUpdatingThis ? "Updating..." : v ? "Active" : "Inactive"}

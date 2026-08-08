@@ -75,11 +75,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#111127] text-black dark:text-white">
       <div className="w-full max-w-md sm:p-6 p-4">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Welcome Back</h1>
-          <p className="text-base text-gray-500 px-4 sm:px-8">
+          <p className="text-base text-gray-500 dark:text-gray-400 px-4 sm:px-8">
             Sign in to your account to continue.
           </p>
         </div>
@@ -96,8 +96,10 @@ const LoginPage = () => {
               type="email"
               placeholder="m@example.com"
               autoComplete="email"
-              className={`border px-2 py-2 rounded text-black ${
-                errors.email ? "border-red-500" : "border-gray-300"
+              className={`h-10 px-3 rounded-lg text-sm border-[1.5px] transition-all duration-200 bg-white dark:bg-white text-gray-900 dark:text-gray-900 placeholder-gray-400 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none ${
+                errors.email
+                  ? "border-red-400 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+                  : "border-gray-300 hover:border-gray-400 focus:border-[var(--secondary-color)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
               }`}
               value={email}
               onChange={(e) => {
@@ -118,7 +120,7 @@ const LoginPage = () => {
               </label>
               <Link
                 to="/forgot-password"
-                className="ml-auto inline-block text-sm font-semibold hover:text-blue-700 hover:underline transition duration-75 ease-in-out"
+                className="ml-auto inline-block text-sm font-semibold hover:text-blue-700 dark:hover:text-blue-400 hover:underline transition duration-75 ease-in-out"
               >
                 Forgot password?
               </Link>
@@ -131,8 +133,10 @@ const LoginPage = () => {
                 type={isShow ? "text" : "password"}
                 placeholder="••••••••"
                 autoComplete="current-password"
-                className={`w-full border px-2 py-2 rounded text-black ${
-                  errors.password ? "border-red-500" : "border-gray-300"
+                className={`w-full h-10 px-3 pr-10 rounded-lg text-sm border-[1.5px] transition-all duration-200 bg-white dark:bg-white text-gray-900 dark:text-gray-900 placeholder-gray-400 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none ${
+                  errors.password
+                    ? "border-red-400 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+                    : "border-gray-300 hover:border-gray-400 focus:border-[var(--secondary-color)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
                 }`}
                 value={password}
                 onChange={(e) => {
@@ -147,7 +151,7 @@ const LoginPage = () => {
                   aria-label={isShow ? "Hide password" : "Show password"}
                   tabIndex={0}
                   onClick={() => setIsShow(!isShow)}
-                  className="absolute top-1/2 right-4 transform -translate-y-1/2 cursor-pointer text-black"
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700 transition"
                 >
                   {isShow ? <Eye size={18} /> : <EyeOff size={18} />}
                 </div>
@@ -162,10 +166,14 @@ const LoginPage = () => {
           <div className="mt-3">
             <button
               type="submit"
-              className="w-full bg-black text-white py-2.5 rounded hover:bg-gray-900 transition cursor-pointer select-none font-medium disabled:opacity-50"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-full transition cursor-pointer select-none font-medium disabled:opacity-50"
               disabled={isPending}
             >
-              {isPending ? <LoadingSpinner content="Signing in..." /> : "Sign In"}
+              {isPending ? (
+                <LoadingSpinner content="Signing in..." />
+              ) : (
+                "Sign In"
+              )}
             </button>
           </div>
         </form>

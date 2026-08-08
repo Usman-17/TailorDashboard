@@ -32,11 +32,14 @@ import ReceivePaymentModal from "./ReceivePaymentModal";
 import PaymentHistoryModal from "./PaymentHistoryModal";
 
 const PLAN_BADGE = {
-  monthly: "bg-blue-100 text-blue-700",
-  quarterly: "bg-green-100 text-green-700",
-  "half-yearly": "bg-purple-100 text-purple-700",
-  yearly: "bg-orange-100 text-orange-700",
-  custom: "bg-gray-100 text-gray-700",
+  monthly: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  quarterly:
+    "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  "half-yearly":
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  yearly:
+    "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+  custom: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 };
 
 const INITIAL_FORM = {
@@ -51,7 +54,6 @@ const INITIAL_FORM = {
   subscriptionExpiry: "",
   isActive: "active",
   amountReceived: 0,
-  notes: "",
   address: {
     street: "",
     city: "",
@@ -320,8 +322,19 @@ const ShopPage = () => {
     if (!validate()) return;
     if (editingShop) {
       // Strip subscription fields — those are managed via Receive Payment
-      const { subscriptionPlan: _sp, subscriptionAmount: _sa, subscriptionDuration: _sd, subscriptionStart: _ss, subscriptionExpiry: _se, amountReceived: _ar, ...editPayload } = form;
-      updateShop({ id: editingShop._id, data: { ...editPayload, logo: logoFile } });
+      const {
+        subscriptionPlan: _sp,
+        subscriptionAmount: _sa,
+        subscriptionDuration: _sd,
+        subscriptionStart: _ss,
+        subscriptionExpiry: _se,
+        amountReceived: _ar,
+        ...editPayload
+      } = form;
+      updateShop({
+        id: editingShop._id,
+        data: { ...editPayload, logo: logoFile },
+      });
     } else {
       createShop({ ...form, logo: logoFile });
     }
@@ -363,7 +376,6 @@ const ShopPage = () => {
               : "",
             isActive: data.isActive || "active",
             amountReceived: data.amountReceived || 0,
-            notes: data.notes || "",
             address: {
               street: data.address?.street || "",
               city: data.address?.city || "",
@@ -399,7 +411,11 @@ const ShopPage = () => {
       dataIndex: "name",
       key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
-      render: (v) => <span className="font-medium text-gray-900">{v}</span>,
+      render: (v) => (
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {v}
+        </span>
+      ),
     },
     {
       title: "Owner",
@@ -450,21 +466,29 @@ const ShopPage = () => {
       sorter: (a, b) => (a.isActive || "").localeCompare(b.isActive || ""),
       render: (v, record) => {
         const colors = {
-          active: "bg-green-100 text-green-700",
-          expired: "bg-yellow-100 text-yellow-700",
-          suspended: "bg-red-100 text-red-700",
+          active:
+            "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+          expired:
+            "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+          suspended:
+            "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
         };
         const now = moment();
         const expiryDate = record.rawExpiry ? moment(record.rawExpiry) : null;
-        const isPastExpiry = expiryDate ? expiryDate.isBefore(now, "day") : false;
-        const daysUntilExpiry = expiryDate ? expiryDate.diff(now, "days") : null;
+        const isPastExpiry = expiryDate
+          ? expiryDate.isBefore(now, "day")
+          : false;
+        const daysUntilExpiry = expiryDate
+          ? expiryDate.diff(now, "days")
+          : null;
 
         let statusText = v ? v.charAt(0).toUpperCase() + v.slice(1) : "Active";
         let colorClass = colors[v] || colors.active;
 
         if (v === "active" && isPastExpiry) {
           statusText = "Expired";
-          colorClass = "bg-yellow-100 text-yellow-700";
+          colorClass =
+            "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300";
         } else if (
           v === "active" &&
           daysUntilExpiry !== null &&
@@ -472,7 +496,8 @@ const ShopPage = () => {
           daysUntilExpiry <= 7
         ) {
           statusText = `Expiring (${daysUntilExpiry}d)`;
-          colorClass = "bg-amber-100 text-amber-700 font-semibold";
+          colorClass =
+            "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 font-semibold";
         }
 
         return (
@@ -545,7 +570,7 @@ const ShopPage = () => {
             isSelected={statusFilter === card.id}
             onClick={() =>
               setStatusFilter(
-                statusFilter === card.id && card.id !== "all" ? "all" : card.id
+                statusFilter === card.id && card.id !== "all" ? "all" : card.id,
               )
             }
           />
@@ -664,137 +689,141 @@ const ShopPage = () => {
               </h3>
             </div>
             {!editingShop && (
-            <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <CustomSelect
-                id="subscriptionPlan"
-                label="Subscription Plan"
-                required
-                value={form.subscriptionPlan}
-                onChange={(val) => {
-                  const expiry = getExpiryDate(
-                    form.subscriptionStart,
-                    val,
-                    form.subscriptionDuration,
-                  );
-                  setForm({
-                    ...form,
-                    subscriptionPlan: val,
-                    subscriptionAmount:
-                      PLAN_PRICES[val] || form.subscriptionAmount,
-                    subscriptionExpiry: expiry,
-                  });
-                }}
-                options={[
-                  { label: "Monthly", value: "monthly" },
-                  { label: "Quarterly (3 Months)", value: "quarterly" },
-                  { label: "Half Yearly (6 Months)", value: "half-yearly" },
-                  { label: "Yearly (12 Months)", value: "yearly" },
-                  { label: "Custom", value: "custom" },
-                ]}
-                allowClear={false}
-              />
-              {form.subscriptionPlan === "custom" ? (
-                <CustomInput
-                  id="subscriptionDuration"
-                  label="Duration (Months)"
-                  type="number"
-                  required
-                  value={form.subscriptionDuration}
-                  onChange={(e) => {
-                    const duration = e.target.value;
-                    const expiry = getExpiryDate(
-                      form.subscriptionStart,
-                      "custom",
-                      duration,
-                    );
-                    setForm({
-                      ...form,
-                      subscriptionDuration: duration,
-                      subscriptionExpiry: expiry,
-                    });
-                  }}
-                  placeholder="e.g. 5"
-                />
-              ) : (
-                <CustomInput
-                  id="subscriptionAmount"
-                  label="Subscription Amount (Rs.)"
-                  type="number"
-                  required
-                  value={form.subscriptionAmount}
-                  onChange={(e) =>
-                    setForm({ ...form, subscriptionAmount: e.target.value })
-                  }
-                  placeholder="1000"
-                />
-              )}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <CustomDatePicker
-                id="subscriptionStart"
-                label="Start Date"
-                required
-                value={
-                  form.subscriptionStart ? dayjs(form.subscriptionStart) : null
-                }
-                onChange={(date) => {
-                  const start = date ? date.format("YYYY-MM-DD") : "";
-                  const expiry = getExpiryDate(
-                    start,
-                    form.subscriptionPlan,
-                    form.subscriptionDuration,
-                  );
-                  setForm({
-                    ...form,
-                    subscriptionStart: start,
-                    subscriptionExpiry: expiry,
-                  });
-                }}
-              />
-              <CustomDatePicker
-                id="subscriptionExpiry"
-                label="Expiry Date (Auto)"
-                value={
-                  form.subscriptionExpiry
-                    ? dayjs(form.subscriptionExpiry)
-                    : null
-                }
-                onChange={(date) => {
-                  setForm({
-                    ...form,
-                    subscriptionExpiry: date ? date.format("YYYY-MM-DD") : "",
-                  });
-                }}
-              />
-            </div>
-            </>
-            )}
-            {!editingShop && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-              <CustomInput
-                id="amountReceived"
-                label="Amount Received (Rs.)"
-                type="number"
-                value={form.amountReceived}
-                onChange={(e) =>
-                  setForm({ ...form, amountReceived: e.target.value })
-                }
-                placeholder="0"
-              />
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">
-                  Remaining (Rs.)
-                </label>
-                <div className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 bg-gray-50">
-                  {Math.max(
-                    0,
-                    (Number(form.subscriptionAmount) || 0) -
-                      (Number(form.amountReceived) || 0),
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <CustomSelect
+                    id="subscriptionPlan"
+                    label="Subscription Plan"
+                    required
+                    value={form.subscriptionPlan}
+                    onChange={(val) => {
+                      const expiry = getExpiryDate(
+                        form.subscriptionStart,
+                        val,
+                        form.subscriptionDuration,
+                      );
+                      setForm({
+                        ...form,
+                        subscriptionPlan: val,
+                        subscriptionAmount:
+                          PLAN_PRICES[val] || form.subscriptionAmount,
+                        subscriptionExpiry: expiry,
+                      });
+                    }}
+                    options={[
+                      { label: "Monthly", value: "monthly" },
+                      { label: "Quarterly (3 Months)", value: "quarterly" },
+                      { label: "Half Yearly (6 Months)", value: "half-yearly" },
+                      { label: "Yearly (12 Months)", value: "yearly" },
+                      { label: "Custom", value: "custom" },
+                    ]}
+                    allowClear={false}
+                  />
+                  {form.subscriptionPlan === "custom" ? (
+                    <CustomInput
+                      id="subscriptionDuration"
+                      label="Duration (Months)"
+                      type="number"
+                      required
+                      value={form.subscriptionDuration}
+                      onChange={(e) => {
+                        const duration = e.target.value;
+                        const expiry = getExpiryDate(
+                          form.subscriptionStart,
+                          "custom",
+                          duration,
+                        );
+                        setForm({
+                          ...form,
+                          subscriptionDuration: duration,
+                          subscriptionExpiry: expiry,
+                        });
+                      }}
+                      placeholder="e.g. 5"
+                    />
+                  ) : (
+                    <CustomInput
+                      id="subscriptionAmount"
+                      label="Subscription Amount (Rs.)"
+                      type="number"
+                      required
+                      value={form.subscriptionAmount}
+                      onChange={(e) =>
+                        setForm({ ...form, subscriptionAmount: e.target.value })
+                      }
+                      placeholder="1000"
+                    />
                   )}
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                  <CustomDatePicker
+                    id="subscriptionStart"
+                    label="Start Date"
+                    required
+                    value={
+                      form.subscriptionStart
+                        ? dayjs(form.subscriptionStart)
+                        : null
+                    }
+                    onChange={(date) => {
+                      const start = date ? date.format("YYYY-MM-DD") : "";
+                      const expiry = getExpiryDate(
+                        start,
+                        form.subscriptionPlan,
+                        form.subscriptionDuration,
+                      );
+                      setForm({
+                        ...form,
+                        subscriptionStart: start,
+                        subscriptionExpiry: expiry,
+                      });
+                    }}
+                  />
+                  <CustomDatePicker
+                    id="subscriptionExpiry"
+                    label="Expiry Date (Auto)"
+                    value={
+                      form.subscriptionExpiry
+                        ? dayjs(form.subscriptionExpiry)
+                        : null
+                    }
+                    onChange={(date) => {
+                      setForm({
+                        ...form,
+                        subscriptionExpiry: date
+                          ? date.format("YYYY-MM-DD")
+                          : "",
+                      });
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            {!editingShop && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <CustomInput
+                  id="amountReceived"
+                  label="Amount Received (Rs.)"
+                  type="number"
+                  value={form.amountReceived}
+                  onChange={(e) =>
+                    setForm({ ...form, amountReceived: e.target.value })
+                  }
+                  placeholder="0"
+                />
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-gray-700">
+                    Remaining (Rs.)
+                  </label>
+                  <div className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 bg-gray-50">
+                    {Math.max(
+                      0,
+                      (Number(form.subscriptionAmount) || 0) -
+                        (Number(form.amountReceived) || 0),
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
             )}
             <div className="mt-4">
               <CustomSelect
