@@ -29,7 +29,7 @@ const paymentEntrySchema = new mongoose.Schema(
     },
     receivedAt: { type: Date, default: Date.now },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const orderItemSchema = new mongoose.Schema(
@@ -39,12 +39,20 @@ const orderItemSchema = new mongoose.Schema(
       required: [true, "Suit type is required"],
       trim: true,
     },
+    dressType: { type: String, trim: true, default: "" },
+    lowerType: { type: String, trim: true, default: "" },
+    collarType: { type: String, trim: true, default: "" },
+    collarDetail: { type: String, trim: true, default: "" },
+    cuffType: { type: String, trim: true, default: "" },
+    pocket: { type: String, trim: true, default: "" },
+    fabric: { type: String, trim: true, default: "" },
+    color: { type: String, trim: true, default: "" },
     description: { type: String, trim: true, default: "" },
     quantity: { type: Number, required: true, min: 1, default: 1 },
     unitPrice: { type: Number, required: true, min: 0 },
     totalPrice: { type: Number, required: true, min: 0 },
   },
-  { _id: true }
+  { _id: true },
 );
 
 const orderSchema = new mongoose.Schema(
@@ -63,7 +71,7 @@ const orderSchema = new mongoose.Schema(
 
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
+      ref: "TailorCustomer",
       required: [true, "Customer is required"],
     },
 
@@ -154,7 +162,7 @@ const orderSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 orderSchema.index({ shopId: 1, orderNumber: 1 }, { unique: true });
@@ -188,7 +196,7 @@ orderSchema.pre("aggregate", function () {
     (stage) =>
       stage.$match &&
       (stage.$match.isDeleted === false ||
-        stage.$match.isDeleted === { $ne: true })
+        stage.$match.isDeleted === { $ne: true }),
   );
   if (!hasDeletedMatch) {
     this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
@@ -196,10 +204,7 @@ orderSchema.pre("aggregate", function () {
 });
 
 orderSchema.methods.calculateTotals = function () {
-  this.totalAmount = this.items.reduce(
-    (sum, item) => sum + item.totalPrice,
-    0
-  );
+  this.totalAmount = this.items.reduce((sum, item) => sum + item.totalPrice, 0);
   this.remainingBalance = Math.max(0, this.totalAmount - this.advancePaid);
   this.isPaid = this.remainingBalance <= 0;
 };

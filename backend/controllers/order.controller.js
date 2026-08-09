@@ -1,5 +1,5 @@
 import Order, { ORDER_STATUS, PAYMENT_METHOD } from "../models/order.model.js";
-import Customer from "../models/customer.model.js";
+import Customer from "../models/tailorCustomer.model.js";
 import Counter from "../models/counter.model.js";
 import Shop from "../models/shop.model.js";
 import { ROLES } from "../models/user.model.js";
@@ -106,7 +106,7 @@ export const getOrder = async (req, res) => {
     const { shopId } = req;
 
     const order = await Order.findOne({ _id: id, shopId })
-      .populate("customer", "name phone customerId email address")
+      .populate("customer", "name phone customerId")
       .populate("measurement")
       .populate("createdBy", "fullName")
       .populate("statusHistory.changedBy", "fullName")
@@ -123,6 +123,20 @@ export const getOrder = async (req, res) => {
   }
 };
 
+// GET /api/orders/next-number
+export const getNextOrderNumber = async (req, res) => {
+  try {
+    const { shopId } = req;
+    const counter = await Counter.findOne({ shopId, name: "order" });
+    const currentVal = counter ? counter.value : 0;
+    const nextNum = `ORD-${String(currentVal + 1).padStart(4, "0")}`;
+    return res.status(200).json({ nextOrderNumber: nextNum });
+  } catch (error) {
+    console.error("Error in getNextOrderNumber:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 // POST /api/orders/add
 export const addOrder = async (req, res) => {
   try {
@@ -135,6 +149,7 @@ export const addOrder = async (req, res) => {
       advancePaid = 0,
       priority = "normal",
       notes = "",
+      orderNumber: requestedOrderNumber,
     } = req.body;
 
     if (!customer || !deliveryDate || !items || !items.length) {
@@ -149,12 +164,24 @@ export const addOrder = async (req, res) => {
     }
 
     const processedItems = items.map((item) => {
-      if (!item.suitType || !item.unitPrice) {
+      if (
+        !item.suitType ||
+        item.unitPrice === undefined ||
+        item.unitPrice === null
+      ) {
         throw new Error("Each item must have suitType and unitPrice");
       }
       const qty = item.quantity || 1;
       return {
         suitType: item.suitType,
+        dressType: item.dressType || item.suitType || "",
+        lowerType: item.lowerType || "",
+        collarType: item.collarType || "",
+        collarDetail: item.collarDetail || "",
+        cuffType: item.cuffType || "",
+        pocket: item.pocket || "",
+        fabric: item.fabric || "",
+        color: item.color || "",
         description: item.description || "",
         quantity: qty,
         unitPrice: item.unitPrice,
@@ -164,7 +191,7 @@ export const addOrder = async (req, res) => {
 
     const totalAmount = processedItems.reduce(
       (sum, item) => sum + item.totalPrice,
-      0
+      0,
     );
 
     if (advancePaid < 0 || advancePaid > totalAmount) {
@@ -173,8 +200,11 @@ export const addOrder = async (req, res) => {
       });
     }
 
-    const orderNum = await Counter.getNextValue(shopId, "order");
-    const orderNumber = `ORD-${String(orderNum).padStart(4, "0")}`;
+    let orderNumber = requestedOrderNumber?.trim();
+    if (!orderNumber) {
+      const orderNum = await Counter.getNextValue(shopId, "order");
+      orderNumber = `ORD-${String(orderNum).padStart(4, "0")}`;
+    }
 
     const order = await Order.create({
       orderNumber,
@@ -227,7 +257,9 @@ export const addOrder = async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({ error: "Order number conflict" });
     }
-    return res.status(500).json({ error: error.message || "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ error: error.message || "Internal Server Error" });
   }
 };
 
@@ -328,7 +360,9 @@ export const addPayment = async (req, res) => {
     const { amount, method = "cash", note = "" } = req.body;
 
     if (!amount || amount <= 0) {
-      return res.status(400).json({ error: "Valid payment amount is required" });
+      return res
+        .status(400)
+        .json({ error: "Valid payment amount is required" });
     }
 
     if (!Object.values(PAYMENT_METHOD).includes(method)) {
@@ -406,7 +440,7 @@ export const generateInvoice = async (req, res) => {
     const { shopId } = req;
 
     const order = await Order.findOne({ _id: id, shopId })
-      .populate("customer", "name phone customerId email address")
+      .populate("customer", "name phone customerId")
       .populate("measurement")
       .populate("createdBy", "fullName");
 
@@ -415,7 +449,7 @@ export const generateInvoice = async (req, res) => {
     }
 
     const shop = await Shop.findById(shopId).select(
-      "name address phone email settings"
+      "name address phone email settings",
     );
 
     const invoice = {
@@ -433,8 +467,8 @@ export const generateInvoice = async (req, res) => {
         name: order.customer.name,
         phone: order.customer.phone,
         customerId: order.customer.customerId,
-        email: order.customer.email,
-        address: order.customer.address,
+        email: order.customer.email || "",
+        address: order.customer.address || null,
       },
       items: order.items.map((item) => ({
         description: `${item.suitType}${item.description ? ` - ${item.description}` : ""}`,
@@ -547,9 +581,7 @@ export const getSalesByDateRange = async (req, res) => {
     const { from, to } = req.query;
 
     if (!from || !to) {
-      return res
-        .status(400)
-        .json({ error: "From and to dates are required" });
+      return res.status(400).json({ error: "From and to dates are required" });
     }
 
     const fromDate = new Date(from);
@@ -565,11 +597,11 @@ export const getSalesByDateRange = async (req, res) => {
 
     const totalRevenue = orders.reduce(
       (sum, order) => sum + order.totalAmount,
-      0
+      0,
     );
     const totalCollected = orders.reduce(
       (sum, order) => sum + order.advancePaid,
-      0
+      0,
     );
 
     return res.status(200).json({

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Order, { ORDER_STATUS } from "../models/order.model.js";
-import Customer from "../models/customer.model.js";
+import Customer from "../models/tailorCustomer.model.js";
 import Shop from "../models/shop.model.js";
 import User from "../models/user.model.js";
 import Expense from "../models/expense.model.js";

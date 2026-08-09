@@ -1,4 +1,5 @@
 import SuitType from "../models/suitType.model.js";
+import Order from "../models/order.model.js";
 
 // GET /api/suit-types/all
 export const getAllSuitTypes = async (req, res) => {
@@ -136,6 +137,13 @@ export const deleteSuitType = async (req, res) => {
   try {
     const { id } = req.params;
     const { shopId } = req;
+
+    const orderCount = await Order.countDocuments({ shopId, suitType: id, isDeleted: { $ne: true } });
+    if (orderCount > 0) {
+      return res.status(400).json({
+        error: `Cannot delete. This suit type is used in ${orderCount} order${orderCount > 1 ? "s" : ""}.`,
+      });
+    }
 
     const suitType = await SuitType.findOneAndDelete({ _id: id, shopId });
     if (!suitType) {

@@ -11,7 +11,7 @@ const measurementSchema = new mongoose.Schema(
 
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Customer",
+      ref: "TailorCustomer",
       required: [true, "Customer is required"],
     },
 

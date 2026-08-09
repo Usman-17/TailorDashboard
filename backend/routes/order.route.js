@@ -15,6 +15,7 @@ import {
   generateInvoice,
   getDashboardStats,
   getSalesByDateRange,
+  getNextOrderNumber,
 } from "../controllers/order.controller.js";
 
 router.use(protectRoute, attachTenantContext);
@@ -23,6 +24,7 @@ router.get("/all", getAllOrders);
 router.get("/dashboard", getDashboardStats);
 router.get("/sales", getSalesByDateRange);
 router.get("/invoice/:id", generateInvoice);
+router.get("/next-number", getNextOrderNumber);
 router.get("/:id", getOrder);
 
 router.post("/add", addOrder);
