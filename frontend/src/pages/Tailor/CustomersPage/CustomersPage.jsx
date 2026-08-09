@@ -9,7 +9,9 @@ import {
   UserCheck,
   UserPlus,
   Eye,
+  Trash2,
   X,
+  ShoppingBag,
 } from "lucide-react";
 
 import CustomTable from "../../../components/CustomTable";
@@ -25,6 +27,7 @@ import SectionHeading from "../../../components/SectionHeading";
 import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 
 import MeasurementModal from "./MeasurementModal";
+import BookOrderModal from "./BookOrderModal";
 import { initialMeasurementState } from "./measurementFields";
 // Imports End----
 
@@ -60,6 +63,18 @@ const CustomersPage = () => {
     customer: null,
   });
   const [measureForm, setMeasureForm] = useState(initialMeasurementState);
+  const [bookOrderModal, setBookOrderModal] = useState({
+    open: false,
+    customer: null,
+  });
+
+  const openBookOrderModal = (customer) => {
+    setBookOrderModal({ open: true, customer });
+  };
+
+  const closeBookOrderModal = () => {
+    setBookOrderModal({ open: false, customer: null });
+  };
 
   const queryClient = useQueryClient();
   const { data, isLoading } = useGetAllCustomers();
@@ -270,10 +285,14 @@ const CustomersPage = () => {
       sorter: (a, b) => (a.measurement ? 1 : 0) - (b.measurement ? 1 : 0),
       render: (_, record) =>
         record.measurement ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-0.5 text-xs font-semibold">
+          <button
+            onClick={() => openMeasureModal(record, "view")}
+            className="inline-flex items-center gap-1.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors"
+            title="View Measurement"
+          >
             <span className="size-1.5 rounded-full bg-green-500 dark:bg-green-400" />
             Available
-          </span>
+          </button>
         ) : (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 px-2.5 py-0.5 text-xs font-semibold">
             <span className="size-1.5 rounded-full bg-red-500 dark:bg-red-400" />
@@ -309,8 +328,10 @@ const CustomersPage = () => {
           <ActionButtons
             record={record}
             onEdit={(r) => openEdit(r)}
-            onDelete={(r) =>
-              setDeleteModal({ open: true, id: r._id, name: r.name })
+            onDelete={
+              (record.orders?.length || 0) === 0
+                ? (r) => setDeleteModal({ open: true, id: r._id, name: r.name })
+                : undefined
             }
           />
 
@@ -325,23 +346,21 @@ const CustomersPage = () => {
           )}
 
           {record.measurement && (
-            <>
-              <button
-                onClick={() => openMeasureModal(record, "edit")}
-                className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:text-yellow-400 cursor-pointer"
-                title="Edit Measurement"
-              >
-                <Ruler size={16} />
-              </button>
-              <button
-                onClick={() => openMeasureModal(record, "view")}
-                className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-blue-600 dark:text-blue-500 hover:bg-blue-50 dark:hover:text-blue-400 cursor-pointer"
-                title="View Measurement"
-              >
-                <Eye size={16} />
-              </button>
-            </>
+            <button
+              onClick={() => openMeasureModal(record, "edit")}
+              className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:text-yellow-400 cursor-pointer"
+              title="Edit Measurement"
+            >
+              <Ruler size={16} />
+            </button>
           )}
+          <button
+            onClick={() => openBookOrderModal(record)}
+            className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:text-purple-300 cursor-pointer"
+            title="Book Order"
+          >
+            <ShoppingBag size={16} />
+          </button>
         </div>
       ),
     },
@@ -479,6 +498,12 @@ const CustomersPage = () => {
         customer={measureModal.customer}
         measureForm={measureForm}
         setMeasureForm={setMeasureForm}
+      />
+
+      <BookOrderModal
+        open={bookOrderModal.open}
+        onClose={closeBookOrderModal}
+        customer={bookOrderModal.customer}
       />
 
       <DeleteConfirmModal

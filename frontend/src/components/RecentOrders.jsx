@@ -8,7 +8,7 @@ const RecentOrders = ({ orders = [] }) => {
         <h3 className="text-lg font-semibold text-gray-800">Recent Orders</h3>
 
         <Link
-          to="/orders/manage"
+          to="/orders"
           className="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
         >
           See all orders

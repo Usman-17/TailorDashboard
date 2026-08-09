@@ -1,186 +1,283 @@
+import { useState, useMemo } from "react";
+import moment from "moment";
+import toast from "react-hot-toast";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Ban, CheckCircle, Eye, Redo, Truck, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
 import SummaryCard from "../components/SummaryCard";
 import CustomButton from "../components/CustomButton";
 import SectionHeading from "../components/SectionHeading";
-
-import { toast } from "react-hot-toast";
+import CustomTable from "../components/CustomTable";
+import CustomSelect from "../components/CustomSelect";
+import useGlobalFilter from "../hooks/useGlobalFilter";
 import { useGetAllOrders } from "../hooks/useGetAllOrders";
-import { Ban, CheckCircle, Redo, Truck, Users } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-// Imports End
+
+const STATUS_COLORS = {
+  pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
+  "in progress": "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  ready: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+  delivered: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
+};
+
+const STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "in progress", label: "In Progress" },
+  { value: "ready", label: "Ready" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 const OrdersListingPage = () => {
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { orders = [] } = useGetAllOrders();
+  const { orders, isLoading } = useGetAllOrders();
 
-  const totalOrders = orders.length;
-  const deliveredOrders = orders.filter((o) => o.status === "delivered").length;
-  const cancelledOrders = orders.filter((o) => o.status === "cancelled").length;
-  const pendingOrders = orders.filter(
-    (o) => !["delivered", "cancelled"].includes(o.status)
-  ).length;
+  // Summary stats
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const delivered = orders.filter((o) => o.status === "delivered").length;
+    const cancelled = orders.filter((o) => o.status === "cancelled").length;
+    const pending = orders.filter(
+      (o) => !["delivered", "cancelled"].includes(o.status)
+    ).length;
+    return { total, delivered, cancelled, pending };
+  }, [orders]);
 
-  //   update Order Status
+  const statCards = [
+    { id: "all", title: "Total Orders", count: stats.total, icon: Users, color: "#3B82F6" },
+    { id: "delivered", title: "Delivered", count: stats.delivered, icon: CheckCircle, color: "#10B981" },
+    { id: "pending", title: "Pending", count: stats.pending, icon: Truck, color: "#F59E0B" },
+    { id: "cancelled", title: "Cancelled", count: stats.cancelled, icon: Ban, color: "#EF4444" },
+  ];
+
+  // Status update mutation
   const { mutate: updateStatus } = useMutation({
     mutationFn: async ({ orderId, status }) => {
       const res = await fetch(`/api/orders/status/${orderId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("Failed to update order status");
       return res.json();
     },
-
-    onMutate: async ({ orderId, status }) => {
-      await queryClient.cancelQueries(["orders"]);
-      const previousOrders = queryClient.getQueryData(["orders"]);
-      queryClient.setQueryData(["orders"], (oldOrders) =>
-        oldOrders?.map((order) =>
-          order._id === orderId ? { ...order, status } : order
-        )
-      );
-      return { previousOrders };
-    },
-
-    onError: (err, variables, context) => {
-      queryClient.setQueryData(["orders"], context.previousOrders);
-      toast.error("Failed to update order status");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries(["orders"]);
-    },
     onSuccess: () => {
       toast.success("Order status updated");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
+    onError: () => toast.error("Failed to update order status"),
   });
 
-  const statusColors = {
-    delivered: "text-green-600",
-    completed: "text-blue-600",
-    cancelled: "text-red-600",
-  };
+  // Filter by summary card
+  const filteredByStatus = useMemo(() => {
+    if (filterStatus === "all") return orders;
+    if (filterStatus === "pending")
+      return orders.filter((o) => !["delivered", "cancelled"].includes(o.status));
+    return orders.filter((o) => o.status === filterStatus);
+  }, [orders, filterStatus]);
+
+  // Global search filter
+  const filtered = useGlobalFilter(filteredByStatus, search, [
+    "orderNumber",
+    "customer.name",
+    "customer.phone",
+    "customer.customerId",
+    "status",
+    "suitType",
+  ]);
+
+  const columns = [
+    {
+      title: "Sr.",
+      key: "sr",
+      width: 60,
+      align: "center",
+      render: (_, __, index) => index + 1,
+    },
+    {
+      title: "Order #",
+      dataIndex: "orderNumber",
+      key: "orderNumber",
+      sorter: (a, b) => (a.orderNumber || "").localeCompare(b.orderNumber || ""),
+      render: (v) => (
+        <span className="font-mono text-xs font-semibold text-gray-500 dark:text-gray-400">
+          {v || "-"}
+        </span>
+      ),
+    },
+    {
+      title: "Customer",
+      key: "customer",
+      sorter: (a, b) =>
+        (a.customer?.name || "").localeCompare(b.customer?.name || ""),
+      render: (_, record) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+            {record.customer?.name || "-"}
+          </span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {record.customer?.phone || ""}
+          </span>
+        </div>
+      ),
+    },
+    {
+      title: "Suit Type",
+      dataIndex: "suitType",
+      key: "suitType",
+      sorter: (a, b) => (a.suitType || "").localeCompare(b.suitType || ""),
+      render: (v) => <span className="text-sm">{v || "-"}</span>,
+    },
+    {
+      title: "Qty",
+      dataIndex: "quantity",
+      key: "quantity",
+      align: "center",
+      width: 60,
+      sorter: (a, b) => (a.quantity || 0) - (b.quantity || 0),
+      render: (v) => <span className="font-medium">{v ?? "-"}</span>,
+    },
+    {
+      title: "Total (Rs.)",
+      dataIndex: "totalAmount",
+      key: "totalAmount",
+      align: "right",
+      sorter: (a, b) => (a.totalAmount || 0) - (b.totalAmount || 0),
+      render: (v) => (
+        <span className="font-semibold text-gray-900 dark:text-gray-100">
+          {v != null ? v.toLocaleString() : "-"}
+        </span>
+      ),
+    },
+    {
+      title: "Advance (Rs.)",
+      dataIndex: "advancePaid",
+      key: "advancePaid",
+      align: "right",
+      sorter: (a, b) => (a.advancePaid || 0) - (b.advancePaid || 0),
+      render: (v) => (
+        <span className="text-gray-700 dark:text-gray-300">
+          {v != null ? Number(v).toLocaleString() : "0"}
+        </span>
+      ),
+    },
+    {
+      title: "Delivery Date",
+      dataIndex: "deliveryDate",
+      key: "deliveryDate",
+      sorter: (a, b) =>
+        moment(a.deliveryDate).unix() - moment(b.deliveryDate).unix(),
+      render: (v) =>
+        v ? (
+          <span className="text-sm">{moment(v).format("DD MMM YYYY")}</span>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      sorter: (a, b) => (a.status || "").localeCompare(b.status || ""),
+      render: (status, record) => (
+        <select
+          value={status}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) =>
+            updateStatus({ orderId: record._id, status: e.target.value })
+          }
+          className={`text-xs font-semibold rounded-full px-3 py-1 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400 ${
+            STATUS_COLORS[status] || STATUS_COLORS.pending
+          }`}
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      title: "Order Date",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      sorter: (a, b) =>
+        moment(a.createdAt).unix() - moment(b.createdAt).unix(),
+      render: (v) =>
+        v ? (
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {moment(v).format("DD MMM YYYY")}
+          </span>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      align: "center",
+      width: 80,
+      render: (_, record) => (
+        <button
+          onClick={() => navigate(`/orders/${record._id}`)}
+          className="p-1.5 rounded-full border border-gray-300 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition cursor-pointer"
+          title="View Order"
+        >
+          <Eye size={15} />
+        </button>
+      ),
+    },
+  ];
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-3 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
         <SectionHeading
           title="Orders List"
           subtitle="Manage all customer orders below"
         />
-
         <div className="sm:w-auto w-full">
-          <CustomButton title="Add New Orders" to="/orders/add" Icon={Redo} />
+          <CustomButton title="Add New Order" to="/orders/add" Icon={Redo} />
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 my-6">
-        <SummaryCard
-          icon={Users}
-          title="Total Orders"
-          count={totalOrders}
-          color="#3B82F6"
-        />
-        <SummaryCard
-          icon={CheckCircle}
-          title="Delivered"
-          count={deliveredOrders}
-          color="#10B981"
-        />
-        <SummaryCard
-          icon={Truck}
-          title="Pending"
-          count={pendingOrders}
-          color="#F59E0B"
-        />
-        <SummaryCard
-          icon={Ban}
-          title="Cancelled"
-          count={cancelledOrders}
-          color="#EF4444"
-        />
-      </div>
-
-      {/* Orders List */}
-      <div className="space-y-6">
-        {orders.map((order) => (
-          <div
-            key={order._id}
-            className="border border-gray-200 rounded-lg p-4 space-y-4"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-              {/* Customer Info */}
-              <div className="text-sm space-y-1">
-                <p>
-                  <span className="font-semibold">Customer:</span>{" "}
-                  {order.customer?.name} ({order.customer?.phone})
-                </p>
-                <p>
-                  <span className="font-semibold">Suit Type:</span>{" "}
-                  {order?.suitType}
-                </p>
-                <p>
-                  <span className="font-semibold">Quantity:</span>{" "}
-                  {order.quantity}
-                </p>
-              </div>
-
-              {/* Payment & Date */}
-              <div className="text-sm space-y-1">
-                <p>
-                  <span className="font-semibold">Total Amount:</span> Rs.{" "}
-                  {order.totalAmount.toLocaleString()}
-                </p>
-                <p>
-                  <span className="font-semibold">Advance Paid:</span> Rs.{" "}
-                  {order.advancePaid || "00"}
-                </p>
-                <p>
-                  <span className="font-semibold">Order Date:</span>{" "}
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </p>
-                <p>
-                  <span className="font-semibold">Delivery Date:</span>{" "}
-                  {new Date(order.deliveryDate).toLocaleDateString()}
-                </p>
-              </div>
-
-              {/* Status & Notes */}
-              <div className="text-sm space-y-2">
-                <div>
-                  <span className="font-semibold">Status:</span>{" "}
-                  <select
-                    value={order.status}
-                    onChange={(e) =>
-                      updateStatus({
-                        orderId: order._id,
-                        status: e.target.value,
-                      })
-                    }
-                    className={`cursor-pointer text-sm border rounded px-2 py-1 focus:outline-none ${
-                      statusColors[order.status] || "text-yellow-600"
-                    }`}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="in progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                {order.notes && (
-                  <p>
-                    <span className="font-semibold">Notes:</span> {order.notes}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 my-5">
+        {statCards.map((card) => (
+          <SummaryCard
+            key={card.id}
+            icon={card.icon}
+            title={card.title}
+            count={card.count}
+            color={card.color}
+            isSelected={filterStatus === card.id}
+            onClick={() =>
+              setFilterStatus(
+                filterStatus === card.id && card.id !== "all" ? "all" : card.id
+              )
+            }
+          />
         ))}
       </div>
+
+      {/* Orders Table */}
+      <CustomTable
+        rowKey="_id"
+        loading={isLoading}
+        columns={columns}
+        dataSource={filtered}
+        globalSearch={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by order #, customer, status..."
+        totalLabel="Total Orders"
+      />
     </>
   );
 };

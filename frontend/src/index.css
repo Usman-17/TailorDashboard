@@ -619,6 +619,16 @@ input:-webkit-autofill:focus {
   color: #fff !important;
 }
 
+[data-theme="dark"] .ant-select-item-option-selected {
+  background-color: color-mix(
+    in srgb,
+    var(--secondary-color) 25%,
+    transparent
+  ) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+
 /* === Mobile Dropdown Scroll Fix === */
 /* Prevent dropdown from propagating scroll to the page */
 .ant-select-dropdown {
@@ -1053,6 +1063,27 @@ input:-webkit-autofill:focus {
 
 [data-theme="dark"] .my-custom-select .ant-select-arrow {
   color: #b3a5db !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-dropdown {
+  background-color: #141025 !important;
+  border: 1px solid #2a2738 !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-item {
+  background-color: #141025 !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-item-option-active {
+  background-color: color-mix(in srgb, var(--secondary-color) 20%, transparent) !important;
+  color: #fff !important;
+}
+
+[data-theme="dark"] .my-custom-select .ant-select-item-option-selected {
+  background-color: color-mix(in srgb, var(--secondary-color) 25%, transparent) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
 }
 
 [data-theme="dark"] .my-custom-datepicker.ant-picker {

@@ -16,7 +16,9 @@ const useGetAllOrders = () => {
         throw new Error("Failed to fetch orders");
       }
 
-      return response.json();
+      const json = await response.json();
+      // API may return { orders: [...] } or a plain array
+      return Array.isArray(json) ? json : (json.orders ?? json.data ?? []);
     },
 
     staleTime: 0,
@@ -25,7 +27,7 @@ const useGetAllOrders = () => {
   });
 
   return {
-    orders,
+    orders: orders ?? [],
     isLoading,
     isPending,
     isError,

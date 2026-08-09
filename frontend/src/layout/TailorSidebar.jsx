@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   SquareChartGantt,
   TrendingUp,
+  Tag,
 } from "lucide-react";
 
 import logo from "../assets/logo.png";
@@ -27,12 +28,14 @@ const tailorNavItems = [
     path: "/customers",
   },
   {
-    name: "Manage Orders",
+    name: "Orders",
     icon: <ShoppingBag />,
-    subItems: [
-      { name: "Add Order", path: "/orders/add" },
-      { name: "Manage Orders", path: "/orders/manage" },
-    ],
+    path: "/orders",
+  },
+  {
+    name: "Suit Types",
+    icon: <Tag />,
+    path: "/suit-types",
   },
   {
     name: "Manage Expenses",

@@ -155,7 +155,7 @@ const DashboardPage = () => {
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Recent Orders</h3>
-            <a href="/orders/manage" className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium">View all</a>
+            <a href="/orders" className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium">View all</a>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -194,7 +194,7 @@ const DashboardPage = () => {
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Upcoming Deliveries</h3>
-            <a href="/orders/manage" className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium">View all</a>
+            <a href="/orders" className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium">View all</a>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

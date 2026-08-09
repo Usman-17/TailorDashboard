@@ -27,6 +27,7 @@ import AddExpensesPage from "./pages/addExpensesPage";
 import ExpensesListingPage from "./pages/ExpensesListingPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SuitTypesPage from "./pages/Tailor/SuitTypesPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AdminDashboardPage = lazy(() => import("./pages/Admin/DashboardPage"));
@@ -112,8 +113,9 @@ const App = () => {
             <Route index element={<DashboardPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders/add" element={<AddOrdersPage />} />
-            <Route path="orders/manage" element={<OrdersListingPage />} />
+            <Route path="orders" element={<OrdersListingPage />} />
             <Route path="sale" element={<SalePage />} />
+            <Route path="suit-types" element={<SuitTypesPage />} />
             <Route path="expenses/add" element={<AddExpensesPage />} />
             <Route path="expenses/edit/:id" element={<AddExpensesPage />} />
             <Route path="expenses/manage" element={<ExpensesListingPage />} />

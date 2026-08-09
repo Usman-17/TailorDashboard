@@ -76,7 +76,7 @@ const CustomSelect = forwardRef(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300"
+            className="block text-sm font-medium mb-1 text-gray-700"
           >
             {label}{" "}
             {required ? (
@@ -145,7 +145,7 @@ const CustomSelect = forwardRef(
               : options
           }
           autoComplete="no-autofill"
-          popupClassName="!z-[9999999]"
+          popupClassName="!z-[9999999] my-custom-select"
           dropdownStyle={{ zIndex: 9999 }}
           styles={{ popup: { root: { borderRadius: "12px" } } }}
           onOpenChange={(visible) => setIsOpen(visible)}

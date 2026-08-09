@@ -1,19 +1,23 @@
 import { Select } from "antd";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Undo } from "lucide-react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 import CustomButton from "../components/CustomButton";
 import LoadingSpinner from "../components/LoadingSpinner";
 import SectionHeading from "../components/SectionHeading";
 import { useGetAllCustomers } from "../hooks/useGetAllCustomers";
+import { useGetAllSuitTypes } from "../hooks/useGetSuitTypes.jsx";
 
 const AddOrdersPage = () => {
+  const [searchParams] = useSearchParams();
+  const prefilledCustomerId = searchParams.get("customerId") || "";
+
   const [formData, setFormData] = useState({
-    customer: "",
-    suitType: "Simple",
+    customer: prefilledCustomerId,
+    suitType: "Single Silai",
     quantity: 1,
     deliveryDate: "",
     totalAmount: "",
@@ -26,6 +30,34 @@ const AddOrdersPage = () => {
   // Get All Customers
   const { data: customersData } = useGetAllCustomers({ page: 1, limit: 1000 });
   const customers = customersData?.customers || [];
+
+  // Get Active Suit Types
+  const { data: suitTypesData } = useGetAllSuitTypes();
+  const activeSuitTypes = suitTypesData?.suitTypes || [];
+
+  const suitTypeOptions =
+    activeSuitTypes.length > 0
+      ? activeSuitTypes.map((st) => ({
+          label: `${st.name} (Rs. ${st.price})`,
+          value: st.name,
+          price: st.price,
+        }))
+      : [
+          { label: "Single Silai (Rs. 1200)", value: "Single Silai", price: 1200 },
+          { label: "Double Silai (Rs. 1500)", value: "Double Silai", price: 1500 },
+          { label: "Karhai (Rs. 2000)", value: "Karhai", price: 2000 },
+          { label: "Simple (Rs. 1000)", value: "Simple", price: 1000 },
+          { label: "Fancy (Rs. 2500)", value: "Fancy", price: 2500 },
+        ];
+
+  const handleSuitTypeChange = (value) => {
+    const selected = suitTypeOptions.find((opt) => opt.value === value);
+    setFormData((prev) => ({
+      ...prev,
+      suitType: value,
+      totalAmount: selected?.price ? selected.price * (prev.quantity || 1) : prev.totalAmount,
+    }));
+  };
 
   // Add Order Mutation
   const { mutate: addOrder, isPending } = useMutation({
@@ -48,7 +80,7 @@ const AddOrdersPage = () => {
 
     onSuccess: () => {
       toast.success("Order added successfully");
-      navigate("/orders/manage");
+      navigate("/orders");
     },
 
     onError: (err) => {
@@ -75,7 +107,7 @@ const AddOrdersPage = () => {
         />
 
         <div className="sm:w-auto w-full">
-          <CustomButton title="Manage Orders" to="/orders/manage" Icon={Undo} />
+          <CustomButton title="Manage Orders" to="/orders" Icon={Undo} />
         </div>
       </div>
 
@@ -108,13 +140,8 @@ const AddOrdersPage = () => {
               value={formData.suitType}
               placeholder="Select Suit type"
               className="w-full"
-              onChange={(value) =>
-                setFormData({ ...formData, suitType: value })
-              }
-              options={[
-                { value: "Simple", label: "Simple" },
-                { value: "Karahi", label: "Karahi" },
-              ]}
+              onChange={handleSuitTypeChange}
+              options={suitTypeOptions}
             />
           </div>
           <div>
