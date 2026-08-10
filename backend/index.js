@@ -19,6 +19,7 @@ import dashboardRoutes from "./routes/dashboard.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import reportsRoutes from "./routes/reports.route.js";
 import suitTypeRoutes from "./routes/suitType.route.js";
+import tailorDashboardRoutes from "./routes/tailorDashboard.route.js";
 import { syncMissingShopPayments } from "./controllers/shop.controller.js";
 
 const app = express();
@@ -60,6 +61,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/reports", reportsRoutes);
 app.use("/api/suit-types", suitTypeRoutes);
+app.use("/api/tailor-dashboard", tailorDashboardRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
