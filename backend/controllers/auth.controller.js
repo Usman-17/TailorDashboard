@@ -21,6 +21,7 @@ const signTokens = (user, res, req, rememberMe = false) => {
     user._id,
     user.role,
     user.shop || null,
+    rememberMe,
   );
   const refreshToken = generateRefreshToken(user._id);
 

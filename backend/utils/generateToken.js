@@ -1,12 +1,20 @@
 import jwt from "jsonwebtoken";
 
 const ACCESS_TOKEN_EXPIRY = "8h";
+const ACCESS_TOKEN_REMEMBER_ME_EXPIRY = "30d";
 const REFRESH_TOKEN_EXPIRY = "7d";
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
-export const generateAccessToken = (userId, role, shopId) => {
+export const generateAccessToken = (
+  userId,
+  role,
+  shopId,
+  rememberMe = false,
+) => {
   return jwt.sign({ userId, role, shopId }, process.env.JWT_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
+    expiresIn: rememberMe
+      ? ACCESS_TOKEN_REMEMBER_ME_EXPIRY
+      : ACCESS_TOKEN_EXPIRY,
   });
 };
 
