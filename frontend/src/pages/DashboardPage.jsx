@@ -1,23 +1,20 @@
 import {
   Users,
   Package,
-  TrendingUp,
   Clock,
   CheckCircle,
   XCircle,
   AlertTriangle,
-  IndianRupee,
   CalendarCheck,
-  Banknote,
 } from "lucide-react";
 import Chart from "react-apexcharts";
 import moment from "moment";
 
-import useDashboardStats from "../hooks/useDashboardStats";
-import useDashboardCharts from "../hooks/useDashboardCharts";
-import useDashboardRecentOrders from "../hooks/useDashboardRecentOrders";
-import useDashboardUpcomingDeliveries from "../hooks/useDashboardUpcomingDeliveries";
-import useDashboardLatestCustomers from "../hooks/useDashboardLatestCustomers";
+import useTailorDashboardStats from "../hooks/useTailorDashboardStats";
+import useTailorDashboardCharts from "../hooks/useTailorDashboardCharts";
+import useTailorRecentOrders from "../hooks/useTailorRecentOrders";
+import useTailorUpcomingDeliveries from "../hooks/useTailorUpcomingDeliveries";
+import useTailorLatestCustomers from "../hooks/useTailorLatestCustomers";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useTheme } from "../context/ThemeContext";
 
@@ -31,20 +28,20 @@ const STATUS_COLORS = {
 
 const DashboardPage = () => {
   const { isDarkMode } = useTheme();
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: charts, isLoading: chartsLoading } = useDashboardCharts();
-  const { data: recentOrders = [], isLoading: ordersLoading } = useDashboardRecentOrders();
-  const { data: upcomingDeliveries = [], isLoading: deliveriesLoading } = useDashboardUpcomingDeliveries();
-  const { data: latestCustomers = [], isLoading: customersLoading } = useDashboardLatestCustomers();
+  const { data: stats, isLoading: statsLoading } = useTailorDashboardStats();
+  const { data: charts, isLoading: chartsLoading } = useTailorDashboardCharts();
+  const { data: recentOrders = [], isLoading: ordersLoading } = useTailorRecentOrders();
+  const { data: upcomingDeliveries = [], isLoading: deliveriesLoading } = useTailorUpcomingDeliveries();
+  const { data: latestCustomers = [], isLoading: customersLoading } = useTailorLatestCustomers();
 
   if (statsLoading || chartsLoading) return <LoadingSpinner />;
 
   const statCards = [
     { title: "Total Customers", value: stats?.totalCustomers || 0, icon: Users, color: "bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400", trend: "+This month" },
     { title: "Total Orders", value: stats?.totalOrders || 0, icon: Package, color: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400", trend: `${stats?.pendingOrders || 0} pending` },
-    { title: "Monthly Revenue", value: `Rs. ${(stats?.monthlyRevenue || 0).toLocaleString()}`, icon: IndianRupee, color: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400", trend: `Exp: Rs. ${(stats?.monthlyExpenses || 0).toLocaleString()}` },
-    { title: "Net Profit", value: `Rs. ${(stats?.netProfit || 0).toLocaleString()}`, icon: Banknote, color: "bg-green-50 dark:bg-green-950/50 text-green-600 dark:text-green-400", trend: "This month" },
-    { title: "Today's Deliveries", value: stats?.todayDeliveries || 0, icon: CalendarCheck, color: "bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400", trend: `${stats?.overdueOrders || 0} overdue` },
+    { title: "Ready Orders", value: stats?.readyOrders || 0, icon: CheckCircle, color: "bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400", trend: "Ready for delivery" },
+    { title: "Overdue Orders", value: stats?.overdueOrders || 0, icon: AlertTriangle, color: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400", trend: "Past delivery date" },
+    { title: "Today's Deliveries", value: stats?.todayDeliveries || 0, icon: CalendarCheck, color: "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400", trend: `${stats?.overdueOrders || 0} overdue` },
   ];
 
   const orderStatusCards = [
@@ -54,18 +51,6 @@ const DashboardPage = () => {
     { title: "Delivered", value: stats?.deliveredOrders || 0, icon: CheckCircle, color: "text-green-500" },
     { title: "Cancelled", value: stats?.cancelledOrders || 0, icon: XCircle, color: "text-red-500" },
   ];
-
-  const revenueChartOptions = {
-    chart: { type: "bar", height: 350, toolbar: { show: false }, fontFamily: "Outfit, sans-serif", foreColor: isDarkMode ? "#a9a0c1" : "#374151", background: "transparent" },
-    theme: { mode: isDarkMode ? "dark" : "light" },
-    colors: ["#8143ec"],
-    plotOptions: { bar: { borderRadius: 6, columnWidth: "60%" } },
-    dataLabels: { enabled: false },
-    xaxis: { categories: charts?.revenueByMonth?.map((r) => r.month) || [], axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { colors: isDarkMode ? "#a9a0c1" : "#6b7280" } } },
-    yaxis: { labels: { formatter: (val) => `Rs. ${(val / 1000).toFixed(0)}k`, style: { colors: isDarkMode ? "#a9a0c1" : "#6b7280" } } },
-    grid: { borderColor: isDarkMode ? "#27223c" : "#F3F4F6", strokeDashArray: 4 },
-    tooltip: { theme: isDarkMode ? "dark" : "light", y: { formatter: (val) => `Rs. ${val.toLocaleString()}` } },
-  };
 
   const ordersChartOptions = {
     chart: { type: "line", height: 350, toolbar: { show: false }, fontFamily: "Outfit, sans-serif", foreColor: isDarkMode ? "#a9a0c1" : "#374151", background: "transparent" },
@@ -135,19 +120,13 @@ const DashboardPage = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-5">
-          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Monthly Revenue</h3>
-          <Chart options={revenueChartOptions} series={[{ name: "Revenue", data: charts?.revenueByMonth?.map((r) => r.total) || [] }]} type="bar" height={350} />
+          <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Monthly Orders</h3>
+          <Chart options={ordersChartOptions} series={[{ name: "Orders", data: charts?.ordersByMonth?.map((o) => o.count) || [] }]} type="line" height={350} />
         </div>
         <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-5">
           <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Orders by Status</h3>
           <Chart options={statusPieOptions} series={statusPieSeries} type="donut" height={280} />
         </div>
-      </div>
-
-      {/* Orders Trend */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-5">
-        <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Orders Trend (Last 6 Months)</h3>
-        <Chart options={ordersChartOptions} series={[{ name: "Orders", data: charts?.ordersByMonth?.map((o) => o.count) || [] }]} type="line" height={350} />
       </div>
 
       {/* Tables Row */}
@@ -251,22 +230,20 @@ const DashboardPage = () => {
                 <th className="px-5 py-3 text-left">ID</th>
                 <th className="px-5 py-3 text-left">Name</th>
                 <th className="px-5 py-3 text-left">Phone</th>
-                <th className="px-5 py-3 text-left">Email</th>
                 <th className="px-5 py-3 text-left">Added</th>
               </tr>
             </thead>
             <tbody>
               {customersLoading ? (
-                <tr><td colSpan="5" className="px-5 py-8 text-center text-gray-400 dark:text-gray-500">Loading...</td></tr>
+                <tr><td colSpan="4" className="px-5 py-8 text-center text-gray-400 dark:text-gray-500">Loading...</td></tr>
               ) : latestCustomers.length === 0 ? (
-                <tr><td colSpan="5" className="px-5 py-8 text-center text-gray-400 dark:text-gray-500">No customers yet</td></tr>
+                <tr><td colSpan="4" className="px-5 py-8 text-center text-gray-400 dark:text-gray-500">No customers yet</td></tr>
               ) : (
                 latestCustomers.map((customer) => (
                   <tr key={customer._id} className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
                     <td className="px-5 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">{customer.customerId}</td>
                     <td className="px-5 py-3 font-medium text-gray-900 dark:text-gray-100">{customer.name}</td>
                     <td className="px-5 py-3 text-gray-600 dark:text-gray-300">{customer.phone}</td>
-                    <td className="px-5 py-3 text-gray-600 dark:text-gray-300">{customer.email || "-"}</td>
                     <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{moment(customer.createdAt).format("DD MMM YYYY")}</td>
                   </tr>
                 ))
