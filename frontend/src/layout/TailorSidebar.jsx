@@ -8,8 +8,7 @@ import {
   Users,
   LayoutDashboard,
   ShoppingBag,
-  SquareChartGantt,
-  TrendingUp,
+  Receipt,
   Tag,
   Banknote,
 } from "lucide-react";
@@ -39,17 +38,9 @@ const tailorNavItems = [
     path: "/suit-types",
   },
   {
-    name: "Manage Expenses",
-    icon: <SquareChartGantt />,
-    subItems: [
-      { name: "Add Expenses", path: "/expenses/add" },
-      { name: "Manage Expenses", path: "/expenses/manage" },
-    ],
-  },
-  {
-    name: "Manage Sale",
-    icon: <TrendingUp />,
-    path: "/sale",
+    name: "Expenses",
+    icon: <Receipt />,
+    path: "/expenses",
   },
   {
     name: "Payments",

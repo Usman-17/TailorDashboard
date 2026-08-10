@@ -21,13 +21,11 @@ import TailorLayout from "./layout/Layout";
 import DashboardPage from "./pages/DashboardPage";
 import CustomersPage from "./pages/Tailor/CustomersPage/CustomersPage";
 import OrdersPage from "./pages/Tailor/OrdersPage/OrdersPage";
-import SalePage from "./pages/SalePage";
-import AddExpensesPage from "./pages/addExpensesPage";
-import ExpensesListingPage from "./pages/ExpensesListingPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SuitTypesPage from "./pages/Tailor/SuitTypesPage";
 import PaymentsPage from "./pages/Tailor/PaymentsPage/PaymentsPage";
+import ExpensesPage from "./pages/Tailor/ExpensesPage/ExpensesPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AdminDashboardPage = lazy(() => import("./pages/Admin/DashboardPage"));
@@ -113,12 +111,9 @@ const App = () => {
             <Route index element={<DashboardPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="orders" element={<OrdersPage />} />
-            <Route path="sale" element={<SalePage />} />
             <Route path="suit-types" element={<SuitTypesPage />} />
             <Route path="payments" element={<PaymentsPage />} />
-            <Route path="expenses/add" element={<AddExpensesPage />} />
-            <Route path="expenses/edit/:id" element={<AddExpensesPage />} />
-            <Route path="expenses/manage" element={<ExpensesListingPage />} />
+            <Route path="expenses" element={<ExpensesPage />} />
           </Route>
 
           {/* Catch all */}
