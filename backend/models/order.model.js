@@ -11,6 +11,8 @@ const ORDER_STATUS = {
 const PAYMENT_METHOD = {
   CASH: "cash",
   BANK: "bank",
+  JAZZCASH: "jazzcash",
+  EASYPAISA: "easypaisa",
   ONLINE: "online",
 };
 
@@ -22,6 +24,12 @@ const paymentEntrySchema = new mongoose.Schema(
       enum: Object.values(PAYMENT_METHOD),
       default: PAYMENT_METHOD.CASH,
     },
+    paymentType: {
+      type: String,
+      enum: ["advance", "partial", "final"],
+      default: "partial",
+    },
+    referenceNo: { type: String, trim: true, default: "" },
     note: { type: String, trim: true, default: "" },
     receivedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -78,7 +86,7 @@ const orderSchema = new mongoose.Schema(
     measurement: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Measurement",
-      default: null,
+      required: [true, "Measurement is required"],
     },
 
     items: {
@@ -209,10 +217,12 @@ orderSchema.methods.calculateTotals = function () {
   this.isPaid = this.remainingBalance <= 0;
 };
 
-orderSchema.methods.addPayment = function (amount, method, userId, note = "") {
+orderSchema.methods.addPayment = function (amount, method, userId, note = "", paymentType = "partial", referenceNo = "") {
   this.paymentHistory.push({
     amount,
     method,
+    paymentType,
+    referenceNo,
     note,
     receivedBy: userId,
     receivedAt: new Date(),

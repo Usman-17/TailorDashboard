@@ -158,6 +158,12 @@ export const addOrder = async (req, res) => {
         .json({ error: "Customer, delivery date, and items are required" });
     }
 
+    if (!measurement) {
+      return res
+        .status(400)
+        .json({ error: "Measurement is required before booking an order" });
+    }
+
     const customerDoc = await Customer.findOne({ _id: customer, shopId });
     if (!customerDoc) {
       return res.status(404).json({ error: "Customer not found" });
@@ -210,7 +216,7 @@ export const addOrder = async (req, res) => {
       orderNumber,
       shopId,
       customer,
-      measurement: measurement || null,
+      measurement,
       items: processedItems,
       deliveryDate: new Date(deliveryDate),
       totalAmount,
@@ -357,7 +363,13 @@ export const addPayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { shopId, user } = req;
-    const { amount, method = "cash", note = "" } = req.body;
+    const {
+      amount,
+      method = "cash",
+      note = "",
+      paymentType = "partial",
+      referenceNo = "",
+    } = req.body;
 
     if (!amount || amount <= 0) {
       return res
@@ -369,7 +381,18 @@ export const addPayment = async (req, res) => {
       return res.status(400).json({ error: "Invalid payment method" });
     }
 
-    const order = await Order.findOne({ _id: id, shopId });
+    if (["bank", "jazzcash", "easypaisa"].includes(method) && !referenceNo) {
+      return res
+        .status(400)
+        .json({
+          error: "Reference/Transaction ID is required for this payment method",
+        });
+    }
+
+    const order = await Order.findOne({ _id: id, shopId }).populate(
+      "customer",
+      "name phone customerId",
+    );
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
@@ -384,8 +407,41 @@ export const addPayment = async (req, res) => {
       });
     }
 
-    order.addPayment(amount, method, user._id, note);
+    // Determine payment type based on remaining balance after payment
+    let detectedType = paymentType;
+    const newRemaining = order.remainingBalance - amount;
+    if (newRemaining <= 0) {
+      detectedType = "final";
+    } else if (order.advancePaid === 0) {
+      detectedType = "advance";
+    } else {
+      detectedType = "partial";
+    }
+
+    order.addPayment(amount, method, user._id, note, detectedType, referenceNo);
     await order.save();
+
+    // Create standalone OrderPayment record
+    const OrderPayment = (await import("../models/orderPayment.model.js"))
+      .default;
+    const { generatePaymentId } =
+      await import("../controllers/orderPayment.controller.js");
+
+    const paymentId = await generatePaymentId(shopId);
+    await OrderPayment.create({
+      shopId,
+      order: order._id,
+      customer: order.customer?._id || order.customer,
+      orderNumber: order.orderNumber,
+      customerName: order.customer?.name || "Unknown",
+      paymentId,
+      amount,
+      method,
+      paymentType: detectedType,
+      referenceNo,
+      note,
+      receivedBy: user._id,
+    });
 
     return res.status(200).json({
       message: "Payment recorded successfully",
