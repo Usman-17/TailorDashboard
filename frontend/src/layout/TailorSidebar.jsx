@@ -12,6 +12,7 @@ import {
   Tag,
   Banknote,
   BarChart3,
+  X,
 } from "lucide-react";
 
 const tailorNavItems = [
@@ -53,7 +54,13 @@ const tailorNavItems = [
 ];
 
 const Sidebar = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const {
+    isExpanded,
+    isMobileOpen,
+    isHovered,
+    setIsHovered,
+    toggleMobileSidebar,
+  } = useSidebar();
   const location = useLocation();
 
   const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -103,7 +110,9 @@ const Sidebar = () => {
               <button
                 onClick={() => handleSubmenuToggle(index, menuType)}
                 className={`w-full flex items-center py-2.5 rounded-xl transition-all cursor-pointer ${
-                  isExpanded || isHovered || isMobileOpen ? "justify-between px-3" : "justify-center px-0"
+                  isExpanded || isHovered || isMobileOpen
+                    ? "justify-between px-3"
+                    : "justify-center px-0"
                 } ${
                   isSubmenuActive || isSubmenuOpen
                     ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-medium"
@@ -134,8 +143,13 @@ const Sidebar = () => {
               nav.path && (
                 <Link
                   to={nav.path}
+                  onClick={() => {
+                    if (isMobileOpen) toggleMobileSidebar();
+                  }}
                   className={`flex items-center gap-3 py-2.5 rounded-xl transition-all ${
-                    isExpanded || isHovered || isMobileOpen ? "px-3" : "px-0 justify-center"
+                    isExpanded || isHovered || isMobileOpen
+                      ? "px-3"
+                      : "px-0 justify-center"
                   } ${
                     isActive(nav.path)
                       ? "bg-purple-600 text-white font-medium shadow-md shadow-purple-500/25 dark:bg-purple-600 dark:text-white"
@@ -171,6 +185,9 @@ const Sidebar = () => {
                     <li key={subItem.name}>
                       <Link
                         to={subItem.path}
+                        onClick={() => {
+                          if (isMobileOpen) toggleMobileSidebar();
+                        }}
                         className={`flex justify-between items-center px-3 py-2 rounded-lg text-[12.5px] whitespace-nowrap transition-all ${
                           isActive(subItem.path)
                             ? "bg-purple-600 text-white font-medium shadow-sm shadow-purple-500/20 dark:bg-purple-600 dark:text-white"
@@ -196,17 +213,17 @@ const Sidebar = () => {
       onMouseLeave={() => setIsHovered(false)}
       className={`fixed top-0 left-0 h-screen px-2 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800/80 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out z-50
         ${
-          isExpanded || isMobileOpen
-            ? "w-[220px]"
-            : isHovered
+          isMobileOpen
+            ? "w-full"
+            : isExpanded || isHovered
               ? "w-[220px]"
               : "w-[68px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
     >
-      <div className="h-14 sm:h-16 flex items-center justify-center mb-2">
-        <Link to="/" className="hidden sm:flex items-center justify-center">
+      <div className="h-14 sm:h-16 flex items-center justify-between px-3 mb-2">
+        <Link to="/" className="flex items-center justify-center">
           {isExpanded || isHovered || isMobileOpen ? (
             <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
               Tailor System
@@ -217,6 +234,14 @@ const Sidebar = () => {
             </span>
           )}
         </Link>
+        {isMobileOpen && (
+          <button
+            onClick={toggleMobileSidebar}
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          >
+            <X size={20} className="text-gray-600 dark:text-gray-300" />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
