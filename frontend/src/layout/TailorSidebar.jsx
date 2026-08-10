@@ -11,6 +11,7 @@ import {
   SquareChartGantt,
   TrendingUp,
   Tag,
+  Banknote,
 } from "lucide-react";
 
 import logo from "../assets/logo.png";
@@ -49,6 +50,11 @@ const tailorNavItems = [
     name: "Manage Sale",
     icon: <TrendingUp />,
     path: "/sale",
+  },
+  {
+    name: "Payments",
+    icon: <Banknote />,
+    path: "/payments",
   },
 ];
 

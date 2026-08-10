@@ -67,8 +67,9 @@ const STATUS_LABELS = {
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "Cash" },
-  { value: "bank", label: "Bank" },
-  { value: "online", label: "Online" },
+  { value: "bank", label: "Bank Transfer" },
+  { value: "jazzcash", label: "JazzCash" },
+  { value: "easypaisa", label: "EasyPaisa" },
 ];
 
 const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
@@ -80,6 +81,7 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNote, setPaymentNote] = useState("");
+  const [paymentRefNo, setPaymentRefNo] = useState("");
 
   // Status update mutation
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
@@ -116,6 +118,7 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
           amount,
           method: paymentMethod,
           note: paymentNote,
+          referenceNo: paymentRefNo,
         }),
       });
       if (!res.ok) {
@@ -130,6 +133,7 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
       setPaymentAmount("");
       setPaymentMethod("cash");
       setPaymentNote("");
+      setPaymentRefNo("");
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -179,13 +183,23 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
 
   const nextStatus = getNextStatus();
 
- return (
+  return (
     <>
       <FullScreenModal
         open={open}
         onClose={onClose}
-        title={isLoading ? "Order Details" : order ? `Order ${order.orderNumber}` : "Order Details"}
-        subtitle={order ? `Created ${moment(order.createdAt).format("DD MMM YYYY, hh:mm A")}` : ""}
+        title={
+          isLoading
+            ? "Order Details"
+            : order
+              ? `Order ${order.orderNumber}`
+              : "Order Details"
+        }
+        subtitle={
+          order
+            ? `Created ${moment(order.createdAt).format("DD MMM YYYY, hh:mm A")}`
+            : ""
+        }
         actions={
           order && (
             <div className="flex flex-wrap items-center gap-2">
@@ -202,7 +216,11 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
               {canCancel && (
                 <button
                   onClick={() => {
-                    if (window.confirm("Are you sure you want to cancel this order?")) {
+                    if (
+                      window.confirm(
+                        "Are you sure you want to cancel this order?",
+                      )
+                    ) {
                       cancelOrder();
                     }
                   }}
@@ -217,9 +235,14 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                   onClick={() => {
                     let phone = order.customer.phone.replace(/[^0-9]/g, "");
                     if (phone.startsWith("0")) phone = "92" + phone.slice(1);
-                    const suitTypes = order.items?.map((i) => i.suitType).join(", ") || "your order";
+                    const suitTypes =
+                      order.items?.map((i) => i.suitType).join(", ") ||
+                      "your order";
                     const msg = `Assalam o Alaikum ${order.customer.name},\n\nYour order *${order.orderNumber}* (${suitTypes}) is ready for pickup.\n\nPlease visit us at your earliest convenience to collect your order.\n\nThank you for choosing us! 🪡`;
-                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
+                    window.open(
+                      `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
+                      "_blank",
+                    );
                   }}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-[#25D366] text-white hover:bg-[#1da851] transition cursor-pointer"
                 >
@@ -239,7 +262,9 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
 
           {!isLoading && !order && (
             <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">Order not found</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                Order not found
+              </p>
               <button
                 onClick={onClose}
                 className="mt-4 px-4 py-2 text-sm rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition cursor-pointer"
@@ -260,19 +285,25 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                   </h2>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Name</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Name
+                      </p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {order.customer?.name || "-"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Mobile</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Mobile
+                      </p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1">
                         <Phone size={12} /> {order.customer?.phone || "-"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Customer ID</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Customer ID
+                      </p>
                       <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
                         {order.customer?.customerId || "-"}
                       </p>
@@ -287,39 +318,57 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                   </h2>
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">Order #</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Order #
+                      </p>
                       <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
                         {order.orderNumber}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">Created</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Created
+                      </p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
                         {moment(order.createdAt).format("DD MMM YYYY")}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">Delivery</p>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Delivery
+                      </p>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {order.deliveryDate ? moment(order.deliveryDate).format("DD MMM YYYY") : "-"}
+                        {order.deliveryDate
+                          ? moment(order.deliveryDate).format("DD MMM YYYY")
+                          : "-"}
                       </p>
                     </div>
                     {order.status === "delivered" &&
                       (() => {
-                        const deliveredEvent = (order.statusHistory || []).find((sh) => sh.status === "delivered");
+                        const deliveredEvent = (order.statusHistory || []).find(
+                          (sh) => sh.status === "delivered",
+                        );
                         if (!deliveredEvent) return null;
                         return (
                           <div>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400">Delivered On</p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                              Delivered On
+                            </p>
                             <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                              {moment(deliveredEvent.changedAt).format("DD MMM YYYY")}
+                              {moment(deliveredEvent.changedAt).format(
+                                "DD MMM YYYY",
+                              )}
                             </p>
                           </div>
                         );
                       })()}
                     <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">Status</p>
-                      <span className={`inline-block text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Status
+                      </p>
+                      <span
+                        className={`inline-block text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}
+                      >
                         {STATUS_LABELS[order.status] || order.status}
                       </span>
                     </div>
@@ -331,7 +380,8 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                   <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-4">
                     <Shirt size={16} className="text-purple-500" /> Suit Items
                     <span className="ml-auto text-xs font-normal text-gray-400 dark:text-gray-500">
-                      {order.items?.length || 0} {order.items?.length === 1 ? "suit" : "suits"}
+                      {order.items?.length || 0}{" "}
+                      {order.items?.length === 1 ? "suit" : "suits"}
                     </span>
                   </h2>
                   <div className="space-y-3">
@@ -357,48 +407,78 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                             {item.lowerType && (
                               <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Lower</p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.lowerType}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                                  Lower
+                                </p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  {item.lowerType}
+                                </p>
                               </div>
                             )}
                             {item.collarType && (
                               <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Collar</p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.collarType}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                                  Collar
+                                </p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  {item.collarType}
+                                </p>
                               </div>
                             )}
                             {item.cuffType && (
                               <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Cuff</p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.cuffType}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                                  Cuff
+                                </p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  {item.cuffType}
+                                </p>
                               </div>
                             )}
                             {item.pocket && (
                               <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Pocket</p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.pocket}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                                  Pocket
+                                </p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  {item.pocket}
+                                </p>
                               </div>
                             )}
                             {item.fabric && (
                               <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Fabric</p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.fabric}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                                  Fabric
+                                </p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  {item.fabric}
+                                </p>
                               </div>
                             )}
                             {item.color && (
                               <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">Color</p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.color}</p>
+                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                                  Color
+                                </p>
+                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                                  {item.color}
+                                </p>
                               </div>
                             )}
                           </div>
                           <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Qty: <span className="font-semibold text-gray-700 dark:text-gray-300">{item.quantity}</span>
+                              Qty:{" "}
+                              <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                {item.quantity}
+                              </span>
                             </span>
                             {item.quantity > 1 && (
                               <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Unit: <span className="font-semibold text-gray-700 dark:text-gray-300">Rs. {(item.unitPrice || 0).toLocaleString()}</span>
+                                Unit:{" "}
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">
+                                  Rs. {(item.unitPrice || 0).toLocaleString()}
+                                </span>
                               </span>
                             )}
                           </div>
@@ -418,21 +498,29 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                   </h2>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Total</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Total
+                      </span>
                       <span className="text-sm font-semibold text-gray-900 dark:text-white">
                         Rs. {(order.totalAmount || 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Paid</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        Paid
+                      </span>
                       <span className="text-sm font-semibold text-green-600 dark:text-green-400">
                         Rs. {totalPaid.toLocaleString()}
                       </span>
                     </div>
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">Remaining</span>
-                        <span className={`text-sm font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          Remaining
+                        </span>
+                        <span
+                          className={`text-sm font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}
+                        >
                           Rs. {remaining.toLocaleString()}
                         </span>
                       </div>
@@ -463,28 +551,53 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                       {STATUS_FLOW.map((step, i) => {
                         const isCurrent = order.status === step.value;
                         const isPast = currentStatusIndex > i;
-                        const isDelivered = step.value === "delivered" && order.status === "delivered";
+                        const isDelivered =
+                          step.value === "delivered" &&
+                          order.status === "delivered";
                         const StepIcon = step.icon;
                         const isDone = isPast || isDelivered;
                         return (
-                          <div key={step.value} className="flex items-center gap-2">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${isDone ? "bg-green-500 text-white" : isCurrent ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}>
-                              {isDone ? <CheckCircle size={14} /> : <StepIcon size={14} />}
+                          <div
+                            key={step.value}
+                            className="flex items-center gap-2"
+                          >
+                            <div
+                              className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${isDone ? "bg-green-500 text-white" : isCurrent ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}
+                            >
+                              {isDone ? (
+                                <CheckCircle size={14} />
+                              ) : (
+                                <StepIcon size={14} />
+                              )}
                             </div>
-                            <span className={`text-xs font-medium flex-1 ${isDone ? "text-green-600 dark:text-green-400" : isCurrent ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}>
+                            <span
+                              className={`text-xs font-medium flex-1 ${isDone ? "text-green-600 dark:text-green-400" : isCurrent ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}
+                            >
                               {step.label}
                             </span>
-                            {isDone && <CheckCircle size={12} className="text-green-500" />}
+                            {isDone && (
+                              <CheckCircle
+                                size={12}
+                                className="text-green-500"
+                              />
+                            )}
                           </div>
                         );
                       })}
                       {nextStatus && (
                         <button
-                          onClick={() => updateStatus({ status: nextStatus, note: `Status changed to ${STATUS_LABELS[nextStatus]}` })}
+                          onClick={() =>
+                            updateStatus({
+                              status: nextStatus,
+                              note: `Status changed to ${STATUS_LABELS[nextStatus]}`,
+                            })
+                          }
                           disabled={isUpdatingStatus}
                           className="w-full mt-3 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 cursor-pointer"
                         >
-                          {isUpdatingStatus ? "Updating..." : `Mark as ${STATUS_LABELS[nextStatus]}`}
+                          {isUpdatingStatus
+                            ? "Updating..."
+                            : `Mark as ${STATUS_LABELS[nextStatus]}`}
                         </button>
                       )}
                     </div>
@@ -543,6 +656,20 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
               placeholder="Select method"
             />
           </div>
+          {["bank", "jazzcash", "easypaisa"].includes(paymentMethod) && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Reference/Transaction ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={paymentRefNo}
+                onChange={(e) => setPaymentRefNo(e.target.value)}
+                placeholder="Enter reference or transaction ID"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Note (Optional)
@@ -565,9 +692,10 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
             <button
               onClick={() => addPayment()}
               disabled={
-                (!paymentAmount && paymentAmount !== "0") ||
                 Number(paymentAmount || remaining) <= 0 ||
-                isAddingPayment
+                isAddingPayment ||
+                (["bank", "jazzcash", "easypaisa"].includes(paymentMethod) &&
+                  !paymentRefNo)
               }
               className="px-4 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 cursor-pointer"
             >

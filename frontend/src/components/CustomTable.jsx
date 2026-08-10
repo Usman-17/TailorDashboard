@@ -10,6 +10,7 @@ const CustomTable = ({
   globalSearch,
   onSearchChange,
   searchPlaceholder = "Search...",
+  hideSearch = false,
   totalLabel = "Total Records",
   isDarkMode: isDarkModeProp,
   rowSelection,
@@ -70,11 +71,13 @@ const CustomTable = ({
             {totalLabel}: {totalCount.toLocaleString()}
           </div>
 
-          <SearchBar
-            value={globalSearch}
-            onChange={onSearchChange}
-            placeholder={searchPlaceholder}
-          />
+          {!hideSearch && (
+            <SearchBar
+              value={globalSearch}
+              onChange={onSearchChange}
+              placeholder={searchPlaceholder}
+            />
+          )}
         </div>
       )}
       footer={footer}

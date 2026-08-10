@@ -188,6 +188,10 @@ const BookOrderModal = ({ open, onClose, customer }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!customer) return toast.error("No customer selected");
+    if (!existingMeasurement)
+      return toast.error(
+        "Please add measurements for this customer before booking an order",
+      );
     if (!deliveryDate) return toast.error("Please select a delivery date");
     if (suitItems.some((s) => !s.suitType))
       return toast.error("Please select a suit type for every suit");
@@ -430,12 +434,18 @@ const BookOrderModal = ({ open, onClose, customer }) => {
             {/* Suit Cards */}
             {suitItems.map((suit, index) => {
               const isCollapsed = collapsedMap[suit.id];
-              const update = (field, val) => handleSuitChange(suit.id, { [field]: val });
+              const update = (field, val) =>
+                handleSuitChange(suit.id, { [field]: val });
 
               return (
-                <div key={suit.id} className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm">
+                <div
+                  key={suit.id}
+                  className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm"
+                >
                   {/* Card Header */}
-                  <div className={`flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}>
+                  <div
+                    className={`flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
+                  >
                     <div className="flex items-center gap-3">
                       <div className="size-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
                         {index + 1}
@@ -454,16 +464,33 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                     <div className="flex items-center gap-2">
                       {suit.price > 0 && (
                         <span className="font-mono text-sm font-extrabold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2.5 py-0.5 rounded-full">
-                          {suit.quantity || 1} × Rs. {Number(suit.price).toLocaleString()} = Rs. {Number(suit.price * (suit.quantity || 1)).toLocaleString()}
+                          {suit.quantity || 1} × Rs.{" "}
+                          {Number(suit.price).toLocaleString()} = Rs.{" "}
+                          {Number(
+                            suit.price * (suit.quantity || 1),
+                          ).toLocaleString()}
                         </span>
                       )}
                       {suitItems.length > 1 && (
-                        <button type="button" onClick={() => removeSuit(suit.id)} className="p-1.5 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer" title="Remove this suit">
+                        <button
+                          type="button"
+                          onClick={() => removeSuit(suit.id)}
+                          className="p-1.5 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer"
+                          title="Remove this suit"
+                        >
                           <Trash2 size={15} />
                         </button>
                       )}
-                      <button type="button" onClick={() => toggleCollapse(suit.id)} className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer">
-                        {isCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                      <button
+                        type="button"
+                        onClick={() => toggleCollapse(suit.id)}
+                        className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+                      >
+                        {isCollapsed ? (
+                          <ChevronDown size={16} />
+                        ) : (
+                          <ChevronUp size={16} />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -472,21 +499,107 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                   {!isCollapsed && (
                     <div className="p-5 space-y-5">
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                        <CustomSelect label="Suit Type" value={suit.suitType} required onChange={(v) => { update("suitType", v); const selected = availableSuitTypesList.find((item) => item.name === v); if (selected && Number(selected.price) >= 0) { update("price", Number(selected.price)); } }} options={availableSuitTypesList.map((item) => ({ label: `${item.name}${item.price > 0 ? ` — Rs. ${Number(item.price).toLocaleString()}` : ""}`, value: item.name }))} />
-                        <CustomSelect label="Collar Type" value={suit.collarType} onChange={(v) => update("collarType", v)} options={COLLAR_TYPES} required allowClear={false} />
-                        <CustomSelect label="Cuff Type" value={suit.cuffType} onChange={(v) => update("cuffType", v)} options={CUFF_TYPES} required allowClear={false} />
-                        <CustomSelect label="Pocket" value={suit.pocket} onChange={(v) => update("pocket", v)} options={POCKET_TYPES} required allowClear={false} />
-                        <CustomSelect label="Lower Type" value={suit.lowerType} onChange={(v) => update("lowerType", v)} options={LOWER_TYPES} required allowClear={false} />
+                        <CustomSelect
+                          label="Suit Type"
+                          value={suit.suitType}
+                          required
+                          onChange={(v) => {
+                            update("suitType", v);
+                            const selected = availableSuitTypesList.find(
+                              (item) => item.name === v,
+                            );
+                            if (selected && Number(selected.price) >= 0) {
+                              update("price", Number(selected.price));
+                            }
+                          }}
+                          options={availableSuitTypesList.map((item) => ({
+                            label: `${item.name}${item.price > 0 ? ` — Rs. ${Number(item.price).toLocaleString()}` : ""}`,
+                            value: item.name,
+                          }))}
+                        />
+                        <CustomSelect
+                          label="Collar Type"
+                          value={suit.collarType}
+                          onChange={(v) => update("collarType", v)}
+                          options={COLLAR_TYPES}
+                          required
+                          allowClear={false}
+                        />
+                        <CustomSelect
+                          label="Cuff Type"
+                          value={suit.cuffType}
+                          onChange={(v) => update("cuffType", v)}
+                          options={CUFF_TYPES}
+                          required
+                          allowClear={false}
+                        />
+                        <CustomSelect
+                          label="Pocket"
+                          value={suit.pocket}
+                          onChange={(v) => update("pocket", v)}
+                          options={POCKET_TYPES}
+                          required
+                          allowClear={false}
+                        />
+                        <CustomSelect
+                          label="Lower Type"
+                          value={suit.lowerType}
+                          onChange={(v) => update("lowerType", v)}
+                          options={LOWER_TYPES}
+                          required
+                          allowClear={false}
+                        />
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <CustomInput id={`fabric-${suit.id}`} label="Fabric Name" value={suit.fabric} onChange={(e) => update("fabric", e.target.value)} placeholder="e.g. Cotton, Silk, Khaddar" />
-                        <CustomInput id={`color-${suit.id}`} label="Fabric Color" value={suit.color} onChange={(e) => update("color", e.target.value)} placeholder="e.g. White, Navy Blue" />
-                        <CustomInput id={`quantity-${suit.id}`} label="Quantity" type="number" min={1} required value={suit.quantity} onChange={(e) => update("quantity", Math.max(1, Number(e.target.value)))} />
-                        <CustomInput id={`price-${suit.id}`} label="Stitching Price (PKR)" type="number" min={0} required value={suit.price} onChange={(e) => update("price", Number(e.target.value))} />
+                        <CustomInput
+                          id={`fabric-${suit.id}`}
+                          label="Fabric Name"
+                          value={suit.fabric}
+                          onChange={(e) => update("fabric", e.target.value)}
+                          placeholder="e.g. Cotton, Silk, Khaddar"
+                        />
+                        <CustomInput
+                          id={`color-${suit.id}`}
+                          label="Fabric Color"
+                          value={suit.color}
+                          onChange={(e) => update("color", e.target.value)}
+                          placeholder="e.g. White, Navy Blue"
+                        />
+                        <CustomInput
+                          id={`quantity-${suit.id}`}
+                          label="Quantity"
+                          type="number"
+                          min={1}
+                          required
+                          value={suit.quantity}
+                          onChange={(e) =>
+                            update(
+                              "quantity",
+                              Math.max(1, Number(e.target.value)),
+                            )
+                          }
+                        />
+                        <CustomInput
+                          id={`price-${suit.id}`}
+                          label="Stitching Price (PKR)"
+                          type="number"
+                          min={0}
+                          required
+                          value={suit.price}
+                          onChange={(e) =>
+                            update("price", Number(e.target.value))
+                          }
+                        />
                       </div>
 
-                      <CustomInput id={`remarks-${suit.id}`} label="Additional Notes" value={suit.remarks} onChange={(e) => update("remarks", e.target.value)} placeholder="Custom instructions for this suit..." />
+                      <CustomInput
+                        id={`remarks-${suit.id}`}
+                        label="Additional Notes"
+                        value={suit.remarks}
+                        onChange={(e) => update("remarks", e.target.value)}
+                        placeholder="Custom instructions for this suit..."
+                      />
                     </div>
                   )}
                 </div>
