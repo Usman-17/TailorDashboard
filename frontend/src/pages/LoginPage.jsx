@@ -18,8 +18,10 @@ const LoginPage = () => {
 
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
+    const savedPassword = localStorage.getItem("rememberedPassword");
     if (savedEmail) {
       setEmail(savedEmail);
+      if (savedPassword) setPassword(savedPassword);
       setRememberMe(true);
     }
   }, []);
@@ -63,8 +65,10 @@ const LoginPage = () => {
 
       if (rememberMe) {
         localStorage.setItem("rememberedEmail", email);
+        localStorage.setItem("rememberedPassword", password);
       } else {
         localStorage.removeItem("rememberedEmail");
+        localStorage.removeItem("rememberedPassword");
       }
 
       const role = data.user.role;
