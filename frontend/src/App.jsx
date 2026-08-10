@@ -26,6 +26,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SuitTypesPage from "./pages/Tailor/SuitTypesPage";
 import PaymentsPage from "./pages/Tailor/PaymentsPage/PaymentsPage";
 import ExpensesPage from "./pages/Tailor/ExpensesPage/ExpensesPage";
+import TailorReportsPage from "./pages/Tailor/ReportsPage/TailorReportsPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AdminDashboardPage = lazy(() => import("./pages/Admin/DashboardPage"));
@@ -114,6 +115,7 @@ const App = () => {
             <Route path="suit-types" element={<SuitTypesPage />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="expenses" element={<ExpensesPage />} />
+            <Route path="reports" element={<TailorReportsPage />} />
           </Route>
 
           {/* Catch all */}

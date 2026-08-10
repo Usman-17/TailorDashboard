@@ -11,6 +11,7 @@ import {
   Receipt,
   Tag,
   Banknote,
+  BarChart3,
 } from "lucide-react";
 
 import logo from "../assets/logo.png";
@@ -46,6 +47,11 @@ const tailorNavItems = [
     name: "Payments",
     icon: <Banknote />,
     path: "/payments",
+  },
+  {
+    name: "Reports",
+    icon: <BarChart3 />,
+    path: "/reports",
   },
 ];
 
