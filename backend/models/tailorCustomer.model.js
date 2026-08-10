@@ -39,21 +39,14 @@ const tailorCustomerSchema = new mongoose.Schema(
         ref: "Order",
       },
     ],
-
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
-
-    deletedAt: {
-      type: Date,
-      default: null,
-    },
   },
   {
     timestamps: true,
   },
 );
+
+tailorCustomerSchema.index({ shopId: 1, customerId: 1 });
+tailorCustomerSchema.index({ shopId: 1, phone: 1 });
 
 const TailorCustomer = mongoose.model("TailorCustomer", tailorCustomerSchema);
 

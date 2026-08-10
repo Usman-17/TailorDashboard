@@ -58,7 +58,7 @@ const measurementSchema = new mongoose.Schema(
   },
 );
 
-measurementSchema.index({ shopId: 1, customer: 1 }, { unique: true });
+measurementSchema.index({ shopId: 1, customer: 1, createdAt: -1 });
 
 const Measurement = mongoose.model("Measurement", measurementSchema);
 

@@ -77,7 +77,9 @@ export const getMeasurementById = async (req, res) => {
     const measurement = await Measurement.findOne({
       customer: customerId,
       shopId,
-    }).populate("customer", "name phone customerId");
+    })
+      .sort({ createdAt: -1 })
+      .populate("customer", "name phone customerId");
 
     if (!measurement) {
       return res.status(404).json({ error: "Measurement not found" });
@@ -101,16 +103,6 @@ export const addMeasurement = async (req, res) => {
       return res.status(404).json({ error: "Customer not found" });
     }
 
-    const existing = await Measurement.findOne({
-      customer: customerId,
-      shopId,
-    });
-    if (existing) {
-      return res
-        .status(409)
-        .json({ error: "Measurement already exists for this customer" });
-    }
-
     const missingFields = MEASUREMENT_FIELDS.filter(
       (field) => req.body[field] === undefined || req.body[field] === null,
     );
@@ -125,11 +117,9 @@ export const addMeasurement = async (req, res) => {
     // Handle lower type
     if (req.body.lower && req.body.lower.type) {
       if (!["shalwar", "trouser"].includes(req.body.lower.type)) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid lower type. Must be 'shalwar' or 'trouser'",
-          });
+        return res.status(400).json({
+          error: "Invalid lower type. Must be 'shalwar' or 'trouser'",
+        });
       }
       measurementData.lower = { type: req.body.lower.type };
     }
@@ -171,44 +161,52 @@ export const updateMeasurement = async (req, res) => {
     const { customerId } = req.params;
     const { shopId } = req;
 
-    const measurement = await Measurement.findOne({
+    const existing = await Measurement.findOne({
       customer: customerId,
       shopId,
-    });
-    if (!measurement) {
+    }).sort({ createdAt: -1 });
+    if (!existing) {
       return res.status(404).json({ error: "Measurement not found" });
     }
 
+    const measurementData = { shopId, customer: customerId };
+
+    // Handle lower type
+    if (req.body.lower && req.body.lower.type) {
+      if (!["shalwar", "trouser"].includes(req.body.lower.type)) {
+        return res.status(400).json({
+          error: "Invalid lower type. Must be 'shalwar' or 'trouser'",
+        });
+      }
+      measurementData.lower = { type: req.body.lower.type };
+    } else {
+      measurementData.lower = { type: existing.lower?.type || "shalwar" };
+    }
+
     for (const field of MEASUREMENT_FIELDS) {
-      if (req.body[field] !== undefined) {
+      if (req.body[field] !== undefined && req.body[field] !== null) {
         const value = Number(req.body[field]);
         if (isNaN(value) || value < 0) {
           return res.status(400).json({
             error: `${field} must be a valid non-negative number`,
           });
         }
-        measurement[field] = value;
+        measurementData[field] = value;
+      } else {
+        measurementData[field] = existing[field];
       }
     }
 
-    // Handle lower type
-    if (req.body.lower && req.body.lower.type) {
-      if (!["shalwar", "trouser"].includes(req.body.lower.type)) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid lower type. Must be 'shalwar' or 'trouser'",
-          });
-      }
-      measurement.lower = { type: req.body.lower.type };
-    }
+    measurementData.remarks =
+      req.body.remarks !== undefined ? req.body.remarks : existing.remarks;
 
-    if (req.body.remarks !== undefined) {
-      measurement.remarks = req.body.remarks;
-    }
+    const measurement = await Measurement.create(measurementData);
 
-    const updated = await measurement.save();
-    return res.status(200).json(updated);
+    await TailorCustomer.findByIdAndUpdate(customerId, {
+      measurement: measurement._id,
+    });
+
+    return res.status(200).json(measurement);
   } catch (error) {
     console.error("Error in updateMeasurement:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });

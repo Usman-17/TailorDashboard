@@ -124,13 +124,29 @@ export const getOrder = async (req, res) => {
 };
 
 // GET /api/orders/next-number
+const padOrderNumber = (n) => `ORD-${String(n).padStart(4, "0")}`;
+
+const computeNextOrderNumber = async (shopId) => {
+  const counter = await Counter.findOne({ shopId, name: "order" });
+  let nextVal = counter ? counter.value + 1 : 1;
+
+  const latest = await Order.findOne({ shopId })
+    .sort({ orderNumber: -1 })
+    .select("orderNumber")
+    .lean();
+  const match = latest?.orderNumber?.match(/ORD-(\d+)/);
+  if (match) {
+    const maxExisting = parseInt(match[1], 10);
+    if (maxExisting >= nextVal) nextVal = maxExisting + 1;
+  }
+  return nextVal;
+};
+
 export const getNextOrderNumber = async (req, res) => {
   try {
     const { shopId } = req;
-    const counter = await Counter.findOne({ shopId, name: "order" });
-    const currentVal = counter ? counter.value : 0;
-    const nextNum = `ORD-${String(currentVal + 1).padStart(4, "0")}`;
-    return res.status(200).json({ nextOrderNumber: nextNum });
+    const nextVal = await computeNextOrderNumber(shopId);
+    return res.status(200).json({ nextOrderNumber: padOrderNumber(nextVal) });
   } catch (error) {
     console.error("Error in getNextOrderNumber:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -149,7 +165,6 @@ export const addOrder = async (req, res) => {
       advancePaid = 0,
       priority = "normal",
       notes = "",
-      orderNumber: requestedOrderNumber,
     } = req.body;
 
     if (!customer || !deliveryDate || !items || !items.length) {
@@ -206,11 +221,14 @@ export const addOrder = async (req, res) => {
       });
     }
 
-    let orderNumber = requestedOrderNumber?.trim();
-    if (!orderNumber) {
-      const orderNum = await Counter.getNextValue(shopId, "order");
-      orderNumber = `ORD-${String(orderNum).padStart(4, "0")}`;
-    }
+    let orderNumber;
+    const nextVal = await computeNextOrderNumber(shopId);
+    orderNumber = padOrderNumber(nextVal);
+    await Counter.updateOne(
+      { shopId, name: "order" },
+      { $set: { value: nextVal } },
+      { upsert: true },
+    );
 
     const order = await Order.create({
       orderNumber,
@@ -382,11 +400,9 @@ export const addPayment = async (req, res) => {
     }
 
     if (["bank", "jazzcash", "easypaisa"].includes(method) && !referenceNo) {
-      return res
-        .status(400)
-        .json({
-          error: "Reference/Transaction ID is required for this payment method",
-        });
+      return res.status(400).json({
+        error: "Reference/Transaction ID is required for this payment method",
+      });
     }
 
     const order = await Order.findOne({ _id: id, shopId }).populate(

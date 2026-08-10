@@ -1,5 +1,7 @@
 import TailorCustomer from "../models/tailorCustomer.model.js";
 import Measurement from "../models/measurement.model.js";
+import Order from "../models/order.model.js";
+import OrderPayment from "../models/orderPayment.model.js";
 import Counter from "../models/counter.model.js";
 
 const PHONE_REGEX = /^(\+?92|0)?[3]\d{9}$/;
@@ -13,13 +15,22 @@ const validatePhone = (phone) => {
   return null;
 };
 
-// GET /api/customers/all
+// GET /api/customers/all?search=
 export const getAllCustomers = async (req, res) => {
   try {
     const { shopId } = req;
+    const { search = "" } = req.query;
 
-    const customers = await TailorCustomer.find({ shopId })
+    const filter = { shopId };
+
+    if (search.trim()) {
+      const regex = new RegExp(search.trim(), "i");
+      filter.$or = [{ name: regex }, { phone: regex }, { customerId: regex }];
+    }
+
+    const customers = await TailorCustomer.find(filter)
       .populate("measurement")
+      .populate("orders")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -30,18 +41,34 @@ export const getAllCustomers = async (req, res) => {
   }
 };
 
-// GET /api/customers/trash
-export const getDeletedCustomers = async (req, res) => {
+// GET /api/customers/:id/detail
+export const getCustomerDetail = async (req, res) => {
   try {
+    const { id } = req.params;
     const { shopId } = req;
 
-    const customers = await TailorCustomer.find({ shopId, isDeleted: true })
-      .sort({ deletedAt: -1 })
+    const customer = await TailorCustomer.findOne({ _id: id, shopId })
+      .populate("measurement")
       .lean();
 
-    return res.status(200).json({ customers });
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    const [orders, payments, measurements] = await Promise.all([
+      Order.find({ shopId, customer: id, isDeleted: { $ne: true } })
+        .populate("measurement", "lower createdAt")
+        .sort({ createdAt: -1 })
+        .lean(),
+      OrderPayment.find({ shopId, customer: id })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Measurement.find({ shopId, customer: id }).sort({ createdAt: -1 }).lean(),
+    ]);
+
+    return res.status(200).json({ customer, orders, payments, measurements });
   } catch (error) {
-    console.error("Error in getDeletedCustomers:", error.message);
+    console.error("Error in getCustomerDetail:", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
@@ -161,75 +188,6 @@ export const updateCustomer = async (req, res) => {
       const field = Object.keys(error.keyValue)[0];
       return res.status(400).json({ error: `This ${field} already exists` });
     }
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-// DELETE /api/customers/:id
-export const deleteCustomer = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { shopId } = req;
-
-    const customer = await TailorCustomer.findOne({ _id: id, shopId });
-    if (!customer) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-
-    customer.isDeleted = true;
-    customer.deletedAt = new Date();
-    await customer.save();
-
-    return res.status(200).json({ message: "Customer moved to trash" });
-  } catch (error) {
-    console.error("Error in deleteCustomer:", error.message);
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-// DELETE /api/customers/permanent/:id
-export const permanentDeleteCustomer = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { shopId } = req;
-
-    const customer = await TailorCustomer.findOne({ _id: id, shopId });
-    if (!customer) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-
-    await Measurement.deleteOne({ customer: id });
-    await TailorCustomer.findByIdAndDelete(id);
-
-    return res.status(200).json({ message: "Customer permanently deleted" });
-  } catch (error) {
-    console.error("Error in permanentDeleteCustomer:", error.message);
-    return res.status(500).json({ error: error.message });
-  }
-};
-
-// PUT /api/customers/restore/:id
-export const restoreCustomer = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { shopId } = req;
-
-    const customer = await TailorCustomer.findOne({
-      _id: id,
-      shopId,
-      isDeleted: true,
-    });
-    if (!customer) {
-      return res.status(404).json({ error: "Deleted customer not found" });
-    }
-
-    customer.isDeleted = false;
-    customer.deletedAt = null;
-    await customer.save();
-
-    return res.status(200).json(customer);
-  } catch (error) {
-    console.error("Error in restoreCustomer:", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
