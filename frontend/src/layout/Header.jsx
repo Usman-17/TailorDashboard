@@ -37,7 +37,6 @@ const Header = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -50,12 +49,6 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 4);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const handleToggle = () => {
     if (window.innerWidth >= 1024) {
       toggleSidebar();
@@ -66,7 +59,7 @@ const Header = () => {
 
   return (
     <>
-      <header className={`sticky top-0 flex items-center justify-between w-full h-14 sm:h-16 bg-white dark:bg-[#141025] px-3 sm:px-4 z-40 transition-all duration-200 ${scrolled ? "border-b border-gray-100 dark:border-gray-800/60 shadow-sm dark:shadow-[0_1px_12px_rgba(0,0,0,0.3)]" : "border-b border-transparent"}`}>
+      <header className="sticky top-0 flex items-center justify-between w-full h-14 sm:h-16 px-3 sm:px-4 z-40 transition-all duration-200 bg-transparent">
         <button
           onClick={handleToggle}
           className="flex items-center justify-center w-10 h-10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"

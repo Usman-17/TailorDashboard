@@ -18,11 +18,11 @@ const TailorLayoutContent = () => {
       </div>
       <div
         className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
-          isExpanded || isHovered ? "lg:ml-[230px]" : "lg:ml-[68px]"
+          isExpanded || isHovered ? "lg:ml-[220px]" : "lg:ml-[68px]"
         } ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6 overflow-x-hidden">
+        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-5 overflow-x-hidden">
           <Outlet />
         </div>
       </div>

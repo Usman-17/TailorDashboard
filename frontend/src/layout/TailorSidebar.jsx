@@ -14,9 +14,6 @@ import {
   BarChart3,
 } from "lucide-react";
 
-import logo from "../assets/logo.png";
-import logo_icon from "../assets/s-logo.png";
-
 const tailorNavItems = [
   {
     name: "Dashboard",
@@ -94,7 +91,7 @@ const Sidebar = () => {
   };
 
   const renderMenuItems = (items, menuType) => (
-    <ul className="flex flex-col gap-2.5">
+    <ul className="flex flex-col gap-0.5">
       {items.map((nav, index) => {
         const isSubmenuActive = nav.subItems?.some((sub) => isActive(sub.path));
         const isSubmenuOpen =
@@ -105,7 +102,9 @@ const Sidebar = () => {
             {nav.subItems ? (
               <button
                 onClick={() => handleSubmenuToggle(index, menuType)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
+                className={`w-full flex items-center py-2.5 rounded-xl transition-all cursor-pointer ${
+                  isExpanded || isHovered || isMobileOpen ? "justify-between px-3" : "justify-center px-0"
+                } ${
                   isSubmenuActive || isSubmenuOpen
                     ? "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-medium"
                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60"
@@ -135,7 +134,9 @@ const Sidebar = () => {
               nav.path && (
                 <Link
                   to={nav.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                  className={`flex items-center gap-3 py-2.5 rounded-xl transition-all ${
+                    isExpanded || isHovered || isMobileOpen ? "px-3" : "px-0 justify-center"
+                  } ${
                     isActive(nav.path)
                       ? "bg-purple-600 text-white font-medium shadow-md shadow-purple-500/25 dark:bg-purple-600 dark:text-white"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60"
@@ -193,12 +194,12 @@ const Sidebar = () => {
     <aside
       onMouseEnter={() => !isExpanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`fixed top-0 left-0 h-screen px-3 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800/80 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out z-50
+      className={`fixed top-0 left-0 h-screen px-2 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800/80 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out z-50
         ${
           isExpanded || isMobileOpen
-            ? "w-[230px]"
+            ? "w-[220px]"
             : isHovered
-              ? "w-[230px]"
+              ? "w-[220px]"
               : "w-[68px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
@@ -207,21 +208,13 @@ const Sidebar = () => {
       <div className="h-14 sm:h-16 flex items-center justify-center mb-2">
         <Link to="/" className="hidden sm:flex items-center justify-center">
           {isExpanded || isHovered || isMobileOpen ? (
-            <img
-              src={logo}
-              alt="Logo"
-              width={95}
-              height={38}
-              className="dark:brightness-0 dark:invert transition-all"
-            />
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
+              Tailor System
+            </span>
           ) : (
-            <img
-              src={logo_icon}
-              alt="Logo"
-              width={28}
-              height={28}
-              className="dark:brightness-0 dark:invert transition-all"
-            />
+            <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
+              TS
+            </span>
           )}
         </Link>
       </div>
