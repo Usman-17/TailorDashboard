@@ -18,7 +18,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./layout/AdminLayout";
 import TailorLayout from "./layout/Layout";
 
-import DashboardPage from "./pages/DashboardPage";
+import DashboardPage from "./pages/Tailor/DashboardPage/TailorDashboardPage";
 import CustomersPage from "./pages/Tailor/CustomersPage/CustomersPage";
 import OrdersPage from "./pages/Tailor/OrdersPage/OrdersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
