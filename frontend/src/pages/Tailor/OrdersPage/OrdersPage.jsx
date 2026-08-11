@@ -1,25 +1,30 @@
 import moment from "moment";
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Ban,
   CheckCircle,
-  CreditCard,
   ExternalLink,
-  Pencil,
   Redo,
+  Search,
+  SquarePen,
   Truck,
   Users,
+  X,
 } from "lucide-react";
 
 import SummaryCard from "../../../components/SummaryCard";
 import CustomTable from "../../../components/CustomTable";
-import CustomButton from "../../../components/CustomButton";
+import CustomModal from "../../../components/CustomModal";
+import BookOrderModal from "../CustomersPage/BookOrderModal";
 import SectionHeading from "../../../components/SectionHeading";
+
+import EditOrderModal from "./EditOrderModal";
 import OrderDetailPage from "./OrderDetailPage";
 
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
 import { useGetAllOrders } from "../../../hooks/useGetAllOrders";
+import useGetAllCustomers from "../../../hooks/useGetAllCustomers";
+// Imports End----
 
 const STATUS_COLORS = {
   pending:
@@ -37,8 +42,31 @@ const OrdersPage = () => {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState(null);
-  const navigate = useNavigate();
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [bookOrderCustomer, setBookOrderCustomer] = useState(null);
+
   const { orders, isLoading } = useGetAllOrders();
+  const { data: customersData, isLoading: customersLoading } =
+    useGetAllCustomers();
+
+  const customers = useMemo(
+    () => customersData?.customers || [],
+    [customersData],
+  );
+
+  const filteredCustomers = useGlobalFilter(customers, customerSearch, [
+    "name",
+    "phone",
+    "customerId",
+  ]);
+
+  const openBookOrder = (customer) => {
+    setPickerOpen(false);
+    setCustomerSearch("");
+    setBookOrderCustomer(customer);
+  };
 
   const stats = useMemo(() => {
     const total = orders.length;
@@ -81,22 +109,37 @@ const OrdersPage = () => {
     },
   ];
 
-  const filteredByStatus = useMemo(() => {
-    if (filterStatus === "all") return orders;
+  const filtered = useMemo(() => {
+    let result = orders;
     if (filterStatus === "pending")
-      return orders.filter(
+      result = result.filter(
         (o) => !["delivered", "cancelled"].includes(o.status),
       );
-    return orders.filter((o) => o.status === filterStatus);
-  }, [orders, filterStatus]);
+    else if (filterStatus !== "all")
+      result = result.filter((o) => o.status === filterStatus);
 
-  const filtered = useGlobalFilter(filteredByStatus, search, [
-    "orderNumber",
-    "customer.name",
-    "customer.phone",
-    "customer.customerId",
-    "status",
-  ]);
+    if (!search) return result;
+
+    const q = search.toLowerCase();
+    const match = (val) =>
+      val != null && val.toString().toLowerCase().includes(q);
+
+    return result.filter((o) => {
+      const customer = o.customer || {};
+      const suits = (o.items || [])
+        .map((it) => `${it.suitType || ""} ${it.description || ""}`)
+        .join(" ");
+      return (
+        match(o.orderNumber) ||
+        match(customer.name) ||
+        match(customer.phone) ||
+        match(customer.customerId) ||
+        match(o.status) ||
+        (suits && suits.toLowerCase().includes(q)) ||
+        match(o.totalAmount)
+      );
+    });
+  }, [orders, filterStatus, search]);
 
   const columns = [
     {
@@ -227,35 +270,24 @@ const OrdersPage = () => {
         const canEdit = !["ready", "delivered", "cancelled"].includes(
           record.status,
         );
-        const canPay = !record.isPaid && record.status !== "cancelled";
         return (
           <div className="flex items-center justify-center gap-2">
+            {canEdit && (
+              <button
+                onClick={() => setEditingOrderId(record._id)}
+                className="p-2 rounded-full border transition-all duration-200 shadow-sm cursor-pointer bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[color-mix(in_srgb,var(--secondary-color)_30%,transparent)] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-[color-mix(in_srgb,var(--secondary-color)_15%,transparent)] dark:hover:text-amber-300 active:scale-90 active:shadow-inner"
+                title="Edit"
+              >
+                <SquarePen size={16} />
+              </button>
+            )}
             <button
               onClick={() => setSelectedOrderId(record._id)}
-              className="p-2 rounded-full border transition-all duration-200 shadow-sm cursor-pointer bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2a1b44] dark:hover:text-blue-300"
+              className="p-2 rounded-full border transition-all duration-200 shadow-sm cursor-pointer bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2a1b44] dark:hover:text-blue-300 active:scale-90 active:shadow-inner"
               title="View"
             >
               <ExternalLink size={16} />
             </button>
-
-            {canEdit && (
-              <button
-                onClick={() => navigate(`/orders/edit/${record._id}`)}
-                className="p-2 rounded-full border transition-all duration-200 shadow-sm cursor-pointer bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[color-mix(in_srgb,var(--secondary-color)_30%,transparent)] text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-[color-mix(in_srgb,var(--secondary-color)_15%,transparent)] dark:hover:text-amber-300"
-                title="Edit"
-              >
-                <Pencil size={16} />
-              </button>
-            )}
-            {canPay && (
-              <button
-                onClick={() => setSelectedOrderId(record._id)}
-                className="p-2 rounded-full border transition-all duration-200 shadow-sm cursor-pointer bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-[#2a1b44] dark:hover:text-green-300"
-                title="Payment"
-              >
-                <CreditCard size={16} />
-              </button>
-            )}
           </div>
         );
       },
@@ -264,11 +296,15 @@ const OrdersPage = () => {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-3 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex items-center justify-between gap-3 mb-2 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
         <SectionHeading title="Orders" subtitle="Manage all customer orders" />
-        <div className="sm:w-auto w-full">
-          <CustomButton title="Add New Order" to="/orders/add" Icon={Redo} />
-        </div>
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="ml-auto inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-sm font-semibold transition-all cursor-pointer text-white shadow-md hover:shadow-purple-500/30 active:scale-95 shrink-0"
+        >
+          <Redo size={16} />
+          Add New Order
+        </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 my-5">
@@ -304,8 +340,83 @@ const OrdersPage = () => {
         orderId={selectedOrderId}
         open={!!selectedOrderId}
         onClose={() => setSelectedOrderId(null)}
+        onEditOrder={(id) => setEditingOrderId(id)}
         fullScreen
       />
+
+      <EditOrderModal
+        orderId={editingOrderId}
+        open={!!editingOrderId}
+        onClose={() => setEditingOrderId(null)}
+      />
+
+      <BookOrderModal
+        open={!!bookOrderCustomer}
+        onClose={() => setBookOrderCustomer(null)}
+        customer={bookOrderCustomer}
+      />
+
+      {/* Customer Picker for New Order */}
+      <CustomModal isOpen={pickerOpen} className="w-[92%] max-w-md">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Select Customer
+            </h3>
+            <button
+              onClick={() => setPickerOpen(false)}
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              value={customerSearch}
+              onChange={(e) => setCustomerSearch(e.target.value)}
+              placeholder="Search by name, phone, ID..."
+              className="w-full pl-10 pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-[#0f0d1b] border-[1.5px] border-gray-200 dark:border-purple-500/30 focus:border-[var(--secondary-color)] dark:focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(168,85,247,0.25)] focus:outline-none transition-all duration-200"
+            />
+          </div>
+
+          <div className="max-h-80 overflow-y-auto flex flex-col gap-2 pr-1">
+            {customersLoading ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                Loading customers...
+              </p>
+            ) : filteredCustomers.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                No customers found
+              </p>
+            ) : (
+              filteredCustomers.map((cust) => (
+                <button
+                  key={cust._id}
+                  onClick={() => openBookOrder(cust)}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15102a] hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition cursor-pointer text-left"
+                >
+                  <div className="size-9 rounded-full bg-purple-600/15 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-sm border border-purple-500/30 shrink-0">
+                    {(cust.name || "?").charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {cust.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {cust.phone} • {cust.customerId}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      </CustomModal>
     </>
   );
 };

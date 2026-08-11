@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import moment from "moment";
+import { useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Calendar,
   CheckCircle,
   Clock,
   CreditCard,
-  Edit3,
+  SquarePen,
   MessageCircle,
   Phone,
   Scissors,
@@ -72,10 +72,10 @@ const PAYMENT_METHODS = [
   { value: "easypaisa", label: "EasyPaisa" },
 ];
 
-const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
+const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { order, isLoading, refetch } = useGetOrder(orderId);
+  const { order, isLoading } = useGetOrder(orderId);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -207,10 +207,14 @@ const OrderDetailPage = ({ orderId, open, onClose, fullScreen = false }) => {
                 order.status !== "delivered" &&
                 order.status !== "cancelled" && (
                   <button
-                    onClick={() => navigate(`/orders/edit/${order._id}`)}
+                    onClick={() =>
+                      onEditOrder
+                        ? onEditOrder(order._id)
+                        : navigate(`/orders/edit/${order._id}`)
+                    }
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
                   >
-                    <Edit3 size={14} /> Edit
+                    <SquarePen size={14} /> Edit
                   </button>
                 )}
               {canCancel && (
