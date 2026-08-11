@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  ShoppingBag,
   Ruler,
   DollarSign,
   Scissors,
@@ -14,11 +13,11 @@ import {
   ChevronUp,
   Plus,
   Trash2,
+  Loader,
 } from "lucide-react";
 
 import CustomInput from "../../../components/CustomInput";
 import CustomSelect from "../../../components/CustomSelect";
-import LoadingSpinner from "../../../components/LoadingSpinner";
 import FullScreenModal from "../../../components/FullScreenModal";
 import CustomDatePicker from "../../../components/CustomDatePicker";
 // Imports End-----
@@ -121,7 +120,8 @@ const BookOrderModal = ({ open, onClose, customer }) => {
   const [deliveryDate, setDeliveryDate] = useState(
     moment().add(7, "days").format("YYYY-MM-DD"),
   );
-  const [advancePaid, setAdvancePaid] = useState(0);
+  const [advancePaid, setAdvancePaid] = useState("");
+  const [discount, setDiscount] = useState("");
   const [globalRemarks, setGlobalRemarks] = useState("");
   const [showMeasurements, setShowMeasurements] = useState(false);
 
@@ -130,7 +130,12 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     (sum, s) => sum + (Number(s.price) || 0) * (Number(s.quantity) || 1),
     0,
   );
-  const remaining = Math.max(0, totalAmount - (Number(advancePaid) || 0));
+  const discountAmount = Math.min(
+    Math.max(Number(discount) || 0, 0),
+    totalAmount,
+  );
+  const netAmount = totalAmount - discountAmount;
+  const remaining = Math.max(0, netAmount - (Number(advancePaid) || 0));
 
   useEffect(() => {
     if (nextOrderData?.nextOrderNumber)
@@ -141,7 +146,8 @@ const BookOrderModal = ({ open, onClose, customer }) => {
   useEffect(() => {
     if (open) {
       setSuitItems([createSuitItem(availableSuitTypesList)]);
-      setAdvancePaid(0);
+      setAdvancePaid("");
+      setDiscount("");
       setGlobalRemarks("");
     }
   }, [open, availableSuitTypesList]);
@@ -223,6 +229,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
       orderNumber: orderNumber || undefined,
       deliveryDate,
       totalAmount,
+      discount: discountAmount,
       advancePaid: Number(advancePaid) || 0,
       notes: allRemarks,
       items,
@@ -236,14 +243,14 @@ const BookOrderModal = ({ open, onClose, customer }) => {
       open={open}
       onClose={onClose}
       title="Book New Order"
-      subtitle={`Customer: ${customer?.name || ""} (${customer?.phone || ""}) — ${customer?.customerId || ""}`}
+      subtitle={`Customer: ${customer?.name || ""}`}
       showClose={false}
       actions={
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition cursor-pointer"
+            className="px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition cursor-pointer whitespace-nowrap"
           >
             Cancel
           </button>
@@ -251,16 +258,11 @@ const BookOrderModal = ({ open, onClose, customer }) => {
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
             disabled={isPending}
-            className="inline-flex items-center gap-2 px-6 py-2 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full shadow-md hover:shadow-purple-500/25 transition-all cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center justify-center px-5 sm:px-6 py-2 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full shadow-md hover:shadow-purple-500/25 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
           >
-            {isPending ? (
-              <LoadingSpinner content="Saving Order..." />
-            ) : (
-              <>
-                <ShoppingBag size={16} />
-                Save &amp; Book Order
-              </>
-            )}
+            {isPending
+              ? "Saving..."
+              : "Book Order"}
           </button>
         </div>
       }
@@ -278,12 +280,17 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">
                     {customer?.name}
                   </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 font-semibold">
-                    {customer?.customerId || "Customer"}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 font-semibold whitespace-nowrap">
+                    <Tag size={11} />
+                    {isLoadingNextNo ? (
+                      <Loader size={10} className="animate-spin" />
+                    ) : (
+                      orderNumber || "ORD-0001"
+                    )}
                   </span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                  📱 {customer?.phone}
+                  {customer?.phone}
                 </p>
               </div>
             </div>
@@ -309,12 +316,6 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                   No Measurement Recorded
                 </span>
               )}
-              <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-600 text-white text-xs font-bold shadow-sm">
-                <Tag size={14} />
-                <span>
-                  {isLoadingNextNo ? "..." : orderNumber || "ORD-0001"}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -355,48 +356,63 @@ const BookOrderModal = ({ open, onClose, customer }) => {
               </div>
 
               {/* Lower Measurements */}
-              <div>
+              <div className="space-y-3">
                 <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-                  {existingMeasurement.lower?.type === "trouser"
-                    ? "Trouser"
-                    : "Shalwar"}
+                  Lower Measurements
                 </span>
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 mt-1.5">
-                  {[
-                    [
-                      existingMeasurement.lower?.type === "trouser"
-                        ? "Length"
-                        : "Shalwar Length",
-                      existingMeasurement.shalwarLength,
-                    ],
-                    [
-                      existingMeasurement.lower?.type === "trouser"
-                        ? "Waist"
-                        : "Shalwar Waist",
-                      existingMeasurement.shalwarWaist,
-                    ],
-                    [
-                      existingMeasurement.lower?.type === "trouser"
-                        ? "Hip"
-                        : "Shalwar Hip",
-                      existingMeasurement.shalwarHip,
-                    ],
-                    ["Thigh", existingMeasurement.thigh],
-                    ["Knee", existingMeasurement.knee],
-                    ["Bottom", existingMeasurement.bottom],
-                  ].map(([label, val]) => (
-                    <div
-                      key={label}
-                      className="bg-white/70 dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
-                    >
-                      <span className="text-gray-400 block font-medium">
-                        {label}
-                      </span>
-                      <span className="font-bold text-purple-700 dark:text-purple-300">
-                        {val || "-"}
-                      </span>
-                    </div>
-                  ))}
+                <div>
+                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Shalwar
+                  </span>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 mt-1.5">
+                    {[
+                      ["Length", existingMeasurement.shalwarLength],
+                      ["Waist", existingMeasurement.shalwarWaist],
+                      ["Hip", existingMeasurement.shalwarHip],
+                      ["Thigh", existingMeasurement.thigh],
+                      ["Knee", existingMeasurement.knee],
+                      ["Bottom", existingMeasurement.bottom],
+                    ].map(([label, val]) => (
+                      <div
+                        key={label}
+                        className="bg-white/70 dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
+                      >
+                        <span className="text-gray-400 block font-medium">
+                          {label}
+                        </span>
+                        <span className="font-bold text-purple-700 dark:text-purple-300">
+                          {val || "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Trouser
+                  </span>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 mt-1.5">
+                    {[
+                      ["Length", existingMeasurement.trouserLength],
+                      ["Waist", existingMeasurement.trouserWaist],
+                      ["Hip", existingMeasurement.trouserHip],
+                      ["Thigh", existingMeasurement.trouserThigh],
+                      ["Knee", existingMeasurement.trouserKnee],
+                      ["Bottom", existingMeasurement.trouserBottom],
+                    ].map(([label, val]) => (
+                      <div
+                        key={label}
+                        className="bg-white/70 dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
+                      >
+                        <span className="text-gray-400 block font-medium">
+                          {label}
+                        </span>
+                        <span className="font-bold text-purple-700 dark:text-purple-300">
+                          {val || "-"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -444,33 +460,24 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                 >
                   {/* Card Header */}
                   <div
-                    className={`flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
+                    className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="size-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
                         {index + 1}
                       </div>
-                      <div>
-                        <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      <div className="min-w-0">
+                        <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
                           Suit #{index + 1}
+                          {suit.suitType && (
+                            <span className="ml-2 text-xs text-purple-600 dark:text-purple-400 font-semibold">
+                              — {suit.suitType}
+                            </span>
+                          )}
                         </span>
-                        {suit.suitType && (
-                          <span className="ml-2 text-xs text-purple-600 dark:text-purple-400 font-semibold">
-                            — {suit.suitType}
-                          </span>
-                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {suit.price > 0 && (
-                        <span className="font-mono text-sm font-extrabold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2.5 py-0.5 rounded-full">
-                          {suit.quantity || 1} × Rs.{" "}
-                          {Number(suit.price).toLocaleString()} = Rs.{" "}
-                          {Number(
-                            suit.price * (suit.quantity || 1),
-                          ).toLocaleString()}
-                        </span>
-                      )}
                       {suitItems.length > 1 && (
                         <button
                           type="button"
@@ -498,7 +505,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                   {/* Card Body */}
                   {!isCollapsed && (
                     <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                         <CustomSelect
                           label="Suit Type"
                           value={suit.suitType}
@@ -549,23 +556,6 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                           required
                           allowClear={false}
                         />
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        <CustomInput
-                          id={`fabric-${suit.id}`}
-                          label="Fabric Name"
-                          value={suit.fabric}
-                          onChange={(e) => update("fabric", e.target.value)}
-                          placeholder="e.g. Cotton, Silk, Khaddar"
-                        />
-                        <CustomInput
-                          id={`color-${suit.id}`}
-                          label="Fabric Color"
-                          value={suit.color}
-                          onChange={(e) => update("color", e.target.value)}
-                          placeholder="e.g. White, Navy Blue"
-                        />
                         <CustomInput
                           id={`quantity-${suit.id}`}
                           label="Quantity"
@@ -580,16 +570,22 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                             )
                           }
                         />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <CustomInput
-                          id={`price-${suit.id}`}
-                          label="Stitching Price (PKR)"
-                          type="number"
-                          min={0}
-                          required
-                          value={suit.price}
-                          onChange={(e) =>
-                            update("price", Number(e.target.value))
-                          }
+                          id={`fabric-${suit.id}`}
+                          label="Fabric Name"
+                          value={suit.fabric}
+                          onChange={(e) => update("fabric", e.target.value)}
+                          placeholder="e.g. Cotton, Silk, Khaddar"
+                        />
+                        <CustomInput
+                          id={`color-${suit.id}`}
+                          label="Fabric Color"
+                          value={suit.color}
+                          onChange={(e) => update("color", e.target.value)}
+                          placeholder="e.g. White, Navy Blue"
                         />
                       </div>
 
@@ -619,13 +615,13 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                     return (
                       <div
                         key={s.id}
-                        className="flex items-center justify-between text-sm"
+                        className="flex items-center justify-between gap-3 text-sm"
                       >
-                        <div className="flex items-center gap-2">
-                          <span className="size-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="size-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                             {i + 1}
                           </span>
-                          <span className="text-gray-700 dark:text-gray-300 font-medium">
+                          <span className="text-gray-700 dark:text-gray-300 font-medium truncate inline-flex items-center">
                             {s.suitType || "Not selected"}
                             {qty > 1 && (
                               <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
@@ -640,11 +636,27 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                       </div>
                     );
                   })}
-                  <div className="border-t border-purple-300 dark:border-purple-700 pt-2 mt-2 flex items-center justify-between font-bold text-base">
-                    <span className="text-gray-900 dark:text-white">Total</span>
-                    <span className="font-mono text-purple-700 dark:text-purple-300">
-                      Rs. {totalAmount.toLocaleString()}
-                    </span>
+                  <div className="border-t border-purple-300 dark:border-purple-700 pt-2 mt-2 space-y-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+                      <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">
+                        Rs. {totalAmount.toLocaleString()}
+                      </span>
+                    </div>
+                    {discountAmount > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500 dark:text-gray-400">Discount</span>
+                        <span className="font-mono font-semibold text-red-500">
+                          - Rs. {discountAmount.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between font-bold text-base">
+                      <span className="text-gray-900 dark:text-white">Total</span>
+                      <span className="font-mono text-purple-700 dark:text-purple-300">
+                        Rs. {netAmount.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -663,7 +675,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Delivery Date */}
               <CustomDatePicker
                 id="deliveryDate"
@@ -676,18 +688,31 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                 placeholder="Select delivery date"
               />
 
-              {/* Total (auto-calculated) */}
+              {/* Total (auto-calculated, read-only) */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
                   Total Amount (PKR)
                 </label>
-                <div className="px-3.5 py-2.5 rounded-xl border border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 flex items-center justify-between">
-                  <span className="text-xs text-gray-500 font-medium">PKR</span>
-                  <span className="font-mono text-base font-extrabold text-purple-700 dark:text-purple-300">
-                    {totalAmount.toLocaleString()}
-                  </span>
-                </div>
+                <input
+                  id="totalAmount"
+                  readOnly
+                  tabIndex={-1}
+                  value={netAmount.toLocaleString()}
+                  className="w-full px-3.5 pr-3.5 h-10 rounded-lg text-[14px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-gray-100 dark:bg-[#1a1129] transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none cursor-default"
+                />
               </div>
+
+              {/* Discount */}
+              <CustomInput
+                id="discount"
+                label="Discount (PKR)"
+                type="number"
+                min={0}
+                max={totalAmount}
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                placeholder="Enter discount amount"
+              />
 
               {/* Advance */}
               <CustomInput
@@ -695,7 +720,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                 label="Advance Paid (PKR)"
                 type="number"
                 min={0}
-                max={totalAmount}
+                max={netAmount}
                 value={advancePaid}
                 onChange={(e) => setAdvancePaid(e.target.value)}
                 placeholder="Enter advance"
@@ -703,17 +728,16 @@ const BookOrderModal = ({ open, onClose, customer }) => {
 
               {/* Remaining */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
                   Remaining Balance
                 </label>
-                <div className="px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-[#1a1129] flex items-center justify-between">
-                  <span className="text-xs text-gray-500 font-medium">PKR</span>
-                  <span
-                    className={`font-mono text-base font-extrabold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}
-                  >
-                    {remaining.toLocaleString()}
-                  </span>
-                </div>
+                <input
+                  id="remainingBalance"
+                  readOnly
+                  tabIndex={-1}
+                  value={remaining.toLocaleString()}
+                  className={`w-full px-3.5 pr-3.5 h-10 rounded-lg text-[14px] font-mono font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"} bg-gray-100 dark:bg-[#1a1129] transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none cursor-default`}
+                />
               </div>
             </div>
           </div>

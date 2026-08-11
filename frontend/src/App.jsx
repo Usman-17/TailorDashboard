@@ -20,6 +20,7 @@ import TailorLayout from "./layout/Layout";
 
 import DashboardPage from "./pages/Tailor/DashboardPage/TailorDashboardPage";
 import CustomersPage from "./pages/Tailor/CustomersPage/CustomersPage";
+import CustomerDetailPage from "./pages/Tailor/CustomersPage/CustomerDetailPage";
 import OrdersPage from "./pages/Tailor/OrdersPage/OrdersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -111,6 +112,7 @@ const App = () => {
           >
             <Route index element={<DashboardPage />} />
             <Route path="customers" element={<CustomersPage />} />
+            <Route path="customers/:id" element={<CustomerDetailPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="suit-types" element={<SuitTypesPage />} />
             <Route path="payments" element={<PaymentsPage />} />

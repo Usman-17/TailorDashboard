@@ -20,7 +20,20 @@ export const SHALWAR_FIELDS = [
   "bottom",
 ];
 
-export const ALL_FIELDS = [...KAMEEZ_FIELDS, ...SHALWAR_FIELDS];
+export const TROUSER_FIELDS = [
+  "trouserLength",
+  "trouserWaist",
+  "trouserHip",
+  "trouserThigh",
+  "trouserKnee",
+  "trouserBottom",
+];
+
+export const ALL_FIELDS = [
+  ...KAMEEZ_FIELDS,
+  ...SHALWAR_FIELDS,
+  ...TROUSER_FIELDS,
+];
 
 export const LOWER_TYPES = [
   { value: "shalwar", label: "Shalwar" },
@@ -28,7 +41,6 @@ export const LOWER_TYPES = [
 ];
 
 export const initialMeasurementState = {
-  lowerType: "shalwar",
   ...ALL_FIELDS.reduce((acc, f) => {
     acc[f] = "";
     return acc;
@@ -53,32 +65,73 @@ export const URDU_LABELS = {
   thigh: "ران",
   knee: "گھٹنا",
   bottom: "دھرا",
+  trouserLength: "لمبائی",
+  trouserWaist: "کمر",
+  trouserHip: "کولہ",
+  trouserThigh: "ران",
+  trouserKnee: "گھٹنا",
+  trouserBottom: "دھرا",
 };
 
-const TROUSER_LABELS = {
+const LOWER_LABELS = {
   shalwarLength: "Length",
   shalwarWaist: "Waist",
   shalwarHip: "Hip",
+  trouserLength: "Length",
+  trouserWaist: "Waist",
+  trouserHip: "Hip",
 };
 
 const SHALWAR_LABELS = {
-  shalwarLength: "Length",
-  shalwarWaist: "Waist",
-  shalwarHip: "Hip",
+  thigh: "Thigh",
+  knee: "Knee",
+  bottom: "Bottom",
+};
+
+const TROUSER_LABELS = {
+  trouserThigh: "Thigh",
+  trouserKnee: "Knee",
+  trouserBottom: "Bottom",
 };
 
 export const labelWithUrdu = (field, lowerType = "shalwar") => {
-  const isLowerField = SHALWAR_FIELDS.includes(field);
+  const isLowerField = [...SHALWAR_FIELDS, ...TROUSER_FIELDS].includes(field);
 
   let english;
-  if (isLowerField && lowerType === "trouser") {
-    english = TROUSER_LABELS[field] || field.replace(/([A-Z])/g, " $1");
-  } else if (isLowerField) {
-    english = SHALWAR_LABELS[field] || field.replace(/([A-Z])/g, " $1");
+  if (isLowerField) {
+    if (lowerType === "trouser") {
+      english =
+        TROUSER_LABELS[field] ||
+        LOWER_LABELS[field] ||
+        field.replace(/([A-Z])/g, " $1");
+    } else {
+      english =
+        SHALWAR_LABELS[field] ||
+        LOWER_LABELS[field] ||
+        field.replace(/([A-Z])/g, " $1");
+    }
   } else {
     english = field.replace(/([A-Z])/g, " $1");
   }
 
   const urdu = URDU_LABELS[field] || "";
   return { english, urdu };
+};
+
+export const lowerFieldTitle = (field) => {
+  const map = {
+    shalwarLength: "Length",
+    shalwarWaist: "Waist",
+    shalwarHip: "Hip",
+    thigh: "Thigh",
+    knee: "Knee",
+    bottom: "Bottom",
+    trouserLength: "Length",
+    trouserWaist: "Waist",
+    trouserHip: "Hip",
+    trouserThigh: "Thigh",
+    trouserKnee: "Knee",
+    trouserBottom: "Bottom",
+  };
+  return map[field] || field.replace(/([A-Z])/g, " $1");
 };

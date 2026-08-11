@@ -1,10 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 
-export const useGetAllCustomers = () => {
+export const useGetAllCustomers = (search = "") => {
   return useQuery({
-    queryKey: ["customers"],
+    queryKey: ["customers", search],
     queryFn: async () => {
-      const res = await fetch("/api/customers/all", {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/customers/all?${params.toString()}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch customers");

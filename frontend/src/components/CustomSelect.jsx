@@ -76,13 +76,13 @@ const CustomSelect = forwardRef(
         {label && (
           <label
             htmlFor={id}
-            className="block text-sm font-medium mb-1 text-gray-700"
+            className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide"
           >
             {label}{" "}
             {required ? (
               <span className="text-red-500 font-semibold">*</span>
             ) : (
-              <span className="text-xs font-normal text-gray-400">
+              <span className="text-xs font-normal text-gray-400 dark:text-purple-300/50">
                 (Optional)
               </span>
             )}

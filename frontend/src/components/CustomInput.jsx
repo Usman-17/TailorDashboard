@@ -78,6 +78,9 @@ const CustomInput = ({
             type={isPassword && showPassword ? "text" : type}
             value={value}
             onChange={onChange}
+            onWheel={
+              type === "number" ? (e) => e.currentTarget.blur() : undefined
+            }
             placeholder={placeholder}
             disabled={disabled}
             inputMode={inputMode}

@@ -1,17 +1,16 @@
 import moment from "moment";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  SquarePen,
   Users,
   Ruler,
   UserCheck,
   UserPlus,
-  Eye,
-  Trash2,
+  UserRound,
   X,
-  ShoppingBag,
+  PlusCircle,
 } from "lucide-react";
 
 import CustomTable from "../../../components/CustomTable";
@@ -24,10 +23,9 @@ import useGetAllCustomers from "../../../hooks/useGetAllCustomers";
 import SummaryCard from "../../../components/SummaryCard";
 import ActionButtons from "../../../components/ActionButtons";
 import SectionHeading from "../../../components/SectionHeading";
-import DeleteConfirmModal from "../../../components/DeleteConfirmModal";
 
-import MeasurementModal from "./MeasurementModal";
 import BookOrderModal from "./BookOrderModal";
+import MeasurementModal from "./MeasurementModal";
 import { initialMeasurementState } from "./measurementFields";
 // Imports End----
 
@@ -52,11 +50,6 @@ const CustomersPage = () => {
   const [editCustomer, setEditCustomer] = useState(null);
   const [form, setForm] = useState({ name: "", phone: "" });
   const [errors, setErrors] = useState({});
-  const [deleteModal, setDeleteModal] = useState({
-    open: false,
-    id: null,
-    name: "",
-  });
   const [measureModal, setMeasureModal] = useState({
     open: false,
     mode: "add",
@@ -67,6 +60,7 @@ const CustomersPage = () => {
     open: false,
     customer: null,
   });
+  const navigate = useNavigate();
 
   const openBookOrderModal = (customer) => {
     setBookOrderModal({ open: true, customer });
@@ -187,7 +181,12 @@ const CustomersPage = () => {
       }
     });
 
-    return { total, withMeasurement, withoutMeasurement, newThisMonth };
+    return {
+      total,
+      withMeasurement,
+      withoutMeasurement,
+      newThisMonth,
+    };
   }, [customers]);
 
   const statCards = [
@@ -303,9 +302,11 @@ const CustomersPage = () => {
     {
       title: "Orders",
       key: "orders",
-      sorter: (a, b) => (a.orders?.length || 0) - (b.orders?.length || 0),
+      sorter: (a, b) =>
+        (a.orders?.filter((o) => !o.isDeleted)?.length || 0) -
+        (b.orders?.filter((o) => !o.isDeleted)?.length || 0),
       render: (_, record) => {
-        const count = record.orders?.length || 0;
+        const count = record.orders?.filter((o) => !o.isDeleted)?.length || 0;
         return (
           <span
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -324,21 +325,13 @@ const CustomersPage = () => {
       key: "actions",
       align: "center",
       render: (_, record) => (
-        <div className="flex items-center justify-center gap-1.5 flex-wrap">
-          <ActionButtons
-            record={record}
-            onEdit={(r) => openEdit(r)}
-            onDelete={
-              (record.orders?.length || 0) === 0
-                ? (r) => setDeleteModal({ open: true, id: r._id, name: r.name })
-                : undefined
-            }
-          />
+        <div className="flex items-center justify-center gap-1 flex-nowrap">
+          <ActionButtons record={record} onEdit={(r) => openEdit(r)} />
 
           {!record.measurement && (
             <button
               onClick={() => openMeasureModal(record, "add")}
-              className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:text-orange-400 cursor-pointer"
+              className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:text-orange-400 cursor-pointer active:scale-90"
               title="Add Measurement"
             >
               <Ruler size={16} />
@@ -348,7 +341,7 @@ const CustomersPage = () => {
           {record.measurement && (
             <button
               onClick={() => openMeasureModal(record, "edit")}
-              className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:text-yellow-400 cursor-pointer"
+              className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:text-yellow-400 cursor-pointer active:scale-90"
               title="Edit Measurement"
             >
               <Ruler size={16} />
@@ -356,10 +349,17 @@ const CustomersPage = () => {
           )}
           <button
             onClick={() => openBookOrderModal(record)}
-            className="p-2 rounded-full border transition-colors duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:text-purple-300 cursor-pointer"
+            className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:text-purple-300 cursor-pointer active:scale-90"
             title="Book Order"
           >
-            <ShoppingBag size={16} />
+            <PlusCircle size={16} />
+          </button>
+          <button
+            onClick={() => navigate(`/customers/${record._id}`)}
+            className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2a1b44] dark:hover:text-blue-300 cursor-pointer active:scale-90"
+            title="View"
+          >
+            <UserRound size={16} />
           </button>
         </div>
       ),
@@ -368,22 +368,22 @@ const CustomersPage = () => {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-3 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
+      <div className="flex items-center justify-between gap-3 mb-2 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
         <SectionHeading
           title="Customers"
           subtitle="Manage customer records and measurements"
         />
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-sm font-medium transition cursor-pointer text-white shadow-sm"
+          className="ml-auto inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-sm font-semibold transition-all cursor-pointer text-white shadow-md hover:shadow-purple-500/30 active:scale-95 shrink-0"
         >
-          <SquarePen size={16} />
+          <UserPlus size={16} />
           Add Customer
         </button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 my-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 my-5">
         {statCards.map((card) => (
           <SummaryCard
             key={card.id}
@@ -504,13 +504,6 @@ const CustomersPage = () => {
         open={bookOrderModal.open}
         onClose={closeBookOrderModal}
         customer={bookOrderModal.customer}
-      />
-
-      <DeleteConfirmModal
-        isOpen={deleteModal.open}
-        onClose={() => setDeleteModal({ open: false, id: null, name: "" })}
-        customerId={deleteModal.id}
-        customerName={deleteModal.name}
       />
     </div>
   );

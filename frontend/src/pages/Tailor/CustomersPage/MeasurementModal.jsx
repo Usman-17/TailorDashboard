@@ -10,8 +10,8 @@ import FullScreenModal from "../../../components/FullScreenModal";
 import {
   KAMEEZ_FIELDS,
   SHALWAR_FIELDS,
+  TROUSER_FIELDS,
   ALL_FIELDS,
-  LOWER_TYPES,
   initialMeasurementState,
   labelWithUrdu,
 } from "./measurementFields";
@@ -47,9 +47,6 @@ const MeasurementModal = ({
       Object.keys(cleaned).forEach((key) => {
         cleaned[key] = existingMeasurement[key] ?? "";
       });
-      if (existingMeasurement.lower?.type) {
-        cleaned.lowerType = existingMeasurement.lower.type;
-      }
       setMeasureForm(cleaned);
     } else if (open) {
       setMeasureForm({ ...initialMeasurementState });
@@ -65,7 +62,7 @@ const MeasurementModal = ({
 
       const payload = {
         ...data,
-        lower: { type: data.lowerType },
+        lower: { type: "shalwar" },
       };
 
       const res = await fetch(url, {
@@ -104,10 +101,7 @@ const MeasurementModal = ({
     saveMeasurement(measureForm);
   };
 
-  const lowerType = measureForm.lowerType || "shalwar";
-  const lowerTitle = lowerType === "trouser" ? "Trouser" : "Shalwar";
-
-  const FieldLabel = ({ field }) => {
+  const FieldLabel = ({ field, lowerType = "shalwar" }) => {
     const { english, urdu } = labelWithUrdu(field, lowerType);
     return (
       <div className="flex items-center justify-between mb-1">
@@ -123,7 +117,7 @@ const MeasurementModal = ({
     );
   };
 
-  const renderViewFields = (fields) =>
+  const renderViewFields = (fields, lowerType = "shalwar") =>
     fields.map((field) => {
       const { english, urdu } = labelWithUrdu(field, lowerType);
       return (
@@ -148,10 +142,10 @@ const MeasurementModal = ({
       );
     });
 
-  const renderFormFields = (fields) =>
+  const renderFormFields = (fields, lowerType = "shalwar") =>
     fields.map((field) => (
       <div key={field}>
-        <FieldLabel field={field} />
+        <FieldLabel field={field} lowerType={lowerType} />
         <input
           name={field}
           type="number"
@@ -206,8 +200,11 @@ const MeasurementModal = ({
             </div>
           )}
           <Section title="Kameez">{renderViewFields(KAMEEZ_FIELDS)}</Section>
-          <Section title={`${lowerTitle} Measurements`}>
-            {renderViewFields(SHALWAR_FIELDS)}
+          <Section title="Shalwar Measurements">
+            {renderViewFields(SHALWAR_FIELDS, "shalwar")}
+          </Section>
+          <Section title="Trouser Measurements">
+            {renderViewFields(TROUSER_FIELDS, "trouser")}
           </Section>
           {existingMeasurement?.remarks && (
             <div>
@@ -224,39 +221,13 @@ const MeasurementModal = ({
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           <Section title="Kameez">{renderFormFields(KAMEEZ_FIELDS)}</Section>
 
-          <div>
-            <div className="flex items-center justify-between mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
-              <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {lowerTitle} Measurements
-              </h3>
-              <div className="flex items-center gap-4">
-                {LOWER_TYPES.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
-                  >
-                    <input
-                      type="radio"
-                      name="lowerType"
-                      value={opt.value}
-                      checked={measureForm.lowerType === opt.value}
-                      onChange={(e) =>
-                        setMeasureForm({
-                          ...measureForm,
-                          lowerType: e.target.value,
-                        })
-                      }
-                      className="w-4 h-4 text-purple-600 border-gray-300 dark:border-gray-700 focus:ring-purple-500 cursor-pointer"
-                    />
-                    {opt.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {renderFormFields(SHALWAR_FIELDS)}
-            </div>
-          </div>
+          <Section title="Shalwar Measurements">
+            {renderFormFields(SHALWAR_FIELDS, "shalwar")}
+          </Section>
+
+          <Section title="Trouser Measurements">
+            {renderFormFields(TROUSER_FIELDS, "trouser")}
+          </Section>
 
           <div>
             <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">

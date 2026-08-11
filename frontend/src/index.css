@@ -1035,6 +1035,15 @@ input:-webkit-autofill:focus {
   color: #6b7280 !important;
 }
 
+.my-custom-datepicker .ant-picker-input {
+  height: 40px !important;
+}
+
+.my-custom-datepicker .ant-picker-input > input {
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
 /* === Dark Mode overrides for Custom Select and Custom DatePicker === */
 [data-theme="dark"] .my-custom-select .ant-select-selector {
   background-color: #1e1935 !important;
