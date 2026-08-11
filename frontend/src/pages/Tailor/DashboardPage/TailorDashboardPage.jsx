@@ -1,3 +1,6 @@
+import moment from "moment";
+import Chart from "react-apexcharts";
+import { Link } from "react-router-dom";
 import {
   Users,
   Package,
@@ -7,15 +10,15 @@ import {
   AlertTriangle,
   CalendarCheck,
 } from "lucide-react";
-import Chart from "react-apexcharts";
-import moment from "moment";
 
+import useTailorRecentOrders from "../../../hooks/useTailorRecentOrders";
 import useTailorDashboardStats from "../../../hooks/useTailorDashboardStats";
 import useTailorDashboardCharts from "../../../hooks/useTailorDashboardCharts";
-import useTailorRecentOrders from "../../../hooks/useTailorRecentOrders";
-import useTailorUpcomingDeliveries from "../../../hooks/useTailorUpcomingDeliveries";
 import useTailorLatestCustomers from "../../../hooks/useTailorLatestCustomers";
+import useTailorUpcomingDeliveries from "../../../hooks/useTailorUpcomingDeliveries";
+
 import { useTheme } from "../../../context/ThemeContext";
+// Imports End----
 
 const Skeleton = ({ className = "" }) => (
   <div
@@ -270,7 +273,7 @@ const DashboardPage = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="dashboard-page space-y-6">
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {statCards.map((card) => (
@@ -278,21 +281,21 @@ const DashboardPage = () => {
             key={card.title}
             className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-5 hover:shadow-md transition-shadow"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div
-                className={`flex items-center justify-center w-10 h-10 rounded-lg ${card.color}`}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg shrink-0 ${card.color}`}
               >
                 <card.icon className="size-5" />
               </div>
-              <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">
+              <span className="text-xs whitespace-nowrap text-gray-400 dark:text-gray-500 font-medium">
                 {card.trend}
               </span>
             </div>
             <div className="mt-3">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm whitespace-nowrap text-gray-500 dark:text-gray-400">
                 {card.title}
               </p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">
+              <p className="text-2xl font-bold whitespace-nowrap text-gray-800 dark:text-gray-100 mt-1">
                 {card.value}
               </p>
             </div>
@@ -307,12 +310,12 @@ const DashboardPage = () => {
             key={card.title}
             className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-4 flex items-center gap-3 hover:shadow-md transition-shadow"
           >
-            <card.icon className={`size-8 ${card.color}`} />
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <card.icon className={`size-8 shrink-0 ${card.color}`} />
+            <div className="min-w-0">
+              <p className="text-xs whitespace-nowrap text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {card.title}
               </p>
-              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              <p className="text-xl font-bold whitespace-nowrap text-gray-800 dark:text-gray-100">
                 {card.value}
               </p>
             </div>
@@ -358,15 +361,15 @@ const DashboardPage = () => {
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
               Recent Orders
             </h3>
-            <a
-              href="/orders"
+            <Link
+              to="/orders"
               className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium"
             >
               View all
-            </a>
+            </Link>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm whitespace-nowrap">
               <thead className="bg-gray-50 dark:bg-gray-800/60 text-xs uppercase text-gray-500 dark:text-gray-400">
                 <tr>
                   <th className="px-5 py-3 text-left">Order</th>
@@ -440,15 +443,15 @@ const DashboardPage = () => {
             <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
               Upcoming Deliveries
             </h3>
-            <a
-              href="/orders"
+            <Link
+              to="/orders"
               className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium"
             >
               View all
-            </a>
+            </Link>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm whitespace-nowrap">
               <thead className="bg-gray-50 dark:bg-gray-800/60 text-xs uppercase text-gray-500 dark:text-gray-400">
                 <tr>
                   <th className="px-5 py-3 text-left">Order</th>
@@ -535,12 +538,12 @@ const DashboardPage = () => {
           <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">
             Latest Customers
           </h3>
-          <a
-            href="/customers"
+          <Link
+            to="/customers"
             className="text-sm text-blue-600 dark:text-purple-400 hover:text-blue-700 font-medium"
           >
             View all
-          </a>
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

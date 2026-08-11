@@ -1085,12 +1085,20 @@ input:-webkit-autofill:focus {
 }
 
 [data-theme="dark"] .my-custom-select .ant-select-item-option-active {
-  background-color: color-mix(in srgb, var(--secondary-color) 20%, transparent) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--secondary-color) 20%,
+    transparent
+  ) !important;
   color: #fff !important;
 }
 
 [data-theme="dark"] .my-custom-select .ant-select-item-option-selected {
-  background-color: color-mix(in srgb, var(--secondary-color) 25%, transparent) !important;
+  background-color: color-mix(
+    in srgb,
+    var(--secondary-color) 25%,
+    transparent
+  ) !important;
   color: #fff !important;
   font-weight: 600 !important;
 }
@@ -2005,3 +2013,9 @@ body.modal-open .ant-tooltip {
 }
 
 /* ========= Popover Styles End ========= */
+
+/* ========= Tailor Dashboard - prevent text wrapping ========= */
+.dashboard-page table th,
+.dashboard-page table td {
+  white-space: nowrap;
+}
