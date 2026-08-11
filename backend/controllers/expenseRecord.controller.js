@@ -17,16 +17,32 @@ const generateExpenseId = async (shopId) => {
 const isCurrentMonth = (date) => {
   const now = new Date();
   const d = new Date(date);
-  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  return (
+    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  );
 };
 
 // GET /api/expense-records/all
 export const getAllExpenses = async (req, res) => {
   try {
     const { shopId } = req;
-    const { category, method, from, to, search, page = 1, limit = 50 } = req.query;
+    const {
+      category,
+      method,
+      from,
+      to,
+      search,
+      status = "active",
+      page = 1,
+      limit = 50,
+    } = req.query;
 
     const filter = { shopId };
+    if (status === "voided") {
+      filter.isVoided = true;
+    } else {
+      filter.isVoided = false;
+    }
 
     if (category && category !== "all") {
       filter.category = category;
@@ -80,20 +96,36 @@ export const getExpenseSummary = async (req, res) => {
     const shopOid = new mongoose.Types.ObjectId(shopId);
 
     const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDay = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [totalExpenses, todayExpenses, monthExpenses] = await Promise.all([
       ExpenseRecord.aggregate([
-        { $match: { shopId: shopOid } },
+        { $match: { shopId: shopOid, isVoided: false } },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
       ExpenseRecord.aggregate([
-        { $match: { shopId: shopOid, date: { $gte: startOfDay } } },
+        {
+          $match: {
+            shopId: shopOid,
+            isVoided: false,
+            date: { $gte: startOfDay },
+          },
+        },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
       ExpenseRecord.aggregate([
-        { $match: { shopId: shopOid, date: { $gte: startOfMonth } } },
+        {
+          $match: {
+            shopId: shopOid,
+            isVoided: false,
+            date: { $gte: startOfMonth },
+          },
+        },
         { $group: { _id: null, total: { $sum: "$amount" } } },
       ]),
     ]);
@@ -138,7 +170,9 @@ export const addExpense = async (req, res) => {
     const { title, category, amount, method, date, note } = req.body;
 
     if (!title || !category || amount == null || !date) {
-      return res.status(400).json({ error: "Title, category, amount, and date are required" });
+      return res
+        .status(400)
+        .json({ error: "Title, category, amount, and date are required" });
     }
 
     if (Number(amount) < 0) {
@@ -179,7 +213,9 @@ export const updateExpense = async (req, res) => {
     }
 
     if (!isCurrentMonth(expense.date)) {
-      return res.status(400).json({ error: "Cannot edit expenses from previous months" });
+      return res
+        .status(400)
+        .json({ error: "Cannot edit expenses from previous months" });
     }
 
     if (title !== undefined) expense.title = title;
@@ -198,26 +234,35 @@ export const updateExpense = async (req, res) => {
   }
 };
 
-// DELETE /api/expense-records/delete/:id
-export const deleteExpense = async (req, res) => {
+// PUT /api/expense-records/void/:id
+export const voidExpense = async (req, res) => {
   try {
     const { id } = req.params;
-    const { shopId } = req;
+    const { shopId, user } = req;
 
     const expense = await ExpenseRecord.findOne({ _id: id, shopId });
     if (!expense) {
       return res.status(404).json({ error: "Expense not found" });
     }
 
-    if (!isCurrentMonth(expense.date)) {
-      return res.status(400).json({ error: "Cannot delete expenses from previous months" });
+    if (expense.isVoided) {
+      return res.status(400).json({ error: "Expense is already voided" });
     }
 
-    await ExpenseRecord.deleteOne({ _id: id, shopId });
+    if (!isCurrentMonth(expense.date)) {
+      return res
+        .status(400)
+        .json({ error: "Cannot void expenses from previous months" });
+    }
 
-    return res.status(200).json({ message: "Expense deleted successfully" });
+    expense.isVoided = true;
+    expense.voidedBy = user._id;
+    expense.voidedAt = new Date();
+    await expense.save();
+
+    return res.status(200).json(expense);
   } catch (error) {
-    console.error("Error in deleteExpense:", error.message);
+    console.error("Error in voidExpense:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };

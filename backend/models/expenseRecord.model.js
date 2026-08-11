@@ -63,6 +63,19 @@ const expenseRecordSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isVoided: {
+      type: Boolean,
+      default: false,
+    },
+    voidedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    voidedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
