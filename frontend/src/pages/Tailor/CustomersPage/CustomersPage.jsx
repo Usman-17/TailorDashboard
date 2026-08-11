@@ -1,7 +1,7 @@
 import moment from "moment";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
@@ -61,13 +61,17 @@ const CustomersPage = () => {
     customer: null,
   });
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const modalParam = searchParams.get("modal");
 
   const openBookOrderModal = (customer) => {
     setBookOrderModal({ open: true, customer });
+    setSearchParams({ modal: "book-order" });
   };
 
   const closeBookOrderModal = () => {
     setBookOrderModal({ open: false, customer: null });
+    setSearchParams({}, { replace: true });
   };
 
   const queryClient = useQueryClient();
@@ -135,6 +139,7 @@ const CustomersPage = () => {
     setEditCustomer(null);
     setForm({ name: "", phone: "" });
     setErrors({});
+    setSearchParams({}, { replace: true });
   };
 
   const openCreate = () => {
@@ -142,6 +147,7 @@ const CustomersPage = () => {
     setForm({ name: "", phone: "" });
     setErrors({});
     setFormModalOpen(true);
+    setSearchParams({ modal: "add-customer" });
   };
 
   const openEdit = (customer) => {
@@ -152,14 +158,17 @@ const CustomersPage = () => {
     });
     setErrors({});
     setFormModalOpen(true);
+    setSearchParams({ modal: "add-customer" });
   };
 
   const openMeasureModal = (customer, mode) => {
     setMeasureModal({ open: true, mode, customer });
+    setSearchParams({ modal: "measurements" });
   };
 
   const closeMeasureModal = () => {
     setMeasureModal({ open: false, mode: "add", customer: null });
+    setSearchParams({}, { replace: true });
   };
 
   const summaryStats = useMemo(() => {
@@ -413,7 +422,10 @@ const CustomersPage = () => {
       />
 
       {/* Custom Modal for Add/Edit Customer */}
-      <CustomModal isOpen={formModalOpen} className="w-[92%] max-w-md">
+      <CustomModal
+        isOpen={formModalOpen && modalParam === "add-customer"}
+        className="w-[92%] max-w-md"
+      >
         <div className="flex flex-col gap-5">
           {/* Modal Header */}
           <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
@@ -492,7 +504,7 @@ const CustomersPage = () => {
       </CustomModal>
 
       <MeasurementModal
-        open={measureModal.open}
+        open={measureModal.open && modalParam === "measurements"}
         onClose={closeMeasureModal}
         mode={measureModal.mode}
         customer={measureModal.customer}
@@ -501,7 +513,7 @@ const CustomersPage = () => {
       />
 
       <BookOrderModal
-        open={bookOrderModal.open}
+        open={bookOrderModal.open && modalParam === "book-order"}
         onClose={closeBookOrderModal}
         customer={bookOrderModal.customer}
       />

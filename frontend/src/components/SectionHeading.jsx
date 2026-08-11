@@ -1,11 +1,15 @@
-const SectionHeading = ({ title, subtitle }) => {
+const SectionHeading = ({ title, subtitle, subtitleClassName }) => {
   return (
-    <div className="mb-2">
+    <div className="mb-2 min-w-0">
       <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
         {title}
       </h2>
       {subtitle && (
-        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>
+        <p
+          className={`text-xs sm:text-sm text-gray-500 dark:text-gray-400 ${subtitleClassName || ""}`}
+        >
+          {subtitle}
+        </p>
       )}
     </div>
   );

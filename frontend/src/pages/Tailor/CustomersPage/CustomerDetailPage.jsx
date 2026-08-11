@@ -218,7 +218,7 @@ const CustomerDetailPage = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <div>
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-64 bg-gray-200 dark:bg-gray-800 rounded-lg" />
           <div className="h-24 bg-gray-200 dark:bg-gray-800 rounded-xl" />
@@ -260,6 +260,7 @@ const CustomerDetailPage = () => {
         <SectionHeading
           title="Customer Details"
           subtitle="Complete profile, orders, payments and measurements"
+          subtitleClassName="max-w-56 sm:max-w-none"
         />
         <Link
           to="/customers"
@@ -271,32 +272,32 @@ const CustomerDetailPage = () => {
       </div>
 
       {/* Profile Card */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] p-5 my-5 flex flex-col sm:flex-row gap-5 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="size-14 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center text-xl font-bold shrink-0">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] p-4 sm:p-5 my-5 flex flex-col sm:flex-row gap-4 sm:gap-5 items-start sm:items-center justify-between">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
+          <div className="size-12 sm:size-14 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">
             {(customer.name || "?").charAt(0).toUpperCase()}
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white break-words">
                 {customer.name}
               </h2>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-5 mt-2 text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1.5 mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
               <span className="inline-flex items-center gap-1.5">
-                <Hash size={14} className="text-gray-400" />
-                {customer.customerId}
+                <Hash size={13} className="text-gray-400 shrink-0" />
+                <span className="truncate">{customer.customerId}</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Phone size={14} className="text-gray-400" />
+                <Phone size={13} className="text-gray-400 shrink-0" />
                 {customer.phone}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <User size={14} className="text-gray-400" />
+                <User size={13} className="text-gray-400 shrink-0" />
                 Joined {moment(customer.createdAt).format("DD MMM YYYY")}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Calendar size={14} className="text-gray-400" />
+                <Calendar size={13} className="text-gray-400 shrink-0" />
                 {orders.length} orders
               </span>
             </div>
