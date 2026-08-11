@@ -123,6 +123,12 @@ const orderSchema = new mongoose.Schema(
       min: 0,
     },
 
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     advancePaid: {
       type: Number,
       default: 0,

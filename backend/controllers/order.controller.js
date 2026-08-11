@@ -163,6 +163,7 @@ export const addOrder = async (req, res) => {
       items,
       deliveryDate,
       advancePaid = 0,
+      discount = 0,
       priority = "normal",
       notes = "",
     } = req.body;
@@ -215,7 +216,15 @@ export const addOrder = async (req, res) => {
       0,
     );
 
-    if (advancePaid < 0 || advancePaid > totalAmount) {
+    const discountAmount = Number(discount) || 0;
+    if (discountAmount < 0 || discountAmount > totalAmount) {
+      return res.status(400).json({
+        error: "Discount must be between 0 and total amount",
+      });
+    }
+    const netAmount = totalAmount - discountAmount;
+
+    if (advancePaid < 0 || advancePaid > netAmount) {
       return res.status(400).json({
         error: "Advance payment must be between 0 and total amount",
       });
@@ -237,10 +246,11 @@ export const addOrder = async (req, res) => {
       measurement,
       items: processedItems,
       deliveryDate: new Date(deliveryDate),
-      totalAmount,
+      totalAmount: netAmount,
+      discount: discountAmount,
       advancePaid,
-      remainingBalance: totalAmount - advancePaid,
-      isPaid: advancePaid >= totalAmount,
+      remainingBalance: netAmount - advancePaid,
+      isPaid: advancePaid >= netAmount,
       priority,
       notes,
       createdBy: user._id,

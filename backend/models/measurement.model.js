@@ -37,13 +37,21 @@ const measurementSchema = new mongoose.Schema(
     bicep: { type: Number, required: true, min: 0 },
     cuff: { type: Number, required: true, min: 0 },
 
-    // Shalwar / Trouser (same fields)
+    // Shalwar (existing set)
     shalwarLength: { type: Number, required: true, min: 0 },
     shalwarWaist: { type: Number, required: true, min: 0 },
     shalwarHip: { type: Number, required: true, min: 0 },
     thigh: { type: Number, required: true, min: 0 },
     knee: { type: Number, required: true, min: 0 },
     bottom: { type: Number, required: true, min: 0 },
+
+    // Trouser (parallel set)
+    trouserLength: { type: Number, min: 0 },
+    trouserWaist: { type: Number, min: 0 },
+    trouserHip: { type: Number, min: 0 },
+    trouserThigh: { type: Number, min: 0 },
+    trouserKnee: { type: Number, min: 0 },
+    trouserBottom: { type: Number, min: 0 },
 
     // Remarks
     remarks: {

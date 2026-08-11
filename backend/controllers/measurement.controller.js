@@ -18,6 +18,12 @@ const MEASUREMENT_FIELDS = [
   "thigh",
   "knee",
   "bottom",
+  "trouserLength",
+  "trouserWaist",
+  "trouserHip",
+  "trouserThigh",
+  "trouserKnee",
+  "trouserBottom",
 ];
 
 // GET /api/measurements/all
