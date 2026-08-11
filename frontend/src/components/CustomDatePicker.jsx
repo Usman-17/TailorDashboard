@@ -27,7 +27,7 @@ const CustomDatePicker = forwardRef(
       : null;
 
     return (
-      <div className={`flex flex-col gap-1 w-full ${className}`}>
+      <div className={`flex flex-col w-full ${className}`}>
         {label && (
           <label
             htmlFor={id}

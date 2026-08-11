@@ -2,17 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 const useGetExpenses = (filters = {}) => {
-  const { category, method, from, to, search } = filters;
+  const { category, method, status, from, to, search } = filters;
 
   const queryParams = useMemo(() => {
     const params = new URLSearchParams();
     if (category && category !== "all") params.set("category", category);
     if (method && method !== "all") params.set("method", method);
+    if (status && status !== "active") params.set("status", status);
     if (from) params.set("from", from);
     if (to) params.set("to", to);
     if (search) params.set("search", search);
     return params.toString();
-  }, [category, method, from, to, search]);
+  }, [category, method, status, from, to, search]);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["expenseRecords", filters],

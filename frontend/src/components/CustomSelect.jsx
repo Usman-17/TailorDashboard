@@ -46,18 +46,20 @@ const CustomSelect = forwardRef(
       }
 
       const scrollY = window.scrollY;
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
       document.body.style.position = "fixed";
       document.body.style.top = `-${scrollY}px`;
       document.body.style.width = "100%";
-      document.body.style.overflowY = "scroll";
 
       window.addEventListener("popstate", onPopState);
 
       return () => {
+        document.documentElement.style.overflow = "";
+        document.body.style.overflow = "";
         document.body.style.position = "";
         document.body.style.top = "";
         document.body.style.width = "";
-        document.body.style.overflowY = "";
         window.scrollTo(0, scrollY);
 
         window.removeEventListener("popstate", onPopState);
@@ -70,7 +72,7 @@ const CustomSelect = forwardRef(
 
     return (
       <div
-        className={`flex flex-col gap-1 w-full ${className}`}
+        className={`flex flex-col w-full ${className}`}
         autoComplete="no-autofill"
       >
         {label && (

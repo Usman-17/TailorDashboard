@@ -12,6 +12,9 @@ const ActionButtons = ({
   onDelete,
   onSettings,
   darkMode: darkModeProp,
+  deleteTitle = "Delete",
+  // eslint-disable-next-line no-unused-vars
+  deleteIcon: DeleteIcon = Trash2,
 }) => {
   const themeContext = useTheme();
   const darkMode = darkModeProp ?? themeContext?.isDarkMode ?? false;
@@ -80,7 +83,7 @@ const ActionButtons = ({
       {/* Delete Button */}
       {onDelete && (
         <button
-          title="Delete"
+          title={deleteTitle}
           onClick={() => !deleteDisabled && onDelete(record)}
           disabled={isDeleteLoading || deleteDisabled}
           className={`p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none active:scale-90 ${
@@ -104,7 +107,7 @@ const ActionButtons = ({
               }`}
             />
           ) : (
-            <Trash2 size={16} />
+            <DeleteIcon size={16} />
           )}
         </button>
       )}

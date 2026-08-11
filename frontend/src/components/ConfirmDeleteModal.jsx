@@ -1,6 +1,15 @@
 import { AlertTriangle, X } from "lucide-react";
 
-const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, title = "Delete Item", message = "Are you sure you want to delete this?", isLoading = false }) => {
+const ConfirmDeleteModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title = "Delete Item",
+  message = "Are you sure you want to delete this?",
+  isLoading = false,
+  confirmText = "Delete",
+  loadingText = "Deleting...",
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -38,7 +47,7 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm, title = "Delete Item",
               disabled={isLoading}
               className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 disabled:opacity-50 cursor-pointer transition-colors"
             >
-              {isLoading ? "Deleting..." : "Delete"}
+              {isLoading ? loadingText : confirmText}
             </button>
           </div>
         </div>

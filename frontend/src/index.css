@@ -934,17 +934,19 @@ input:-webkit-autofill:focus {
   font-family: "Outfit", sans-serif !important;
   color: #111827 !important;
   padding: 0 12px !important;
-  border: 1.5px solid #e5e7eb !important;
+  border: 1.5px solid var(--color-gray-200) !important;
   border-radius: 8px !important;
   height: 40px !important;
+  min-height: 40px !important;
   display: flex !important;
   align-items: center !important;
+  box-sizing: border-box !important;
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04) !important;
   transition: all 0.2s ease !important;
 }
 
 .my-custom-select .ant-select-selector:hover {
-  border-color: #9ca3af !important;
+  border-color: var(--color-gray-400) !important;
 }
 
 /* Focus and Open state for Select */
@@ -1011,7 +1013,7 @@ input:-webkit-autofill:focus {
 
 .my-custom-datepicker.ant-picker {
   background: #ffffff !important;
-  border: 1.5px solid #e5e7eb !important;
+  border: 1.5px solid var(--color-gray-200) !important;
   border-radius: 8px !important;
   height: 40px !important;
   padding: 0 12px !important;
@@ -1020,7 +1022,7 @@ input:-webkit-autofill:focus {
 }
 
 .my-custom-datepicker.ant-picker:hover {
-  border-color: #9ca3af !important;
+  border-color: var(--color-gray-400) !important;
 }
 
 .my-custom-datepicker.ant-picker-focused,
@@ -1046,19 +1048,20 @@ input:-webkit-autofill:focus {
 
 /* === Dark Mode overrides for Custom Select and Custom DatePicker === */
 [data-theme="dark"] .my-custom-select .ant-select-selector {
-  background-color: #1e1935 !important;
+  background-color: #0f0d1b !important;
   color: #ffffff !important;
-  border: 1.5px solid #423768 !important;
+  border: 1.5px solid
+    color-mix(in oklab, var(--color-purple-500) 30%, transparent) !important;
 }
 
 [data-theme="dark"] .my-custom-select .ant-select-selector:hover {
-  border-color: #8143ec !important;
+  border-color: #c084fc !important;
 }
 
 [data-theme="dark"] .my-custom-select.ant-select-focused .ant-select-selector,
 [data-theme="dark"] .my-custom-select.ant-select-open .ant-select-selector {
   border-color: #c084fc !important;
-  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25) !important;
 }
 
 [data-theme="dark"] .my-custom-select .ant-select-selection-item {
@@ -1104,17 +1107,18 @@ input:-webkit-autofill:focus {
 }
 
 [data-theme="dark"] .my-custom-datepicker.ant-picker {
-  background: #1e1935 !important;
-  border: 1.5px solid #423768 !important;
+  background: #0f0d1b !important;
+  border: 1.5px solid
+    color-mix(in oklab, var(--color-purple-500) 30%, transparent) !important;
 }
 
 [data-theme="dark"] .my-custom-datepicker.ant-picker:hover {
-  border-color: #8143ec !important;
+  border-color: #c084fc !important;
 }
 
 [data-theme="dark"] .my-custom-datepicker.ant-picker-focused {
   border-color: #c084fc !important;
-  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25) !important;
 }
 
 [data-theme="dark"] .my-custom-datepicker .ant-picker-input > input {
