@@ -302,7 +302,7 @@ export const updateOrder = async (req, res) => {
   try {
     const { id } = req.params;
     const { shopId } = req;
-    const { items, deliveryDate, priority, notes } = req.body;
+    const { items, deliveryDate, priority, notes, discount } = req.body;
 
     const order = await Order.findOne({ _id: id, shopId });
     if (!order) {
@@ -319,20 +319,38 @@ export const updateOrder = async (req, res) => {
     }
 
     if (items && items.length > 0) {
-      order.items = items.map((item) => ({
-        suitType: item.suitType,
-        description: item.description || "",
-        quantity: item.quantity || 1,
-        unitPrice: item.unitPrice,
-        totalPrice: (item.quantity || 1) * item.unitPrice,
-      }));
-      order.calculateTotals();
+      order.items = items.map((item) => {
+        const qty = item.quantity || 1;
+        return {
+          suitType: item.suitType,
+          dressType: item.dressType || item.suitType || "",
+          lowerType: item.lowerType || "",
+          collarType: item.collarType || "",
+          collarDetail: item.collarDetail || "",
+          cuffType: item.cuffType || "",
+          pocket: item.pocket || "",
+          fabric: item.fabric || "",
+          color: item.color || "",
+          description: item.description || "",
+          quantity: qty,
+          unitPrice: item.unitPrice,
+          totalPrice: qty * item.unitPrice,
+        };
+      });
+
+      const rawTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+
+      if (discount !== undefined) {
+        order.discount = Math.min(Math.max(Number(discount) || 0, 0), rawTotal);
+      }
+
+      order.totalAmount = Math.max(0, rawTotal - order.discount);
 
       if (order.advancePaid > order.totalAmount) {
         order.advancePaid = order.totalAmount;
-        order.remainingBalance = 0;
-        order.isPaid = true;
       }
+      order.remainingBalance = Math.max(0, order.totalAmount - order.advancePaid);
+      order.isPaid = order.remainingBalance <= 0;
     }
 
     if (deliveryDate) order.deliveryDate = new Date(deliveryDate);
