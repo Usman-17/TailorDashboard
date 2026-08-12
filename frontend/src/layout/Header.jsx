@@ -13,10 +13,11 @@ import {
 import useLogout from "../hooks/useLogout";
 import useGetAuth from "../hooks/useGetAuth";
 
-import { useSidebar } from "../context/SidebarContext";
-import ChangePasswordModal from "../components/ChangePasswordModal";
 import ThemeToggle from "../components/ThemeToggle";
-import { useTheme } from "../context/ThemeContext";
+import ChangePasswordModal from "../components/ChangePasswordModal";
+
+import { useSidebar } from "../context/SidebarContext";
+// Imports End----
 
 const ROLE_LABELS = {
   super_admin: "Super Admin",
@@ -25,19 +26,20 @@ const ROLE_LABELS = {
 };
 
 const ROLE_COLORS = {
-  super_admin: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+  super_admin:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
   owner: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   staff: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
 };
 
 const Header = () => {
-  const { logoutMutation } = useLogout();
-  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   const { data: authUser } = useGetAuth();
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { logoutMutation } = useLogout();
+
+  const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -77,16 +79,22 @@ const Header = () => {
               className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             >
               <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                <UserRound size={18} className="text-gray-600 dark:text-gray-300" />
+                <UserRound
+                  size={18}
+                  className="text-gray-600 dark:text-gray-300"
+                />
               </div>
+
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">
                   {authUser?.fullName}
                 </p>
+
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
                   {authUser?.email}
                 </p>
               </div>
+
               <ChevronDown
                 size={16}
                 className={`hidden sm:block text-gray-400 dark:text-gray-500 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
@@ -98,31 +106,24 @@ const Header = () => {
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                      <UserRound size={20} className="text-gray-600 dark:text-gray-300" />
+                      <UserRound
+                        size={20}
+                        className="text-gray-600 dark:text-gray-300"
+                      />
                     </div>
+
                     <div>
                       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {authUser?.fullName}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{authUser?.email}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {authUser?.email}
+                      </p>
                     </div>
                   </div>
                 </div>
+
                 <div className="py-1">
-                  <button
-                    onClick={() => {
-                      toggleTheme();
-                    }}
-                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-3">
-                      <ThemeToggle className="p-0 border-0 bg-transparent hover:bg-transparent shadow-none" />
-                      Theme Mode
-                    </span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 capitalize">
-                      {isDarkMode ? "Dark" : "Light"}
-                    </span>
-                  </button>
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
@@ -133,6 +134,7 @@ const Header = () => {
                     <KeyRound size={16} />
                     Change Password
                   </button>
+
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
