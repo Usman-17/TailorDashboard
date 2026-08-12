@@ -1,13 +1,17 @@
-import { Outlet, Navigate } from "react-router-dom";
-import useGetAuth from "../hooks/useGetAuth";
 import { Loader } from "lucide-react";
+import { Outlet, Navigate } from "react-router-dom";
+
 import Header from "./Header";
 import Backdrop from "./Backdrop";
 import AdminSidebar from "./AdminSidebar";
+
+import useGetAuth from "../hooks/useGetAuth";
+
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
+// Imports End----
 
 const AdminLayoutContent = () => {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const { isMobileOpen } = useSidebar();
 
   return (
     <div className="min-h-screen xl:flex">
@@ -16,9 +20,7 @@ const AdminLayoutContent = () => {
         <Backdrop />
       </div>
       <div
-        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
-          isExpanded || isHovered ? "lg:ml-[230px]" : "lg:ml-[68px]"
-        } ${isMobileOpen ? "ml-0" : ""}`}
+        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out lg:ml-[230px] ${isMobileOpen ? "ml-0" : ""}`}
       >
         <Header />
         <div className="p-2 mx-auto max-w-(--breakpoint-2xl) md:p-4 overflow-x-hidden">

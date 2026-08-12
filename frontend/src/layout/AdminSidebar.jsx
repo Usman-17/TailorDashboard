@@ -4,15 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebar } from "../context/SidebarContext";
 import {
   ChevronDownIcon,
-  Ellipsis,
   LayoutDashboard,
   Store,
   Users,
   BarChart2,
+  X,
 } from "lucide-react";
-
-import logo from "../assets/logo.png";
-import logo_icon from "../assets/s-logo.png";
 
 const adminNavItems = [
   {
@@ -38,7 +35,7 @@ const adminNavItems = [
 ];
 
 const AdminSidebar = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isMobileOpen, toggleMobileSidebar } = useSidebar();
   const location = useLocation();
 
   const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -97,26 +94,25 @@ const AdminSidebar = () => {
                   <span className="[&>svg]:size-[19px] flex-shrink-0">
                     {nav.icon}
                   </span>
-                  {(isExpanded || isHovered || isMobileOpen) && (
-                    <span className="text-[13.5px] font-medium whitespace-nowrap">
-                      {nav.name}
-                    </span>
-                  )}
+                  <span className="text-[13.5px] font-medium whitespace-nowrap">
+                    {nav.name}
+                  </span>
                 </div>
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <ChevronDownIcon
-                    className={`w-4 h-4 transition-transform duration-200 ${
-                      isSubmenuOpen
-                        ? "rotate-180 text-purple-600 dark:text-purple-400"
-                        : "text-gray-400 dark:text-gray-500"
-                    }`}
-                  />
-                )}
+                <ChevronDownIcon
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isSubmenuOpen
+                      ? "rotate-180 text-purple-600 dark:text-purple-400"
+                      : "text-gray-400 dark:text-gray-500"
+                  }`}
+                />
               </button>
             ) : (
               nav.path && (
                 <Link
                   to={nav.path}
+                  onClick={() => {
+                    if (isMobileOpen) toggleMobileSidebar();
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer ${
                     isActive(nav.path)
                       ? "bg-purple-600 text-white font-medium shadow-md shadow-purple-500/25 dark:bg-purple-600 dark:text-white"
@@ -126,16 +122,14 @@ const AdminSidebar = () => {
                   <span className="[&>svg]:size-[19px] flex-shrink-0">
                     {nav.icon}
                   </span>
-                  {(isExpanded || isHovered || isMobileOpen) && (
-                    <span className="text-[13.5px] font-medium whitespace-nowrap">
-                      {nav.name}
-                    </span>
-                  )}
+                  <span className="text-[13.5px] font-medium whitespace-nowrap">
+                    {nav.name}
+                  </span>
                 </Link>
               )
             )}
 
-            {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
+            {nav.subItems && (
               <div
                 ref={(el) => {
                   subMenuRefs.current[`${menuType}-${index}`] = el;
@@ -152,6 +146,9 @@ const AdminSidebar = () => {
                     <li key={subItem.name}>
                       <Link
                         to={subItem.path}
+                        onClick={() => {
+                          if (isMobileOpen) toggleMobileSidebar();
+                        }}
                         className={`flex justify-between items-center px-3 py-2 rounded-lg text-[12.5px] whitespace-nowrap transition-all cursor-pointer ${
                           isActive(subItem.path)
                             ? "bg-purple-600 text-white font-medium shadow-sm shadow-purple-500/20 dark:bg-purple-600 dark:text-white"
@@ -173,55 +170,39 @@ const AdminSidebar = () => {
 
   return (
     <aside
-      onMouseEnter={() => !isExpanded && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       className={`fixed top-0 left-0 h-screen px-3 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800/80 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out z-50
-        ${
-          isExpanded || isMobileOpen
-            ? "w-[230px]"
-            : isHovered
-              ? "w-[230px]"
-              : "w-[68px]"
-        }
+        ${isMobileOpen ? "w-full" : "w-[230px]"}
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
     >
-      <div className="h-14 sm:h-16 flex items-center justify-center mb-2">
-        <Link to="/admin" className="hidden sm:flex items-center justify-center">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <img
-              src={logo}
-              alt="Logo"
-              width={95}
-              height={38}
-              className="dark:brightness-0 dark:invert transition-all"
-            />
-          ) : (
-            <img
-              src={logo_icon}
-              alt="Logo"
-              width={28}
-              height={28}
-              className="dark:brightness-0 dark:invert transition-all"
-            />
-          )}
+      <div className="h-14 sm:h-16 flex items-center justify-between px-1 mb-2">
+        <Link
+          to="/admin"
+          onClick={() => {
+            if (isMobileOpen) toggleMobileSidebar();
+          }}
+          className="flex items-center justify-center"
+        >
+          <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent whitespace-nowrap">
+            Admin Panel
+          </span>
         </Link>
+        {isMobileOpen && (
+          <button
+            onClick={toggleMobileSidebar}
+            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+          >
+            <X size={20} className="text-gray-600 dark:text-gray-300" />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
         <nav className="mb-4">
           <div className="flex flex-col gap-2">
             <div>
-              <h2
-                className={`mb-2.5 text-[10px] font-semibold uppercase tracking-wider flex leading-[16px] text-gray-400 dark:text-gray-500 px-1 ${
-                  !isExpanded && !isHovered ? "justify-center" : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Admin Panel"
-                ) : (
-                  <Ellipsis size={14} />
-                )}
+              <h2 className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider flex leading-[16px] text-gray-400 dark:text-gray-500 px-1 justify-start">
+                Main Menu
               </h2>
               {renderMenuItems(adminNavItems, "main")}
             </div>
