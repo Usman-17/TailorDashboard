@@ -662,6 +662,9 @@ export const forgotPassword = async (req, res) => {
     const token = await user.createPasswordResetToken();
     await user.save();
 
+    const frontendUrl =
+      process.env.FRONTEND_URL || "https://tailorone.vercel.app";
+
     const resetURL = `
     <html>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
@@ -670,7 +673,7 @@ export const forgotPassword = async (req, res) => {
         <p>Hi ${user.fullName},</p>
         <p>Please click the button below to reset your password. This link will expire in 15 minutes:</p>
         <p>
-          <a href="${process.env.FRONTEND_URL}/reset-password/${token}" 
+          <a href="${frontendUrl}/reset-password/${token}" 
              style="display: inline-block; padding: 10px 20px; font-size: 16px; color: #fff; background-color: #4CAF50; text-decoration: none; border-radius: 4px;">Reset Password</a>
         </p>
         <p>If you did not request this, please ignore this email.</p>
