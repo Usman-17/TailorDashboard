@@ -1,7 +1,8 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import LoadingSpinner from "../components/LoadingSpinner";
 import { useMutation } from "@tanstack/react-query";
+
+import LoadingSpinner from "../components/LoadingSpinner";
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState("");
@@ -9,26 +10,24 @@ const ForgotPasswordPage = () => {
 
   const { mutate: forgotPasswordMutation, isPending } = useMutation({
     mutationFn: async ({ email }) => {
-      try {
-        const res = await fetch("/api/auth/forgot-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
 
-        const data = await res.json();
+      const data = await res.json();
 
-        if (!res.ok)
-          throw new Error(data.error || "Request failed. Please try again.");
-      } catch (error) {
-        throw new Error(error.message);
-      }
+      if (!res.ok)
+        throw new Error(data.error || "Request failed. Please try again.");
+
+      return data;
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 5000);
-      toast.success("Email sent successfully!");
+      toast.success(data.message || "Email sent successfully!");
       setEmail("");
     },
 
