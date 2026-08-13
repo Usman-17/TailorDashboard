@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 
+let transporterVerified = false;
+
 export const sendEmail = async (data) => {
   try {
     const mailId = process.env.MAIL_ID;
@@ -25,6 +27,19 @@ export const sendEmail = async (data) => {
       },
     });
 
+    if (!transporterVerified) {
+      try {
+        await transporter.verify();
+        console.log("SMTP transporter verified successfully");
+        transporterVerified = true;
+      } catch (verifyError) {
+        console.error("SMTP transporter verification failed:", verifyError.message);
+        throw new Error(
+          `SMTP connection failed: ${verifyError.message}. Check MAIL_ID, MAIL_PASSWORD, and SMTP settings.`
+        );
+      }
+    }
+
     const info = await transporter.sendMail({
       from: `"Tailor Dashboard" <${mailId}>`,
       to: data.to,
@@ -33,7 +48,7 @@ export const sendEmail = async (data) => {
       html: data.html,
     });
 
-    console.log(`Email sent to ${data.to}: ${info.messageId || "OK"}`);
+    console.log(`Email sent to ${data.to} | MessageId: ${info.messageId || "N/A"} | Response: ${info.response || "N/A"}`);
   } catch (error) {
     console.error("Error sending email:", error.message);
     throw new Error(`Failed to send email: ${error.message}`);
