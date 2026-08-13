@@ -683,16 +683,31 @@ export const forgotPassword = async (req, res) => {
     </html>
     `;
 
-    await sendEmail({
-      to: email,
-      subject: "Tailor Dashboard Password Reset Request",
-      text: `Hi ${user.fullName}, please follow this link to reset your password.`,
-      html: resetURL,
-    });
+    let emailSent = false;
+    try {
+      await sendEmail({
+        to: email,
+        subject: "Tailor Dashboard Password Reset Request",
+        text: `Hi ${user.fullName}, please follow this link to reset your password.`,
+        html: resetURL,
+      });
+      emailSent = true;
+    } catch (emailError) {
+      console.error("Email delivery failed:", emailError.message);
+    }
+
+    if (!emailSent) {
+      console.warn(
+        `Password reset email could not be delivered to ${email}. ` +
+        `Reset URL: ${frontendUrl}/reset-password/${token}`
+      );
+    }
 
     res.status(200).json({
       success: true,
-      message: `Password reset email sent to ${user.email}. Check your inbox.`,
+      message: emailSent
+        ? `Password reset email sent to ${user.email}. Check your inbox.`
+        : "Password reset link generated, but email delivery failed. Please contact support if you do not receive it.",
     });
   } catch (error) {
     console.error("Error in forgotPassword:", error.message);

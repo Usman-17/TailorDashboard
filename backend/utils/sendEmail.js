@@ -2,6 +2,15 @@ import nodemailer from "nodemailer";
 
 export const sendEmail = async (data) => {
   try {
+    const mailId = process.env.MAIL_ID;
+    const mailPassword = (process.env.MAIL_PASSWORD || "").replace(/\s/g, "");
+
+    if (!mailId || !mailPassword) {
+      throw new Error(
+        "MAIL_ID and MAIL_PASSWORD are not configured in environment variables"
+      );
+    }
+
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
       port: parseInt(process.env.SMTP_PORT || "587", 10),
@@ -11,15 +20,13 @@ export const sendEmail = async (data) => {
       socketTimeout: 20000,
       greetingTimeout: 5000,
       auth: {
-        user: process.env.MAIL_ID,
-        pass: (process.env.MAIL_PASSWORD || "").replace(/\s/g, ""),
+        user: mailId,
+        pass: mailPassword,
       },
     });
 
-    const senderEmail = process.env.MAIL_ID;
-
     const info = await transporter.sendMail({
-      from: `"Tailor Dashboard" <${senderEmail}>`,
+      from: `"Tailor Dashboard" <${mailId}>`,
       to: data.to,
       subject: data.subject,
       text: data.text,
