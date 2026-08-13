@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import moment from "moment";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect, useMemo } from "react";
 import {
   SquarePen,
@@ -13,6 +14,8 @@ import {
   AlertTriangle,
   Clock,
   XCircle,
+  LogIn,
+  Loader,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -98,6 +101,7 @@ const ShopPage = () => {
   const formRef = useRef(null);
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: shops = [], isLoading } = useGetAllShops();
 
   const summaryStats = useMemo(() => {
@@ -301,6 +305,23 @@ const ShopPage = () => {
       return res.json();
     },
     enabled: !!paymentHistoryShop,
+  });
+
+  const { mutate: impersonateShop, isPending: isImpersonating } = useMutation({
+    mutationFn: async (shopId) => {
+      const res = await fetch(`/api/auth/impersonate/${shopId}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to impersonate shop");
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Logged in as shop");
+      navigate("/");
+    },
+    onError: (error) => toast.error(error.message),
   });
 
   const validate = () => {
@@ -534,6 +555,14 @@ const ShopPage = () => {
           >
             <ScrollText size={16} />
           </button>
+          <button
+            title="Login As Shop"
+            onClick={() => impersonateShop(record._id)}
+            disabled={isImpersonating}
+            className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-500 dark:hover:text-orange-400 transition cursor-pointer disabled:opacity-50"
+          >
+            <LogIn size={16} />
+          </button>
         </div>
       ),
     },
@@ -541,6 +570,14 @@ const ShopPage = () => {
 
   return (
     <div>
+      {isImpersonating && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+          <Loader className="size-10 animate-spin text-orange-400 mb-4" />
+          <p className="text-white text-lg font-medium">
+            Logging in as shop...
+          </p>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-3 px-1 py-2 border-b border-gray-200">
         <SectionHeading
           title="Shops"

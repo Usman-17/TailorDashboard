@@ -15,6 +15,7 @@ import useGetAuth from "../hooks/useGetAuth";
 
 import ThemeToggle from "../components/ThemeToggle";
 import ChangePasswordModal from "../components/ChangePasswordModal";
+import ImpersonationBanner from "../components/ImpersonationBanner";
 
 import { useSidebar } from "../context/SidebarContext";
 // Imports End----
@@ -61,6 +62,12 @@ const Header = () => {
 
   return (
     <>
+      {authUser?.isImpersonating && (
+        <ImpersonationBanner
+          shopName={authUser?.shop?.name || "Unknown Shop"}
+          impersonatorName={authUser?.impersonator?.fullName}
+        />
+      )}
       <header className="sticky top-0 flex items-center justify-between w-full h-14 sm:h-16 px-3 sm:px-4 z-40 transition-all duration-200 bg-transparent">
         <button
           onClick={handleToggle}

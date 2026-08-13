@@ -30,7 +30,9 @@ import ExpensesPage from "./pages/Tailor/ExpensesPage/ExpensesPage";
 import TailorReportsPage from "./pages/Tailor/ReportsPage/TailorReportsPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const AdminDashboardPage = lazy(() => import("./pages/Admin/AdminDashboardPage"));
+const AdminDashboardPage = lazy(
+  () => import("./pages/Admin/AdminDashboardPage"),
+);
 const ShopPage = lazy(() => import("./pages/Admin/ShopPage/ShopPage"));
 const ManageUsersPage = lazy(() => import("./pages/Admin/ManageUsersPage"));
 const SettingsPage = lazy(() => import("./pages/Admin/SettingsPage"));
@@ -127,7 +129,8 @@ const App = () => {
               <Navigate
                 to={
                   authUser
-                    ? authUser.role === "super_admin"
+                    ? authUser.role === "super_admin" &&
+                      !authUser.isImpersonating
                       ? "/admin"
                       : "/"
                     : "/login"

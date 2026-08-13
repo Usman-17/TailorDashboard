@@ -1,7 +1,8 @@
-import { Navigate } from "react-router-dom";
-import useGetAuth from "../hooks/useGetAuth";
 import { Loader } from "lucide-react";
+import { Navigate } from "react-router-dom";
 
+import useGetAuth from "../hooks/useGetAuth";
+// Imports End-----
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { data: authUser, isLoading } = useGetAuth();
 
@@ -17,9 +18,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(authUser.role)) {
+  // When impersonating, super_admin can access owner/staff routes
+  const effectiveRole = authUser.isImpersonating ? "owner" : authUser.role;
+
+  if (allowedRoles && !allowedRoles.includes(effectiveRole)) {
     const redirectPath =
-      authUser.role === "super_admin" ? "/admin" : "/";
+      authUser.role === "super_admin" && !authUser.isImpersonating
+        ? "/admin"
+        : "/";
     return <Navigate to={redirectPath} replace />;
   }
 
