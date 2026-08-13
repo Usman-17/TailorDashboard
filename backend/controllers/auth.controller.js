@@ -540,6 +540,8 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
+    let passwordChanged = false;
+
     if (currentPassword && newPassword) {
       const isPasswordMatched = await bcrypt.compare(
         currentPassword,
@@ -559,6 +561,7 @@ export const updateProfile = async (req, res) => {
       const salt = await bcrypt.genSalt(12);
       user.password = await bcrypt.hash(newPassword, salt);
       user.passwordChangedAt = Date.now();
+      passwordChanged = true;
     } else if (currentPassword || newPassword) {
       return res.status(400).json({
         error:
@@ -570,6 +573,12 @@ export const updateProfile = async (req, res) => {
     if (mobile) user.mobile = mobile;
 
     await user.save();
+
+    if (passwordChanged) {
+      user.refreshTokens = [];
+      signTokens(user, res, req);
+      await user.save();
+    }
 
     res.status(200).json({
       success: true,
