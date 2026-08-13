@@ -105,6 +105,15 @@ const DashboardPage = () => {
       fontFamily: "Outfit, sans-serif",
       foreColor: isDarkMode ? "#a9a0c1" : "#374151",
       background: "transparent",
+      responsive: [
+        {
+          breakpoint: 768,
+          options: {
+            chart: { height: 260 },
+            plotOptions: { bar: { columnWidth: "70%" } },
+          },
+        },
+      ],
     },
     theme: {
       mode: isDarkMode ? "dark" : "light",
@@ -151,29 +160,29 @@ const DashboardPage = () => {
       />
 
       {/* 7 Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-3">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
             <div
               key={card.title}
-              className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-4 transition-all duration-200 hover:shadow-md flex flex-col justify-between"
+              className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-2.5 sm:p-4 transition-all duration-200 hover:shadow-md flex flex-col justify-between min-w-0"
             >
               <div className="flex items-center justify-between">
                 <div
-                  className={`flex items-center justify-center size-9 rounded-xl border ${card.color}`}
+                  className={`flex items-center justify-center size-8 sm:size-9 rounded-xl border ${card.color}`}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                 </div>
               </div>
-              <div className="mt-3">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
+              <div className="mt-2 sm:mt-3">
+                <p className="text-[11px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
                   {card.title}
                 </p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 mt-0.5 truncate">
+                <p className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 mt-0.5 truncate">
                   {card.value}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{card.subtext}</p>
+                <p className="text-[10px] sm:text-[11px] text-gray-400 dark:text-gray-500 mt-1 truncate">{card.subtext}</p>
               </div>
             </div>
           );
@@ -181,7 +190,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Revenue Chart Widget */}
-      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-5 shadow-xs">
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">
@@ -201,12 +210,12 @@ const DashboardPage = () => {
             },
           ]}
           type="bar"
-          height={320}
+          height={280}
         />
       </div>
 
       {/* 2 Bottom Widgets: Recent Payments & Upcoming Renewals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Payments Widget */}
         <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#141025] p-5 shadow-xs flex flex-col">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">

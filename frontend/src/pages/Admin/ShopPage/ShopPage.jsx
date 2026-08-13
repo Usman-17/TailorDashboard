@@ -523,14 +523,14 @@ const ShopPage = () => {
           <button
             title="Receive Payment"
             onClick={() => setReceivePaymentShop(record)}
-            className="p-2 rounded-full border border-gray-300 text-green-600 hover:bg-green-50 hover:text-green-500 transition cursor-pointer"
+            className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-500 dark:hover:text-green-400 transition cursor-pointer"
           >
             <Wallet size={16} />
           </button>
           <button
             title="Payment History"
             onClick={() => setPaymentHistoryShop(record)}
-            className="p-2 rounded-full border border-gray-300 text-blue-600 hover:bg-blue-50 hover:text-blue-500 transition cursor-pointer"
+            className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-500 dark:hover:text-blue-400 transition cursor-pointer"
           >
             <ScrollText size={16} />
           </button>

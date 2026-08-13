@@ -30,7 +30,7 @@ import ExpensesPage from "./pages/Tailor/ExpensesPage/ExpensesPage";
 import TailorReportsPage from "./pages/Tailor/ReportsPage/TailorReportsPage";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const AdminDashboardPage = lazy(() => import("./pages/Admin/DashboardPage"));
+const AdminDashboardPage = lazy(() => import("./pages/Admin/AdminDashboardPage"));
 const ShopPage = lazy(() => import("./pages/Admin/ShopPage/ShopPage"));
 const ManageUsersPage = lazy(() => import("./pages/Admin/ManageUsersPage"));
 const SettingsPage = lazy(() => import("./pages/Admin/SettingsPage"));
