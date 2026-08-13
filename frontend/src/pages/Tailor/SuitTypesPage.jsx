@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
-import { Plus, X, Tag, DollarSign } from "lucide-react";
 import React, { useState, useMemo, useEffect } from "react";
+import { Plus, X, Tag, DollarSign, Ban, Redo } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import CustomTable from "../../components/CustomTable";
@@ -17,7 +17,7 @@ import { useGetAllSuitTypes } from "../../hooks/useGetSuitTypes.jsx";
 const SuitTypesPage = () => {
   const [search, setSearch] = useState("");
   const [modalState, setModalState] = useState({ open: false, data: null });
-  const [deleteModal, setDeleteModal] = useState({
+  const [voidModal, setVoidModal] = useState({
     open: false,
     id: null,
     name: "",
@@ -97,21 +97,42 @@ const SuitTypesPage = () => {
     });
   };
 
-  const { mutate: deleteSuitType, isPending: isDeleting } = useMutation({
+  const { mutate: voidSuitType, isPending: isVoiding } = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`/api/suit-types/${id}`, {
-        method: "DELETE",
+      const res = await fetch(`/api/suit-types/update/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({ isActive: false }),
       });
       const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.error || "Failed to delete suit type");
+      if (!res.ok) throw new Error(result.error || "Failed to void suit type");
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suitTypes"] });
-      toast.success("Suit type deleted successfully!");
-      setDeleteModal({ open: false, id: null, name: "" });
+      toast.success("Suit type deactivated successfully!");
+      setVoidModal({ open: false, id: null, name: "" });
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const { mutate: restoreSuitType, isPending: isRestoring } = useMutation({
+    mutationFn: async (id) => {
+      const res = await fetch(`/api/suit-types/update/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ isActive: true }),
+      });
+      const result = await res.json();
+      if (!res.ok)
+        throw new Error(result.error || "Failed to restore suit type");
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["suitTypes"] });
+      toast.success("Suit type restored successfully!");
     },
     onError: (err) => toast.error(err.message),
   });
@@ -140,7 +161,7 @@ const SuitTypesPage = () => {
       key: "price",
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (v) => (
-        <span className="font-mono text-sm font-extrabold text-purple-600 dark:text-purple-400">
+        <span className="text-sm font-extrabold text-purple-600 dark:text-purple-400">
           Rs. {Number(v || 0).toLocaleString()}
         </span>
       ),
@@ -168,13 +189,27 @@ const SuitTypesPage = () => {
       key: "actions",
       align: "center",
       render: (_, record) => (
-        <ActionButtons
-          record={record}
-          onEdit={(r) => setModalState({ open: true, data: r })}
-          onDelete={(r) =>
-            setDeleteModal({ open: true, id: r._id, name: r.name })
-          }
-        />
+        <div className="flex items-center justify-center gap-1">
+          <ActionButtons
+            record={record}
+            onEdit={(r) => setModalState({ open: true, data: r })}
+            onDelete={(r) =>
+              setVoidModal({ open: true, id: r._id, name: r.name })
+            }
+            deleteTitle="Void"
+            deleteIcon={Ban}
+          />
+          {!record.isActive && (
+            <button
+              title="Restore"
+              onClick={() => restoreSuitType(record._id)}
+              disabled={isRestoring}
+              className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition cursor-pointer disabled:opacity-50"
+            >
+              <Redo size={16} />
+            </button>
+          )}
+        </div>
       ),
     },
   ];
@@ -183,14 +218,14 @@ const SuitTypesPage = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
         <SectionHeading
-          title="Suit Types Management"
+          title="Suit Types"
           subtitle="Define suit types and default stitching prices"
         />
         <button
           onClick={() => setModalState({ open: true, data: null })}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-sm font-semibold transition cursor-pointer text-white shadow-sm"
         >
-          <Plus size={18} />
+          <Redo size={18} />
           Add Suit Type
         </button>
       </div>
@@ -299,25 +334,23 @@ const SuitTypesPage = () => {
         </div>
       </CustomModal>
 
-      <CustomModal isOpen={deleteModal.open} className="w-[92%] max-w-sm">
+      <CustomModal isOpen={voidModal.open} className="w-[92%] max-w-sm">
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Delete Suit Type?
+            Void Suit Type?
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Are you sure you want to delete{" "}
-            <span className="font-bold text-purple-600">
-              {deleteModal.name}
-            </span>
-            ? This action cannot be undone.
+            Are you sure you want to void{" "}
+            <span className="font-bold text-purple-600">{voidModal.name}</span>?
+            It will be marked inactive and hidden from order booking.
           </p>
 
           <ModalActionButtons
-            onCancel={() => setDeleteModal({ open: false, id: null, name: "" })}
-            onSubmit={() => deleteSuitType(deleteModal.id)}
-            isSubmitting={isDeleting}
-            submitText="Delete"
-            loadingText="Deleting..."
+            onCancel={() => setVoidModal({ open: false, id: null, name: "" })}
+            onSubmit={() => voidSuitType(voidModal.id)}
+            isSubmitting={isVoiding}
+            submitText="Void"
+            loadingText="Voiding..."
           />
         </div>
       </CustomModal>

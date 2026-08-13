@@ -63,24 +63,11 @@ const ModalActionButtons = ({
         type="button"
         onClick={onSubmit}
         disabled={isDisabled || isSubmitting || isSavingAndClosing}
-        className={`px-4 sm:px-6 h-10 sm:h-9 min-w-27.5 sm:min-w-0 rounded-full text-white text-sm font-medium transition-all duration-200 outline-none ${
+        className={`px-4 sm:px-6 h-10 sm:h-9 min-w-27.5 sm:min-w-0 rounded-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium transition-all duration-200 outline-none ${
           isDisabled
             ? "opacity-50 cursor-not-allowed"
-            : "focus-visible:ring-2 active:scale-95"
-        } ${isSubmitting ? "cursor-not-allowed" : ""} ${
-          isDarkMode
-            ? "focus-visible:ring-(--secondary-color)/50"
-            : "focus-visible:ring-(--secondary-color)/50"
-        }`}
-        style={{
-          backgroundColor: "var(--secondary-color)",
-          filter: isSubmitting ? "brightness(0.8)" : undefined,
-          cursor: isDisabled
-            ? "not-allowed"
-            : isSubmitting
-              ? "not-allowed"
-              : undefined,
-        }}
+            : "focus-visible:ring-2 focus-visible:ring-purple-500/50 active:scale-95"
+        } ${isSubmitting ? "cursor-not-allowed opacity-80" : ""}`}
       >
         {isSubmitting ? <LoadingSpinner content={loadingText} /> : submitText}
       </button>

@@ -21,6 +21,11 @@ const tailorNavItems = [
     icon: <LayoutDashboard />,
     path: "/",
   },
+    {
+    name: "Suit Types",
+    icon: <Tag />,
+    path: "/suit-types",
+  },
   {
     name: "Customers",
     icon: <Users />,
@@ -30,11 +35,6 @@ const tailorNavItems = [
     name: "Orders",
     icon: <ShoppingBag />,
     path: "/orders",
-  },
-  {
-    name: "Suit Types",
-    icon: <Tag />,
-    path: "/suit-types",
   },
   {
     name: "Expenses",

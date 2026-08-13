@@ -8,15 +8,17 @@ import {
   ChevronDown,
   KeyRound,
   Menu,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import useLogout from "../hooks/useLogout";
 import useGetAuth from "../hooks/useGetAuth";
 
-import ThemeToggle from "../components/ThemeToggle";
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import ImpersonationBanner from "../components/ImpersonationBanner";
 
+import { useTheme } from "../context/ThemeContext";
 import { useSidebar } from "../context/SidebarContext";
 // Imports End----
 
@@ -36,6 +38,7 @@ const ROLE_COLORS = {
 const Header = () => {
   const { data: authUser } = useGetAuth();
   const { logoutMutation } = useLogout();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -77,17 +80,27 @@ const Header = () => {
           {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            onClick={toggleTheme}
+            title={`Switch to ${isDarkMode ? "Light" : "Dark"} Mode`}
+          >
+            {isDarkMode ? (
+              <Sun size={18} className="text-yellow-400" />
+            ) : (
+              <Moon size={18} className="text-gray-600" />
+            )}
+          </div>
 
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             >
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
                 <UserRound
-                  size={18}
+                  size={16}
                   className="text-gray-600 dark:text-gray-300"
                 />
               </div>
