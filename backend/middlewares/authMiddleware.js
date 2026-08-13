@@ -3,15 +3,68 @@ import { verifyAccessToken } from "../utils/generateToken.js";
 
 export const protectRoute = async (req, res, next) => {
   try {
-    const token = req.cookies.access_token;
+    const impersonationToken = req.cookies.impersonation_token;
+    const accessToken = req.cookies.access_token;
 
-    if (!token) {
+    if (!impersonationToken && !accessToken) {
       return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
+    // Impersonation mode: impersonation_token takes priority
+    if (impersonationToken) {
+      let decoded;
+      try {
+        decoded = verifyAccessToken(impersonationToken);
+      } catch (err) {
+        if (err.name === "TokenExpiredError") {
+          return res
+            .status(401)
+            .json({ error: "Impersonation session expired" });
+        }
+        return res.status(401).json({ error: "Invalid impersonation token" });
+      }
+
+      if (!decoded.impersonation || !decoded.impersonatorId) {
+        return res.status(401).json({ error: "Invalid impersonation token" });
+      }
+
+      const targetUser = await User.findById(decoded.userId).select(
+        "+loginAttempts +lockUntil",
+      );
+
+      if (!targetUser) {
+        return res.status(401).json({ error: "Target user no longer exists" });
+      }
+
+      if (!targetUser.isActive) {
+        return res
+          .status(403)
+          .json({ error: "Target account has been deactivated" });
+      }
+
+      // Load impersonator info
+      const impersonator = await User.findById(decoded.impersonatorId).select(
+        "fullName email role",
+      );
+
+      req.user = targetUser;
+      req.isImpersonating = true;
+      req.impersonator = impersonator
+        ? {
+            id: impersonator._id,
+            fullName: impersonator.fullName,
+            email: impersonator.email,
+            role: impersonator.role,
+          }
+        : null;
+
+      return next();
+    }
+
+    // Normal mode
     let decoded;
     try {
-      decoded = verifyAccessToken(token);
+      decoded = verifyAccessToken(accessToken);
     } catch (err) {
       if (err.name === "TokenExpiredError") {
         return res.status(401).json({ error: "Token expired" });
@@ -20,7 +73,7 @@ export const protectRoute = async (req, res, next) => {
     }
 
     const user = await User.findById(decoded.userId).select(
-      "+loginAttempts +lockUntil"
+      "+loginAttempts +lockUntil",
     );
 
     if (!user) {
@@ -41,7 +94,7 @@ export const protectRoute = async (req, res, next) => {
     if (user.passwordChangedAt) {
       const changedTimestamp = parseInt(
         user.passwordChangedAt.getTime() / 1000,
-        10
+        10,
       );
       if (decoded.iat < changedTimestamp) {
         return res.status(401).json({
@@ -51,6 +104,7 @@ export const protectRoute = async (req, res, next) => {
     }
 
     req.user = user;
+    req.isImpersonating = false;
     next();
   } catch (error) {
     console.error("Error in protectRoute middleware:", error.message);

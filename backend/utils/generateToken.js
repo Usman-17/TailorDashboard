@@ -4,6 +4,8 @@ const ACCESS_TOKEN_EXPIRY = "8h";
 const ACCESS_TOKEN_REMEMBER_ME_EXPIRY = "30d";
 const REFRESH_TOKEN_EXPIRY = "7d";
 const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const IMPERSONATION_TOKEN_EXPIRY = "1h";
+const IMPERSONATION_TOKEN_MAX_AGE = 60 * 60 * 1000;
 
 export const generateAccessToken = (
   userId,
@@ -22,6 +24,19 @@ export const generateRefreshToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_REFRESH_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRY,
   });
+};
+
+export const generateImpersonationToken = (
+  userId,
+  role,
+  shopId,
+  impersonatorId,
+) => {
+  return jwt.sign(
+    { userId, role, shopId, impersonatorId, impersonation: true },
+    process.env.JWT_SECRET,
+    { expiresIn: IMPERSONATION_TOKEN_EXPIRY },
+  );
 };
 
 export const setAccessCookie = (token, res, rememberMe = false) => {
@@ -43,9 +58,22 @@ export const setRefreshCookie = (token, res, rememberMe = false) => {
   });
 };
 
+export const setImpersonationCookie = (token, res) => {
+  res.cookie("impersonation_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: IMPERSONATION_TOKEN_MAX_AGE,
+  });
+};
+
 export const clearAuthCookies = (res) => {
   res.cookie("access_token", "", { maxAge: 0 });
   res.cookie("refresh_token", "", { maxAge: 0, path: "/api/auth/refresh" });
+};
+
+export const clearImpersonationCookie = (res) => {
+  res.cookie("impersonation_token", "", { maxAge: 0 });
 };
 
 export const verifyAccessToken = (token) => {

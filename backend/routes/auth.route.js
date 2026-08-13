@@ -17,6 +17,8 @@ import {
   forgotPassword,
   resetPassword,
   updateUserStatus,
+  impersonateShop,
+  stopImpersonation,
 } from "../controllers/auth.controller.js";
 import { protectRoute } from "../middlewares/authMiddleware.js";
 import { authorize, isOwnerOrAdmin } from "../middlewares/roleMiddleware.js";
@@ -78,5 +80,14 @@ router.put(
   authorize("super_admin"),
   updateUserStatus,
 );
+
+// Impersonation (Super Admin only)
+router.post(
+  "/impersonate/:shopId",
+  protectRoute,
+  authorize("super_admin"),
+  impersonateShop,
+);
+router.post("/stop-impersonation", protectRoute, stopImpersonation);
 
 export default router;

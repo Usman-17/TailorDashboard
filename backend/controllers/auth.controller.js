@@ -6,9 +6,12 @@ import crypto from "crypto";
 import {
   generateAccessToken,
   generateRefreshToken,
+  generateImpersonationToken,
   setAccessCookie,
   setRefreshCookie,
+  setImpersonationCookie,
   clearAuthCookies,
+  clearImpersonationCookie,
   verifyRefreshToken,
 } from "../utils/generateToken.js";
 import { sendEmail } from "../utils/sendEmail.js";
@@ -522,7 +525,13 @@ export const getUser = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    res.status(200).json(user);
+    const userData = user.toObject();
+    userData.isImpersonating = !!req.isImpersonating;
+    if (req.isImpersonating && req.impersonator) {
+      userData.impersonator = req.impersonator;
+    }
+
+    res.status(200).json(userData);
   } catch (error) {
     console.error("Error in getUser controller:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
@@ -732,5 +741,75 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error("Error in resetPassword:", error.message);
     res.status(500).json({ error: error.message });
+  }
+};
+
+// POST /api/auth/impersonate/:shopId
+export const impersonateShop = async (req, res) => {
+  try {
+    const { shopId } = req.params;
+
+    if (req.user.role !== "super_admin") {
+      return res
+        .status(403)
+        .json({ error: "Only super admin can impersonate" });
+    }
+
+    if (!shopId) {
+      return res.status(400).json({ error: "Shop ID is required" });
+    }
+
+    const shop = await Shop.findById(shopId);
+    if (!shop) {
+      return res.status(404).json({ error: "Shop not found" });
+    }
+
+    const shopOwner = await User.findOne({ shop: shopId, role: "owner" });
+    if (!shopOwner) {
+      return res.status(404).json({ error: "Shop owner not found" });
+    }
+
+    const impersonationToken = generateImpersonationToken(
+      shopOwner._id,
+      shopOwner.role,
+      shopId,
+      req.user._id,
+    );
+
+    setImpersonationCookie(impersonationToken, res);
+
+    res.status(200).json({
+      success: true,
+      message: `Now viewing as ${shop.name}`,
+      shop: { _id: shop._id, name: shop.name },
+      impersonator: {
+        _id: req.user._id,
+        fullName: req.user.fullName,
+        email: req.user.email,
+        role: req.user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Error in impersonateShop:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// POST /api/auth/stop-impersonation
+export const stopImpersonation = async (req, res) => {
+  try {
+    if (!req.isImpersonating) {
+      return res.status(400).json({ error: "Not currently impersonating" });
+    }
+
+    clearImpersonationCookie(res);
+
+    res.status(200).json({
+      success: true,
+      message: "Impersonation ended",
+    });
+  } catch (error) {
+    console.error("Error in stopImpersonation:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
