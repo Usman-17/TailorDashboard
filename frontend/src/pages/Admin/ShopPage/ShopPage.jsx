@@ -16,23 +16,27 @@ import {
   XCircle,
   LogIn,
   Loader,
+  KeyRound,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import CustomTable from "../../../components/CustomTable";
 import CustomInput from "../../../components/CustomInput";
+import SummaryCard from "../../../components/SummaryCard";
+import CustomModal from "../../../components/CustomModal";
 import useGetAllShops from "../../../hooks/useGetAllShops";
 import CustomSelect from "../../../components/CustomSelect";
 import CustomUpload from "../../../components/CustomUpload";
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
-import SectionHeading from "../../../components/SectionHeading";
-import CustomDatePicker from "../../../components/CustomDatePicker";
 import ActionButtons from "../../../components/ActionButtons";
+import SectionHeading from "../../../components/SectionHeading";
 import FullScreenModal from "../../../components/FullScreenModal";
-import SummaryCard from "../../../components/SummaryCard";
+import CustomDatePicker from "../../../components/CustomDatePicker";
+import ModalActionButtons from "../../../components/ModalActionButtons";
 
 import ReceivePaymentModal from "./ReceivePaymentModal";
 import PaymentHistoryModal from "./PaymentHistoryModal";
+// Imports End-----
 
 const PLAN_BADGE = {
   monthly: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
@@ -98,6 +102,7 @@ const ShopPage = () => {
   const [loadingShopId, setLoadingShopId] = useState(null);
   const [receivePaymentShop, setReceivePaymentShop] = useState(null);
   const [paymentHistoryShop, setPaymentHistoryShop] = useState(null);
+  const [resetPasswordShop, setResetPasswordShop] = useState(null);
   const formRef = useRef(null);
 
   const queryClient = useQueryClient();
@@ -324,6 +329,25 @@ const ShopPage = () => {
     onError: (error) => toast.error(error.message),
   });
 
+  const { mutate: resetPassword, isPending: isResettingPassword } = useMutation(
+    {
+      mutationFn: async (shopId) => {
+        const res = await fetch(`/api/shops/${shopId}/reset-password`, {
+          method: "PUT",
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to reset password");
+        return data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Password reset successfully");
+        setResetPasswordShop(null);
+      },
+      onError: (error) => toast.error(error.message),
+    },
+  );
+
   const validate = () => {
     const e = {};
     if (!form.fullName.trim()) e.fullName = "Full name is required";
@@ -541,6 +565,7 @@ const ShopPage = () => {
             isEditLoading={loadingShopId === record._id}
             onEdit={(r) => setEditingShop(r)}
           />
+
           <button
             title="Receive Payment"
             onClick={() => setReceivePaymentShop(record)}
@@ -548,6 +573,7 @@ const ShopPage = () => {
           >
             <Wallet size={16} />
           </button>
+
           <button
             title="Payment History"
             onClick={() => setPaymentHistoryShop(record)}
@@ -555,6 +581,7 @@ const ShopPage = () => {
           >
             <ScrollText size={16} />
           </button>
+
           <button
             title="Login As Shop"
             onClick={() => impersonateShop(record._id)}
@@ -562,6 +589,14 @@ const ShopPage = () => {
             className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-500 dark:hover:text-orange-400 transition cursor-pointer disabled:opacity-50"
           >
             <LogIn size={16} />
+          </button>
+
+          <button
+            title="Reset Owner Password"
+            onClick={() => setResetPasswordShop(record)}
+            className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer"
+          >
+            <KeyRound size={16} />
           </button>
         </div>
       ),
@@ -956,6 +991,33 @@ const ShopPage = () => {
           isLoading={isLoadingPayments}
         />
       )}
+
+      <CustomModal isOpen={!!resetPasswordShop} className="w-[92%] max-w-sm">
+        <div className="flex flex-col gap-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            Reset Password?
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Reset the owner password of{" "}
+            <span className="font-bold text-purple-600">
+              {resetPasswordShop?.name}
+            </span>
+            ? The new password will be{" "}
+            <span className="font-mono font-bold text-purple-600">
+              123456789
+            </span>
+            . The owner will be logged out of all devices.
+          </p>
+
+          <ModalActionButtons
+            onCancel={() => setResetPasswordShop(null)}
+            onSubmit={() => resetPassword(resetPasswordShop?._id)}
+            isSubmitting={isResettingPassword}
+            submitText="Reset Password"
+            loadingText="Resetting..."
+          />
+        </div>
+      </CustomModal>
     </div>
   );
 };
