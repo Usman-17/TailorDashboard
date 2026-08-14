@@ -24,7 +24,9 @@ export const syncMissingShopPayments = async () => {
           newExpiry: shop.subscriptionExpiry || new Date(),
           recordedBy: shop.owner,
         });
-        console.log(`Synced missing initial payment record for shop: ${shop.name}`);
+        console.log(
+          `Synced missing initial payment record for shop: ${shop.name}`,
+        );
       }
     }
   } catch (err) {
@@ -109,7 +111,7 @@ export const getShop = async (req, res) => {
 
     const shop = await Shop.findById(id).populate(
       "owner",
-      "fullName email mobile role"
+      "fullName email mobile role",
     );
 
     if (!shop) {
@@ -191,10 +193,7 @@ export const createShop = async (req, res) => {
 
       await session.commitTransaction();
 
-      const populated = await shop.populate(
-        "owner",
-        "fullName email mobile"
-      );
+      const populated = await shop.populate("owner", "fullName email mobile");
 
       return res.status(201).json(populated);
     } catch (error) {
@@ -234,7 +233,8 @@ export const createOwner = async (req, res) => {
       address: addressRaw,
     } = req.body;
 
-    const address = typeof addressRaw === "string" ? JSON.parse(addressRaw) : addressRaw;
+    const address =
+      typeof addressRaw === "string" ? JSON.parse(addressRaw) : addressRaw;
     const password = "123456789";
 
     if (!fullName || !email || !mobile || !shopName) {
@@ -255,9 +255,7 @@ export const createOwner = async (req, res) => {
     }
 
     if (mobile.length !== 11) {
-      return res
-        .status(400)
-        .json({ error: "Mobile number must be 11 digits" });
+      return res.status(400).json({ error: "Mobile number must be 11 digits" });
     }
 
     const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
@@ -287,7 +285,7 @@ export const createOwner = async (req, res) => {
             role: ROLES.OWNER,
           },
         ],
-        { session }
+        { session },
       );
 
       const user = users[0];
@@ -310,7 +308,7 @@ export const createOwner = async (req, res) => {
             address: address || {},
           },
         ],
-        { session }
+        { session },
       );
 
       user.shop = shops[0]._id;
@@ -318,7 +316,10 @@ export const createOwner = async (req, res) => {
 
       await session.commitTransaction();
 
-      const populated = await shops[0].populate("owner", "fullName email mobile");
+      const populated = await shops[0].populate(
+        "owner",
+        "fullName email mobile",
+      );
 
       let logo = null;
       if (req.files && req.files.logo) {
@@ -337,8 +338,12 @@ export const createOwner = async (req, res) => {
           referenceNo: "",
           notes: "Initial payment on shop creation",
           subscriptionPlan: subscriptionPlan || "monthly",
-          previousExpiry: subscriptionStart ? new Date(subscriptionStart) : new Date(),
-          newExpiry: subscriptionExpiry ? new Date(subscriptionExpiry) : new Date(),
+          previousExpiry: subscriptionStart
+            ? new Date(subscriptionStart)
+            : new Date(),
+          newExpiry: subscriptionExpiry
+            ? new Date(subscriptionExpiry)
+            : new Date(),
           recordedBy: req.user._id,
         });
       }
@@ -384,7 +389,8 @@ export const updateShop = async (req, res) => {
       notes,
     } = req.body;
 
-    const address = typeof addressRaw === "string" ? JSON.parse(addressRaw) : addressRaw;
+    const address =
+      typeof addressRaw === "string" ? JSON.parse(addressRaw) : addressRaw;
 
     const shop = await Shop.findById(id);
     if (!shop) {
@@ -396,12 +402,18 @@ export const updateShop = async (req, res) => {
     if (email !== undefined) shop.email = email;
     if (address !== undefined) shop.address = address;
     if (isActive !== undefined) shop.isActive = isActive;
-    if (subscriptionPlan !== undefined) shop.subscriptionPlan = subscriptionPlan;
-    if (subscriptionAmount !== undefined) shop.subscriptionAmount = Number(subscriptionAmount);
-    if (subscriptionDuration !== undefined) shop.subscriptionDuration = subscriptionDuration || null;
-    if (subscriptionStart !== undefined) shop.subscriptionStart = subscriptionStart || null;
-    if (subscriptionExpiry !== undefined) shop.subscriptionExpiry = subscriptionExpiry || null;
-    if (amountReceived !== undefined) shop.amountReceived = Number(amountReceived) || 0;
+    if (subscriptionPlan !== undefined)
+      shop.subscriptionPlan = subscriptionPlan;
+    if (subscriptionAmount !== undefined)
+      shop.subscriptionAmount = Number(subscriptionAmount);
+    if (subscriptionDuration !== undefined)
+      shop.subscriptionDuration = subscriptionDuration || null;
+    if (subscriptionStart !== undefined)
+      shop.subscriptionStart = subscriptionStart || null;
+    if (subscriptionExpiry !== undefined)
+      shop.subscriptionExpiry = subscriptionExpiry || null;
+    if (amountReceived !== undefined)
+      shop.amountReceived = Number(amountReceived) || 0;
     if (notes !== undefined) shop.notes = notes;
 
     if (req.files && req.files.logo) {
@@ -504,9 +516,13 @@ export const deleteShop = async (req, res) => {
     session.startTransaction();
 
     try {
-      await User.findByIdAndUpdate(shop.owner, {
-        $unset: { shop: "" },
-      }, { session });
+      await User.findByIdAndUpdate(
+        shop.owner,
+        {
+          $unset: { shop: "" },
+        },
+        { session },
+      );
 
       await deleteImage(shop.logo);
 
@@ -596,6 +612,35 @@ export const getShopStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getShopStats:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// PUT /api/shops/:id/reset-password
+export const resetShopOwnerPassword = async (req, res) => {
+  try {
+    const shop = await Shop.findById(req.params.id);
+    if (!shop) {
+      return res.status(404).json({ error: "Shop not found" });
+    }
+
+    const owner = await User.findById(shop.owner).select("+password");
+    if (!owner) {
+      return res.status(404).json({ error: "Shop owner not found" });
+    }
+
+    const salt = await bcrypt.genSalt(12);
+    owner.password = await bcrypt.hash("123456789", salt);
+    owner.passwordChangedAt = Date.now();
+    owner.refreshTokens = [];
+    await owner.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Password for ${shop.name} owner has been reset to 123456789`,
+    });
+  } catch (error) {
+    console.error("Error in resetShopOwnerPassword:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
