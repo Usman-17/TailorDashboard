@@ -7,20 +7,20 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import LoadingSpinner from "../components/LoadingSpinner";
 
 const LoginPage = () => {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
   const [isShow, setIsShow] = useState(false);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
   useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberedEmail");
+    const savedLogin = localStorage.getItem("rememberedEmail");
     const savedPassword = localStorage.getItem("rememberedPassword");
-    if (savedEmail) {
-      setEmail(savedEmail);
+    if (savedLogin) {
+      setIdentifier(savedLogin);
       if (savedPassword) setPassword(savedPassword);
       setRememberMe(true);
     }
@@ -28,10 +28,14 @@ const LoginPage = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = "Invalid email format";
+    const trimmed = identifier.trim();
+    if (!trimmed) {
+      newErrors.email = "Email or phone is required";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) &&
+      !/^\d{11}$/.test(trimmed.replace(/\s/g, ""))
+    ) {
+      newErrors.email = "Enter a valid email or 11-digit phone number";
     }
     if (!password) {
       newErrors.password = "Password is required";
@@ -43,11 +47,11 @@ const LoginPage = () => {
   };
 
   const { mutate: loginMutation, isPending } = useMutation({
-    mutationFn: async ({ email, password, rememberMe }) => {
+    mutationFn: async ({ identifier, password, rememberMe }) => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe }),
+        body: JSON.stringify({ email: identifier, password, rememberMe }),
       });
 
       const data = await res.json();
@@ -64,7 +68,7 @@ const LoginPage = () => {
       queryClient.invalidateQueries({ queryKey: ["authUser"] });
 
       if (rememberMe) {
-        localStorage.setItem("rememberedEmail", email);
+        localStorage.setItem("rememberedEmail", identifier);
         localStorage.setItem("rememberedPassword", password);
       } else {
         localStorage.removeItem("rememberedEmail");
@@ -83,7 +87,7 @@ const LoginPage = () => {
       if (error.message.includes("locked")) {
         toast.error(error.message);
       } else {
-        toast.error(error.message || "Invalid email or password");
+        toast.error(error.message || "Invalid email/phone or password");
       }
     },
   });
@@ -91,7 +95,7 @@ const LoginPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    loginMutation({ email, password, rememberMe });
+    loginMutation({ identifier, password, rememberMe });
   };
 
   return (
@@ -105,25 +109,25 @@ const LoginPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="grid gap-4" noValidate>
-          {/* Email */}
+          {/* Email / Phone */}
           <div className="grid">
-            <label htmlFor="email" className="text-base font-medium">
-              Email
+            <label htmlFor="identifier" className="text-base font-medium">
+              Login ID
             </label>
             <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="m@example.com"
-              autoComplete="email"
+              id="identifier"
+              name="identifier"
+              type="text"
+              placeholder="m@example.com or 03001234567"
+              autoComplete="username"
               className={`h-10 px-3 rounded-lg text-sm border-[1.5px] transition-all duration-200 bg-white dark:bg-white text-gray-900 dark:text-gray-900 placeholder-gray-400 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] focus:outline-none ${
                 errors.email
                   ? "border-red-400 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
                   : "border-gray-300 hover:border-gray-400 focus:border-[var(--secondary-color)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--secondary-color)_15%,transparent)]"
               }`}
-              value={email}
+              value={identifier}
               onChange={(e) => {
-                setEmail(e.target.value);
+                setIdentifier(e.target.value);
                 if (errors.email) setErrors({ ...errors, email: "" });
               }}
             />
