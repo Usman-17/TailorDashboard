@@ -380,18 +380,25 @@ export const createStaff = async (req, res) => {
 // POST /api/auth/login
 export const login = async (req, res) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const { email, mobile, password, rememberMe } = req.body;
+    const identifier = (email || mobile || "").trim().toLowerCase();
 
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+    if (!identifier || !password) {
+      return res
+        .status(400)
+        .json({ error: "Email/phone and password are required" });
     }
 
-    const user = await User.findOne({ email }).select(
-      "+password +loginAttempts +lockUntil",
-    );
+    const user = await User.findOne({
+      $or: [
+        { email: identifier },
+        { mobile: identifier },
+        { mobile: identifier.replace(/\s/g, "") },
+      ],
+    }).select("+password +loginAttempts +lockUntil");
 
     if (!user) {
-      return res.status(400).json({ error: "Invalid email or password" });
+      return res.status(400).json({ error: "Invalid email/phone or password" });
     }
 
     if (!user.isActive) {
@@ -415,7 +422,7 @@ export const login = async (req, res) => {
       }
 
       await user.save();
-      return res.status(400).json({ error: "Invalid email or password" });
+      return res.status(400).json({ error: "Invalid email/phone or password" });
     }
 
     user.loginAttempts = 0;
@@ -699,7 +706,7 @@ export const forgotPassword = async (req, res) => {
     if (!emailSent) {
       console.warn(
         `Password reset email could not be delivered to ${email}. ` +
-        `Reset URL: ${frontendUrl}/reset-password/${token}`
+          `Reset URL: ${frontendUrl}/reset-password/${token}`,
       );
     }
 
