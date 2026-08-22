@@ -45,7 +45,7 @@ const MeasurementModal = ({
     if (existingMeasurement && open) {
       const cleaned = { ...initialMeasurementState };
       Object.keys(cleaned).forEach((key) => {
-        cleaned[key] = existingMeasurement[key] ?? "";
+        cleaned[key] = existingMeasurement[key] || "";
       });
       setMeasureForm(cleaned);
     } else if (open) {
@@ -60,10 +60,16 @@ const MeasurementModal = ({
         ? `/api/measurements/update/${customerId}`
         : `/api/measurements/add/${customerId}`;
 
-      const payload = {
-        ...data,
-        lower: { type: "shalwar" },
-      };
+      const payload = { ...data, lower: { type: "shalwar" } };
+      ALL_FIELDS.forEach((f) => {
+        if (
+          payload[f] === "" ||
+          payload[f] === null ||
+          payload[f] === undefined
+        ) {
+          delete payload[f];
+        }
+      });
 
       const res = await fetch(url, {
         method,
@@ -93,12 +99,17 @@ const MeasurementModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const numericFieldsEmpty = ALL_FIELDS.some((f) => measureForm[f] === "");
-    if (numericFieldsEmpty) {
-      toast.error("Please fill all measurement fields");
-      return;
-    }
-    saveMeasurement(measureForm);
+    const payload = { ...measureForm, lower: { type: "shalwar" } };
+    ALL_FIELDS.forEach((f) => {
+      if (
+        payload[f] === "" ||
+        payload[f] === null ||
+        payload[f] === undefined
+      ) {
+        delete payload[f];
+      }
+    });
+    saveMeasurement(payload);
   };
 
   const FieldLabel = ({ field, lowerType = "shalwar" }) => {
@@ -150,7 +161,6 @@ const MeasurementModal = ({
           name={field}
           type="number"
           step="any"
-          required
           placeholder={`${labelWithUrdu(field, lowerType).english} size`}
           value={measureForm[field]}
           onChange={(e) =>
@@ -180,7 +190,7 @@ const MeasurementModal = ({
             disabled={isPending}
             className="px-5 py-1.5 text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-sm transition-all cursor-pointer disabled:opacity-50"
           >
-            {isPending ? "Saving..." : "Save Measurements"}
+            {isPending ? "Saving..." : "Save"}
           </button>
         )
       }
