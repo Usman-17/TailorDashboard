@@ -1,6 +1,6 @@
 import moment from "moment";
-import { useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
 import {
   X,
   User,
@@ -75,13 +75,29 @@ const TYPE_COLORS = {
 };
 
 const MeasurementSection = ({ measurement, title, isCurrent = false }) => {
-  const fieldGroups = [
-    { title: "Kameez", fields: KAMEEZ_FIELDS },
-    { title: "Shalwar", fields: SHALWAR_FIELDS },
-    { title: "Trouser", fields: TROUSER_FIELDS },
-  ];
+  const [activeLowerTab, setActiveLowerTab] = useState("shalwar");
+
+  useEffect(() => {
+    const hasTrouserData = TROUSER_FIELDS.some(
+      (f) =>
+        measurement?.[f] !== undefined &&
+        measurement?.[f] !== "" &&
+        measurement?.[f] !== null,
+    );
+    const hasShalwarData = SHALWAR_FIELDS.some(
+      (f) =>
+        measurement?.[f] !== undefined &&
+        measurement?.[f] !== "" &&
+        measurement?.[f] !== null,
+    );
+    if (hasTrouserData && !hasShalwarData) {
+      setActiveLowerTab("trouser");
+    }
+  }, [measurement]);
 
   const value = (v) => (v === 0 ? "0" : (v ?? "-"));
+  const activeLowerFields =
+    activeLowerTab === "trouser" ? TROUSER_FIELDS : SHALWAR_FIELDS;
 
   return (
     <div
@@ -107,29 +123,74 @@ const MeasurementSection = ({ measurement, title, isCurrent = false }) => {
         </span>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        {fieldGroups.map((group) => (
-          <div key={group.title}>
-            <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">
-              {group.title}
+      <div className="space-y-4">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">
+            Kameez
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5">
+            {KAMEEZ_FIELDS.map((f) => (
+              <div
+                key={f}
+                className="flex items-center justify-between border-b border-dashed border-gray-200 dark:border-gray-700/60 pb-1"
+              >
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {lowerFieldTitle(f)}
+                </span>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                  {value(measurement?.[f])}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700/60">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+              {activeLowerTab === "trouser" ? "Trouser" : "Shalwar"}
             </p>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-              {group.fields.map((f) => (
-                <div
-                  key={f}
-                  className="flex items-center justify-between border-b border-dashed border-gray-200 dark:border-gray-700/60 pb-1"
-                >
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {lowerFieldTitle(f)}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                    {value(measurement?.[f])}
-                  </span>
-                </div>
-              ))}
+            <div className="inline-flex p-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={() => setActiveLowerTab("shalwar")}
+                className={`px-2.5 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                  activeLowerTab === "shalwar"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                Shalwar
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveLowerTab("trouser")}
+                className={`px-2.5 py-0.5 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                  activeLowerTab === "trouser"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                Trouser
+              </button>
             </div>
           </div>
-        ))}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1.5">
+            {activeLowerFields.map((f) => (
+              <div
+                key={f}
+                className="flex items-center justify-between border-b border-dashed border-gray-200 dark:border-gray-700/60 pb-1"
+              >
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {lowerFieldTitle(f)}
+                </span>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                  {value(measurement?.[f])}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {measurement?.remarks && (

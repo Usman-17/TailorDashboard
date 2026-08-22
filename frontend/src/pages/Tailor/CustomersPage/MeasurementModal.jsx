@@ -1,6 +1,6 @@
 import moment from "moment";
 import toast from "react-hot-toast";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Shirt, Scissors } from "lucide-react";
 
@@ -28,6 +28,7 @@ const MeasurementModal = ({
   const formRef = useRef(null);
   const queryClient = useQueryClient();
   const customerId = customer?._id;
+  const [activeLowerTab, setActiveLowerTab] = useState("shalwar");
 
   const { data: existingMeasurement, isLoading } = useQuery({
     queryKey: ["measurement", customerId],
@@ -49,8 +50,27 @@ const MeasurementModal = ({
         cleaned[key] = existingMeasurement[key] || "";
       });
       setMeasureForm(cleaned);
+
+      const hasTrouserData = TROUSER_FIELDS.some(
+        (f) =>
+          existingMeasurement[f] !== undefined &&
+          existingMeasurement[f] !== "" &&
+          existingMeasurement[f] !== null,
+      );
+      const hasShalwarData = SHALWAR_FIELDS.some(
+        (f) =>
+          existingMeasurement[f] !== undefined &&
+          existingMeasurement[f] !== "" &&
+          existingMeasurement[f] !== null,
+      );
+      if (hasTrouserData && !hasShalwarData) {
+        setActiveLowerTab("trouser");
+      } else {
+        setActiveLowerTab("shalwar");
+      }
     } else if (open) {
       setMeasureForm({ ...initialMeasurementState });
+      setActiveLowerTab("shalwar");
     }
   }, [existingMeasurement, open, setMeasureForm]);
 
@@ -61,7 +81,7 @@ const MeasurementModal = ({
         ? `/api/measurements/update/${customerId}`
         : `/api/measurements/add/${customerId}`;
 
-      const payload = { ...data, lower: { type: "shalwar" } };
+      const payload = { ...data, lower: { type: activeLowerTab } };
       ALL_FIELDS.forEach((f) => {
         if (
           payload[f] === "" ||
@@ -100,7 +120,7 @@ const MeasurementModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = { ...measureForm, lower: { type: "shalwar" } };
+    const payload = { ...measureForm, lower: { type: activeLowerTab } };
     ALL_FIELDS.forEach((f) => {
       if (
         payload[f] === "" ||
@@ -172,6 +192,44 @@ const MeasurementModal = ({
       </div>
     ));
 
+  const renderLowerSwitch = () => (
+    <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-2">
+      <div className="flex items-center gap-2">
+        <Scissors size={16} className="text-purple-500 dark:text-purple-400" />
+        <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          {activeLowerTab === "trouser"
+            ? "Trouser Measurements"
+            : "Shalwar Measurements"}
+        </h3>
+      </div>
+
+      <div className="inline-flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          onClick={() => setActiveLowerTab("shalwar")}
+          className={`px-3.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            activeLowerTab === "shalwar"
+              ? "bg-purple-600 text-white shadow-sm"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
+        >
+          Shalwar
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveLowerTab("trouser")}
+          className={`px-3.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            activeLowerTab === "trouser"
+              ? "bg-purple-600 text-white shadow-sm"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+          }`}
+        >
+          Trouser
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <FullScreenModal
       open={open}
@@ -210,13 +268,19 @@ const MeasurementModal = ({
               </span>
             </div>
           )}
-          <Section title="Kameez" icon={Shirt}>{renderViewFields(KAMEEZ_FIELDS)}</Section>
-          <Section title="Shalwar Measurements" icon={Scissors}>
-            {renderViewFields(SHALWAR_FIELDS, "shalwar")}
+          <Section title="Kameez" icon={Shirt}>
+            {renderViewFields(KAMEEZ_FIELDS)}
           </Section>
-          <Section title="Trouser Measurements" icon={Scissors}>
-            {renderViewFields(TROUSER_FIELDS, "trouser")}
-          </Section>
+
+          <div>
+            {renderLowerSwitch()}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-3">
+              {activeLowerTab === "shalwar"
+                ? renderViewFields(SHALWAR_FIELDS, "shalwar")
+                : renderViewFields(TROUSER_FIELDS, "trouser")}
+            </div>
+          </div>
+
           {existingMeasurement?.remarks && (
             <div>
               <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
@@ -230,15 +294,18 @@ const MeasurementModal = ({
         </div>
       ) : (
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-          <Section title="Kameez" icon={Shirt}>{renderFormFields(KAMEEZ_FIELDS)}</Section>
-
-          <Section title="Shalwar Measurements" icon={Scissors}>
-            {renderFormFields(SHALWAR_FIELDS, "shalwar")}
+          <Section title="Kameez" icon={Shirt}>
+            {renderFormFields(KAMEEZ_FIELDS)}
           </Section>
 
-          <Section title="Trouser Measurements" icon={Scissors}>
-            {renderFormFields(TROUSER_FIELDS, "trouser")}
-          </Section>
+          <div>
+            {renderLowerSwitch()}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-3">
+              {activeLowerTab === "shalwar"
+                ? renderFormFields(SHALWAR_FIELDS, "shalwar")
+                : renderFormFields(TROUSER_FIELDS, "trouser")}
+            </div>
+          </div>
 
           <div>
             <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
