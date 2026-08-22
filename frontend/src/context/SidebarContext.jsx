@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
 
 const SidebarContext = createContext();
@@ -34,6 +35,54 @@ export const SidebarProvider = ({ children }) => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    window.history.pushState(
+      { ...window.history.state, mobileSidebarOpen: true },
+      "",
+    );
+
+    const handlePopState = () => {
+      setIsMobileOpen(false);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (window.history.state?.mobileSidebarOpen) {
+        window.history.back();
+      }
+    };
+  }, [isMobileOpen]);
+
+  useEffect(() => {
+    if (!isMobileOpen) return;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    const handleTouchMove = (e) => {
+      const sidebarEl = document.querySelector("aside");
+      if (sidebarEl && !sidebarEl.contains(e.target)) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    document.addEventListener("touchmove", handleTouchMove, {
+      passive: false,
+    });
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+      document.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [isMobileOpen]);
 
   const toggleSidebar = () => {
     setIsExpanded((prev) => !prev);
