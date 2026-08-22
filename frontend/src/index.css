@@ -350,6 +350,10 @@ input:-webkit-autofill:focus {
   border-right: 1px solid var(--table-border) !important;
 }
 
+.ant-table-wrapper .ant-table-tbody > tr.row-urgent > td {
+  background-color: rgba(239, 68, 68, 0.12) !important;
+}
+
 [data-theme="dark"] .ant-table-wrapper .ant-table-tbody > tr > td {
   color: #ffffff !important;
 }

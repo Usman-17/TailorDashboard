@@ -42,7 +42,7 @@ const STATUS_COLORS = {
 
 const OrdersPage = () => {
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("pending");
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -121,27 +121,39 @@ const OrdersPage = () => {
     else if (filterStatus !== "all")
       result = result.filter((o) => o.status === filterStatus);
 
-    if (!search) return result;
+    if (search) {
+      const q = search.toLowerCase();
+      const match = (val) =>
+        val != null && val.toString().toLowerCase().includes(q);
+      result = result.filter((o) => {
+        const customer = o.customer || {};
+        const suits = (o.items || [])
+          .map((it) => `${it.suitType || ""} ${it.description || ""}`)
+          .join(" ");
+        return (
+          match(o.orderNumber) ||
+          match(customer.name) ||
+          match(customer.phone) ||
+          match(customer.customerId) ||
+          match(o.status) ||
+          (suits && suits.toLowerCase().includes(q)) ||
+          match(o.totalAmount)
+        );
+      });
+    }
 
-    const q = search.toLowerCase();
-    const match = (val) =>
-      val != null && val.toString().toLowerCase().includes(q);
-
-    return result.filter((o) => {
-      const customer = o.customer || {};
-      const suits = (o.items || [])
-        .map((it) => `${it.suitType || ""} ${it.description || ""}`)
-        .join(" ");
+    const isUrgent = (o) => {
+      if (!o.deliveryDate || ["delivered", "cancelled"].includes(o.status))
+        return false;
       return (
-        match(o.orderNumber) ||
-        match(customer.name) ||
-        match(customer.phone) ||
-        match(customer.customerId) ||
-        match(o.status) ||
-        (suits && suits.toLowerCase().includes(q)) ||
-        match(o.totalAmount)
+        moment(o.deliveryDate)
+          .startOf("day")
+          .diff(moment().startOf("day"), "days") <= 3
       );
-    });
+    };
+    const urgent = result.filter(isUrgent);
+    const rest = result.filter((o) => !isUrgent(o));
+    return [...urgent, ...rest];
   }, [orders, filterStatus, search]);
 
   const columns = [
@@ -359,6 +371,19 @@ const OrdersPage = () => {
         onSearchChange={setSearch}
         searchPlaceholder="Search by order #, customer, status..."
         totalLabel="Total Orders"
+        rowClassName={(record) => {
+          let cls = "!h-12 [&>td]:!py-1.5 [&>td]:!px-2 cursor-pointer";
+          if (
+            record.deliveryDate &&
+            !["delivered", "cancelled"].includes(record.status)
+          ) {
+            const days = moment(record.deliveryDate)
+              .startOf("day")
+              .diff(moment().startOf("day"), "days");
+            if (days <= 3) cls = `row-urgent ${cls}`;
+          }
+          return cls;
+        }}
       />
 
       <OrderDetailPage
