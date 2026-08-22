@@ -140,7 +140,6 @@ const CustomersPage = () => {
     setEditCustomer(null);
     setForm({ name: "", phone: "" });
     setErrors({});
-    setSearchParams({}, { replace: true });
   };
 
   const openCreate = () => {
@@ -148,7 +147,6 @@ const CustomersPage = () => {
     setForm({ name: "", phone: "" });
     setErrors({});
     setFormModalOpen(true);
-    setSearchParams({ modal: "add-customer" });
   };
 
   const openEdit = (customer) => {
@@ -159,7 +157,6 @@ const CustomersPage = () => {
     });
     setErrors({});
     setFormModalOpen(true);
-    setSearchParams({ modal: "add-customer" });
   };
 
   const openMeasureModal = (customer, mode) => {
@@ -423,10 +420,7 @@ const CustomersPage = () => {
       />
 
       {/* Custom Modal for Add/Edit Customer */}
-      <CustomModal
-        isOpen={formModalOpen && modalParam === "add-customer"}
-        className="w-[92%] max-w-md"
-      >
+      <CustomModal isOpen={formModalOpen} className="w-[92%] max-w-md">
         <div className="flex flex-col gap-5">
           {/* Modal Header */}
           <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
