@@ -4,6 +4,7 @@ import {
   Ban,
   CheckCircle,
   ExternalLink,
+  MessageCircle,
   Redo,
   Search,
   SquarePen,
@@ -23,6 +24,7 @@ import OrderDetailPage from "./OrderDetailPage";
 
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
 import { useGetAllOrders } from "../../../hooks/useGetAllOrders";
+import useGetAuth from "../../../hooks/useGetAuth";
 import useGetAllCustomers from "../../../hooks/useGetAllCustomers";
 // Imports End----
 
@@ -50,6 +52,7 @@ const OrdersPage = () => {
   const { orders, isLoading } = useGetAllOrders();
   const { data: customersData, isLoading: customersLoading } =
     useGetAllCustomers();
+  const { data: authUser } = useGetAuth();
 
   const customers = useMemo(
     () => customersData?.customers || [],
@@ -288,6 +291,28 @@ const OrdersPage = () => {
             >
               <ExternalLink size={16} />
             </button>
+            {record.status === "ready" && record.customer?.phone && (
+              <button
+                onClick={() => {
+                  let phone = record.customer.phone.replace(/[^0-9]/g, "");
+                  if (phone.startsWith("0")) phone = "92" + phone.slice(1);
+                  const totalSuits = record.items?.length || 0;
+                  const totalAmount = Number(
+                    record.totalAmount || 0,
+                  ).toLocaleString();
+                  const shopName = authUser?.shop?.name || "our shop";
+                  const msg = `Assalam o Alaikum ${record.customer.name},\n\nThis is to inform you that your order *${record.orderNumber}* is now *ready for pickup*.\n\n*Order Summary:*\n- Total Suits: ${totalSuits}\n- Total Amount: Rs. ${totalAmount}\n\nKindly visit us at your earliest convenience to collect your order.\n\nJazakAllah,\n*${shopName}*`;
+                  window.open(
+                    `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
+                    "_blank",
+                  );
+                }}
+                className="p-2 rounded-full border transition-all duration-200 shadow-sm cursor-pointer bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#25D366]/30 text-[#25D366] hover:bg-[#25D366]/10 dark:hover:bg-[#25D366]/10 active:scale-90 active:shadow-inner"
+                title="WhatsApp"
+              >
+                <MessageCircle size={16} />
+              </button>
+            )}
           </div>
         );
       },

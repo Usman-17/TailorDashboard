@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Calendar,
   CheckCircle,
   Clock,
   CreditCard,
@@ -18,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import useGetAuth from "../../../hooks/useGetAuth";
 import { useGetOrder } from "../../../hooks/useGetOrder";
 import FullScreenModal from "../../../components/FullScreenModal";
 import CustomModal from "../../../components/CustomModal";
@@ -76,6 +76,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { order, isLoading } = useGetOrder(orderId);
+  const { data: authUser } = useGetAuth();
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -239,10 +240,12 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
                   onClick={() => {
                     let phone = order.customer.phone.replace(/[^0-9]/g, "");
                     if (phone.startsWith("0")) phone = "92" + phone.slice(1);
-                    const suitTypes =
-                      order.items?.map((i) => i.suitType).join(", ") ||
-                      "your order";
-                    const msg = `Assalam o Alaikum ${order.customer.name},\n\nYour order *${order.orderNumber}* (${suitTypes}) is ready for pickup.\n\nPlease visit us at your earliest convenience to collect your order.\n\nThank you for choosing us! 🪡`;
+                    const totalSuits = order.items?.length || 0;
+                    const totalAmount = Number(
+                      order.totalAmount || 0,
+                    ).toLocaleString();
+                    const shopName = authUser?.shop?.name || "our shop";
+                    const msg = `Assalam o Alaikum ${order.customer.name},\n\nThis is to inform you that your order *${order.orderNumber}* is now *ready for pickup*.\n\n*Order Summary:*\n- Total Suits: ${totalSuits}\n- Total Amount: Rs. ${totalAmount}\n\nKindly visit us at your earliest convenience to collect your order.\n\nJazakAllah,\n*${shopName}*`;
                     window.open(
                       `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
                       "_blank",
