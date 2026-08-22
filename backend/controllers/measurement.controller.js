@@ -206,7 +206,11 @@ export const updateMeasurement = async (req, res) => {
     measurementData.remarks =
       req.body.remarks !== undefined ? req.body.remarks : existing.remarks;
 
-    const measurement = await Measurement.create(measurementData);
+    const measurement = await Measurement.findByIdAndUpdate(
+      existing._id,
+      measurementData,
+      { new: true, runValidators: true },
+    );
 
     await TailorCustomer.findByIdAndUpdate(customerId, {
       measurement: measurement._id,
