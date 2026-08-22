@@ -333,7 +333,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                     ["Shoulder", existingMeasurement.shoulder],
                     ["Chest", existingMeasurement.chest],
                     ["Waist", existingMeasurement.waist],
-                    ["Hip", existingMeasurement.hip],
+                    ["Ghera", existingMeasurement.ghera],
                     ["Neck", existingMeasurement.neck],
                     ["Sleeve", existingMeasurement.sleeveLength],
                     ["Arm Hole", existingMeasurement.armHole],
@@ -371,7 +371,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                       ["Hip", existingMeasurement.shalwarHip],
                       ["Thigh", existingMeasurement.thigh],
                       ["Knee", existingMeasurement.knee],
-                      ["Bottom", existingMeasurement.bottom],
+                      ["Pancha", existingMeasurement.bottom],
                     ].map(([label, val]) => (
                       <div
                         key={label}
@@ -396,9 +396,11 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                       ["Length", existingMeasurement.trouserLength],
                       ["Waist", existingMeasurement.trouserWaist],
                       ["Hip", existingMeasurement.trouserHip],
+                      ["Ghera", existingMeasurement.trouserGhera],
+                      ["Aasan", existingMeasurement.trouserAasan],
                       ["Thigh", existingMeasurement.trouserThigh],
                       ["Knee", existingMeasurement.trouserKnee],
-                      ["Bottom", existingMeasurement.trouserBottom],
+                      ["Pancha", existingMeasurement.trouserBottom],
                     ].map(([label, val]) => (
                       <div
                         key={label}

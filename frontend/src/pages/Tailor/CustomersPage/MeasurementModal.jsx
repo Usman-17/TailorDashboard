@@ -2,6 +2,7 @@ import moment from "moment";
 import toast from "react-hot-toast";
 import { useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Shirt, Scissors } from "lucide-react";
 
 import CustomInput from "../../../components/CustomInput";
 import LoadingSpinner from "../../../components/LoadingSpinner";
@@ -209,11 +210,11 @@ const MeasurementModal = ({
               </span>
             </div>
           )}
-          <Section title="Kameez">{renderViewFields(KAMEEZ_FIELDS)}</Section>
-          <Section title="Shalwar Measurements">
+          <Section title="Kameez" icon={Shirt}>{renderViewFields(KAMEEZ_FIELDS)}</Section>
+          <Section title="Shalwar Measurements" icon={Scissors}>
             {renderViewFields(SHALWAR_FIELDS, "shalwar")}
           </Section>
-          <Section title="Trouser Measurements">
+          <Section title="Trouser Measurements" icon={Scissors}>
             {renderViewFields(TROUSER_FIELDS, "trouser")}
           </Section>
           {existingMeasurement?.remarks && (
@@ -229,13 +230,13 @@ const MeasurementModal = ({
         </div>
       ) : (
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-          <Section title="Kameez">{renderFormFields(KAMEEZ_FIELDS)}</Section>
+          <Section title="Kameez" icon={Shirt}>{renderFormFields(KAMEEZ_FIELDS)}</Section>
 
-          <Section title="Shalwar Measurements">
+          <Section title="Shalwar Measurements" icon={Scissors}>
             {renderFormFields(SHALWAR_FIELDS, "shalwar")}
           </Section>
 
-          <Section title="Trouser Measurements">
+          <Section title="Trouser Measurements" icon={Scissors}>
             {renderFormFields(TROUSER_FIELDS, "trouser")}
           </Section>
 
@@ -260,9 +261,12 @@ const MeasurementModal = ({
   );
 };
 
-const Section = ({ title, children }) => (
+const Section = ({ title, icon: Icon, children }) => (
   <div>
-    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
+    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1 flex items-center gap-2">
+      {Icon && (
+        <Icon size={16} className="text-purple-500 dark:text-purple-400" />
+      )}
       {title}
     </h3>
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
