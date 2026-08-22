@@ -80,7 +80,9 @@ const Header = () => {
           {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
 
-        <div className="flex items-center gap-2">
+        <div
+          className={`flex items-center gap-2 ${isMobileOpen ? "invisible" : ""}`}
+        >
           <div
             className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             onClick={toggleTheme}

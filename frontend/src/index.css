@@ -2027,3 +2027,13 @@ body.modal-open .ant-tooltip {
 .dashboard-page table td {
   white-space: nowrap;
 }
+
+/* ========= Sidebar Backdrop Animation ========= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

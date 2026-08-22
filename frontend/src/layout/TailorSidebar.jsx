@@ -21,7 +21,7 @@ const tailorNavItems = [
     icon: <LayoutDashboard />,
     path: "/",
   },
-    {
+  {
     name: "Suit Types",
     icon: <Tag />,
     path: "/suit-types",
@@ -208,63 +208,72 @@ const Sidebar = () => {
   );
 
   return (
-    <aside
-      onMouseEnter={() => !isExpanded && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`fixed top-0 left-0 h-screen px-2 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800/80 text-gray-900 dark:text-gray-100 transition-all duration-300 ease-in-out z-50
-        ${
-          isMobileOpen
-            ? "w-full"
-            : isExpanded || isHovered
-              ? "w-[220px]"
-              : "w-[68px]"
-        }
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:translate-x-0`}
-    >
-      <div className="h-14 sm:h-16 flex items-center justify-between px-3 mb-2">
-        <Link to="/" className="flex items-center justify-center">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
-              Tailor System
-            </span>
-          ) : (
-            <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
-              TS
-            </span>
+    <>
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden animate-[fadeIn_200ms_ease-out]"
+          onClick={toggleMobileSidebar}
+        />
+      )}
+      <aside
+        onMouseEnter={() => !isExpanded && setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed top-0 left-0 h-screen px-2 bg-white dark:bg-[#141025] border-r border-gray-200 dark:border-gray-800/80 text-gray-900 dark:text-gray-100 z-50
+          transition-[width,transform] duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]
+          ${
+            isMobileOpen
+              ? "w-[280px] translate-x-0"
+              : isExpanded || isHovered
+                ? "w-[220px] -translate-x-full lg:translate-x-0"
+                : "w-[68px] -translate-x-full lg:translate-x-0"
+          }`}
+      >
+        <div className="h-14 sm:h-16 flex items-center justify-between px-3 mb-2">
+          <Link to="/" className="flex items-center justify-center">
+            {isExpanded || isHovered || isMobileOpen ? (
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent transition-opacity duration-200">
+                Tailor System
+              </span>
+            ) : (
+              <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-purple-400 bg-clip-text text-transparent">
+                TS
+              </span>
+            )}
+          </Link>
+          {isMobileOpen && (
+            <button
+              onClick={toggleMobileSidebar}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              <X size={20} className="text-gray-600 dark:text-gray-300" />
+            </button>
           )}
-        </Link>
-        {isMobileOpen && (
-          <button
-            onClick={toggleMobileSidebar}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-          >
-            <X size={20} className="text-gray-600 dark:text-gray-300" />
-          </button>
-        )}
-      </div>
+        </div>
 
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
-        <nav className="mb-4">
-          <div className="flex flex-col gap-2">
-            <div>
-              <h2
-                className={`mb-2.5 text-[10px] font-semibold uppercase tracking-wider flex leading-[16px] text-gray-400 dark:text-gray-500 px-1 ${
-                  !isExpanded && !isHovered ? "justify-center" : "justify-start"
-                }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Main Menu"
-                ) : (
-                  <Ellipsis size={14} />
-                )}
-              </h2>
-              {renderMenuItems(tailorNavItems, "main")}
+        <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
+          <nav className="mb-4">
+            <div className="flex flex-col gap-2">
+              <div>
+                <h2
+                  className={`mb-2.5 text-[10px] font-semibold uppercase tracking-wider flex leading-[16px] text-gray-400 dark:text-gray-500 px-1 ${
+                    !isExpanded && !isHovered && !isMobileOpen
+                      ? "justify-center"
+                      : "justify-start"
+                  }`}
+                >
+                  {isExpanded || isHovered || isMobileOpen ? (
+                    "Main Menu"
+                  ) : (
+                    <Ellipsis size={14} />
+                  )}
+                </h2>
+                {renderMenuItems(tailorNavItems, "main")}
+              </div>
             </div>
-          </div>
-        </nav>
-      </div>
-    </aside>
+          </nav>
+        </div>
+      </aside>
+    </>
   );
 };
 
