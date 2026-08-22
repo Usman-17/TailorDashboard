@@ -24,8 +24,8 @@ import CustomDatePicker from "../../../components/CustomDatePicker";
 
 // ─── Constants ────────────────────────────────────────────────
 const COLLAR_TYPES = [
-  { label: "Ban Collar", value: "Ban Collar" },
-  { label: "Shirt Collar", value: "Shirt Collar" },
+  { label: "Collar", value: "Collar" },
+  { label: "Ban", value: "Ban" },
 ];
 const CUFF_TYPES = [
   { label: "Simple", value: "Simple" },
@@ -269,10 +269,10 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     >
       <div className="space-y-6 pb-12">
         {/* ── Customer & Measurement Banner ────────────────── */}
-        <div className="bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-purple-900/30 border border-purple-200 dark:border-purple-800/40 rounded-2xl p-4 sm:p-5 shadow-sm">
+        <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 dark:from-purple-900/30 dark:via-indigo-900/20 dark:to-purple-900/30 border border-purple-200 dark:border-purple-800/40 rounded-2xl p-4 sm:p-5 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="size-12 rounded-full bg-purple-600/20 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-lg border border-purple-500/30">
+              <div className="size-12 rounded-full bg-purple-100 dark:bg-purple-600/20 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-lg border border-purple-200 dark:border-purple-500/30">
                 {customer?.name?.charAt(0)?.toUpperCase() || "C"}
               </div>
               <div>
@@ -342,7 +342,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                   ].map(([label, val]) => (
                     <div
                       key={label}
-                      className="bg-white/70 dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
+                      className="bg-white dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
                     >
                       <span className="text-gray-400 block font-medium">
                         {label}
@@ -375,7 +375,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                     ].map(([label, val]) => (
                       <div
                         key={label}
-                        className="bg-white/70 dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
+                        className="bg-white dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
                       >
                         <span className="text-gray-400 block font-medium">
                           {label}
@@ -402,7 +402,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                     ].map(([label, val]) => (
                       <div
                         key={label}
-                        className="bg-white/70 dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
+                        className="bg-white dark:bg-[#1a1129] p-2 rounded-lg border border-purple-100 dark:border-purple-900/40 text-center"
                       >
                         <span className="text-gray-400 block font-medium">
                           {label}

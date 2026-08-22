@@ -23,8 +23,8 @@ import { useGetOrder } from "../../../hooks/useGetOrder";
 
 // ─── Constants ────────────────────────────────────────────────
 const COLLAR_TYPES = [
-  { label: "Ban Collar", value: "Ban Collar" },
-  { label: "Shirt Collar", value: "Shirt Collar" },
+  { label: "Collar", value: "Collar" },
+  { label: "Ban", value: "Ban" },
 ];
 const CUFF_TYPES = [
   { label: "Simple", value: "Simple" },
@@ -46,7 +46,7 @@ const createSuitItem = (suitTypes = [], overrides = {}) => {
   return {
     id: Date.now() + Math.random(),
     suitType: first?.name || "",
-    collarType: "Ban Collar",
+    collarType: "Ban",
     cuffType: "Simple",
     pocket: "No Pocket",
     lowerType: "Shalwar",
@@ -99,7 +99,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
       const items = (order.items || []).map((item) =>
         createSuitItem(availableSuitTypesList, {
           suitType: item.suitType || "",
-          collarType: item.collarType || "Ban Collar",
+          collarType: item.collarType || "Ban",
           cuffType: item.cuffType || "Simple",
           pocket: item.pocket || "No Pocket",
           lowerType: item.lowerType || "Shalwar",
