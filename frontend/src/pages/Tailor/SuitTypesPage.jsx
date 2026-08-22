@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, X, Tag, DollarSign, Ban, Redo } from "lucide-react";
+import { Plus, X, Tag, DollarSign, Ban, Redo, SquarePen } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import CustomTable from "../../components/CustomTable";
@@ -9,6 +9,7 @@ import CustomInput from "../../components/CustomInput";
 import SectionHeading from "../../components/SectionHeading";
 import ModalActionButtons from "../../components/ModalActionButtons";
 import ActionButtons from "../../components/ActionButtons";
+import SearchBar from "../../components/SearchBar";
 
 import useGlobalFilter from "../../hooks/useGlobalFilter";
 import { useGetAllSuitTypes } from "../../hooks/useGetSuitTypes.jsx";
@@ -223,23 +224,131 @@ const SuitTypesPage = () => {
         />
         <button
           onClick={() => setModalState({ open: true, data: null })}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-sm font-semibold transition cursor-pointer text-white shadow-sm"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-sm font-semibold transition cursor-pointer text-white shadow-sm"
         >
-          <Redo size={18} />
+          <SquarePen size={18} />
           Add Suit Type
         </button>
       </div>
 
-      <CustomTable
-        rowKey="_id"
-        loading={isLoading}
-        columns={columns}
-        dataSource={filtered.map((item, index) => ({ ...item, sr: index + 1 }))}
-        globalSearch={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search suit type name..."
-        totalLabel="Total Suit Types"
-      />
+      {/* Mobile Grid View */}
+      <div className="block md:hidden space-y-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#17102a] p-3.5 rounded-xl border border-gray-200 dark:border-gray-800">
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Total Suit Types:{" "}
+            <span className="text-purple-600 dark:text-purple-400 font-bold">
+              {filtered.length}
+            </span>
+          </div>
+          <div className="w-full sm:w-64">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Search suit type name..."
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-800/50 animate-pulse rounded-xl"
+              />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-800 bg-white dark:bg-[#17102a]">
+            <Tag size={36} className="text-gray-300 dark:text-gray-600 mb-2" />
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              No suit types found
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {filtered.map((item, index) => (
+              <div
+                key={item._id}
+                className="bg-white dark:bg-[#17102a] border border-gray-200 dark:border-gray-800/80 rounded-xl p-4 shadow-sm flex flex-col justify-between gap-3 hover:border-purple-300 dark:hover:border-purple-900/60 transition-all"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="inline-flex items-center justify-center size-6 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 text-xs font-bold shrink-0">
+                      #{index + 1}
+                    </span>
+                    <h4 className="text-base font-bold text-gray-900 dark:text-white truncate">
+                      {item.name}
+                    </h4>
+                  </div>
+                  {item.isActive ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-0.5 text-xs font-semibold shrink-0">
+                      <span className="size-1.5 rounded-full bg-green-500 animate-pulse" />
+                      Active
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 px-2.5 py-0.5 text-xs font-semibold shrink-0">
+                      <span className="size-1.5 rounded-full bg-gray-400" />
+                      Inactive
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-800/60">
+                  <div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium block">
+                      Stitching Price
+                    </span>
+                    <span className="text-base font-extrabold text-purple-600 dark:text-purple-400">
+                      Rs. {Number(item.price || 0).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <ActionButtons
+                      record={item}
+                      onEdit={(r) => setModalState({ open: true, data: r })}
+                      onDelete={(r) =>
+                        setVoidModal({ open: true, id: r._id, name: r.name })
+                      }
+                      deleteTitle="Void"
+                      deleteIcon={Ban}
+                    />
+                    {!item.isActive && (
+                      <button
+                        title="Restore"
+                        onClick={() => restoreSuitType(item._id)}
+                        disabled={isRestoring}
+                        className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 transition cursor-pointer disabled:opacity-50"
+                      >
+                        <Redo size={16} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block">
+        <CustomTable
+          rowKey="_id"
+          loading={isLoading}
+          columns={columns}
+          dataSource={filtered.map((item, index) => ({
+            ...item,
+            sr: index + 1,
+          }))}
+          globalSearch={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search suit type name..."
+          totalLabel="Total Suit Types"
+        />
+      </div>
 
       {/* Suit Type Modal */}
       <CustomModal isOpen={modalState.open} className="w-[92%] max-w-md">
