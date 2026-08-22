@@ -194,8 +194,10 @@ const SuitTypesPage = () => {
           <ActionButtons
             record={record}
             onEdit={(r) => setModalState({ open: true, data: r })}
-            onDelete={(r) =>
-              setVoidModal({ open: true, id: r._id, name: r.name })
+            onDelete={
+              record.isActive
+                ? (r) => setVoidModal({ open: true, id: r._id, name: r.name })
+                : undefined
             }
             deleteTitle="Void"
             deleteIcon={Ban}
@@ -309,8 +311,15 @@ const SuitTypesPage = () => {
                     <ActionButtons
                       record={item}
                       onEdit={(r) => setModalState({ open: true, data: r })}
-                      onDelete={(r) =>
-                        setVoidModal({ open: true, id: r._id, name: r.name })
+                      onDelete={
+                        item.isActive
+                          ? (r) =>
+                              setVoidModal({
+                                open: true,
+                                id: r._id,
+                                name: r.name,
+                              })
+                          : undefined
                       }
                       deleteTitle="Void"
                       deleteIcon={Ban}
