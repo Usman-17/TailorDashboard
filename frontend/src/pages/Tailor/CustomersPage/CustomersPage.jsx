@@ -16,6 +16,7 @@ import {
 import CustomTable from "../../../components/CustomTable";
 import CustomInput from "../../../components/CustomInput";
 import CustomModal from "../../../components/CustomModal";
+import ModalActionButtons from "../../../components/ModalActionButtons";
 
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
 import useGetAllCustomers from "../../../hooks/useGetAllCustomers";
@@ -476,29 +477,13 @@ const CustomersPage = () => {
             />
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-800 mt-2">
-              <button
-                type="button"
-                onClick={closeFormModal}
-                className="px-5 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="px-6 py-2 text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow-sm transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isSaving
-                  ? editCustomer
-                    ? "Updating..."
-                    : "Saving..."
-                  : editCustomer
-                    ? "Update Customer"
-                    : "Save Customer"}
-              </button>
-            </div>
+            <ModalActionButtons
+              onCancel={closeFormModal}
+              onSubmit={handleSubmit}
+              isSubmitting={isSaving}
+              submitText={editCustomer ? "Update Customer" : "Save Customer"}
+              loadingText={editCustomer ? "Updating..." : "Saving..."}
+            />
           </form>
         </div>
       </CustomModal>

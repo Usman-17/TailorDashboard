@@ -1,8 +1,8 @@
 import moment from "moment";
 import toast from "react-hot-toast";
 import { useRef, useEffect, useState } from "react";
+import { Shirt, Scissors, FileText } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Shirt, Scissors } from "lucide-react";
 
 import CustomInput from "../../../components/CustomInput";
 import LoadingSpinner from "../../../components/LoadingSpinner";
@@ -283,7 +283,11 @@ const MeasurementModal = ({
 
           {existingMeasurement?.remarks && (
             <div>
-              <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
+              <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1 flex items-center gap-2">
+                <FileText
+                  size={16}
+                  className="text-purple-500 dark:text-purple-400"
+                />
                 Remarks
               </h3>
               <p className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-[#1a1129] border border-gray-200 dark:border-gray-700 rounded-md p-3">
@@ -308,7 +312,11 @@ const MeasurementModal = ({
           </div>
 
           <div>
-            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1">
+            <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 dark:border-gray-700 pb-1 flex items-center gap-2">
+              <FileText
+                size={16}
+                className="text-purple-500 dark:text-purple-400"
+              />
               Remarks
             </h3>
             <CustomInput
