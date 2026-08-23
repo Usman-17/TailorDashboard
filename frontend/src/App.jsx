@@ -24,7 +24,7 @@ import CustomerDetailPage from "./pages/Tailor/CustomersPage/CustomerDetailPage"
 import OrdersPage from "./pages/Tailor/OrdersPage/OrdersPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
-import SuitTypesPage from "./pages/Tailor/SuitTypesPage";
+import SuitTypesPage from "./pages/Tailor/SuitTypesPage/SuitTypePage";
 import PaymentsPage from "./pages/Tailor/PaymentsPage/PaymentsPage";
 import ExpensesPage from "./pages/Tailor/ExpensesPage/ExpensesPage";
 import TailorReportsPage from "./pages/Tailor/ReportsPage/TailorReportsPage";

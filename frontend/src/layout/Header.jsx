@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { LogOut, ChevronDown, KeyRound, Menu, Sun, Moon } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { LogOut, ChevronDown, KeyRound, Menu, Sun, Moon, ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import useLogout from "../hooks/useLogout";
 import useGetAuth from "../hooks/useGetAuth";
@@ -12,6 +14,8 @@ import { useSidebar } from "../context/SidebarContext";
 // Imports End----
 
 const Header = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { data: authUser } = useGetAuth();
   const { logoutMutation } = useLogout();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -20,6 +24,15 @@ const Header = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const { toggleSidebar, toggleMobileSidebar } = useSidebar();
+
+  // Pages that show a back-button + page title on mobile instead of shop name
+  const mobilePageTitles = {
+    "/suit-types": { title: "Suit Types", subtitle: "Manage suit types and stitching prices." },
+  };
+  const mobilePage = Object.entries(mobilePageTitles).find(([route]) =>
+    location.pathname.startsWith(route)
+  );
+  const mobilePageInfo = mobilePage ? mobilePage[1] : null;
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -58,15 +71,35 @@ const Header = () => {
           <Menu size={22} />
         </button>
 
-        {/* Mobile Shop Name & Subtitle */}
-        <div className="flex lg:hidden flex-col justify-center min-w-0 select-none">
-          <span className="text-xl font-extrabold text-gray-900 dark:text-white truncate tracking-tight leading-tight select-none">
-            {authUser?.shop?.name || "Tailor Shop"}
-          </span>
-          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mt-0.5 select-none">
-            Tailor Management Portal
-          </span>
-        </div>
+        {/* Mobile Left: Back button + Page Title OR Shop Name */}
+        {mobilePageInfo ? (
+          <div className="flex lg:hidden items-center gap-2.5 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="size-8 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0 cursor-pointer"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <div className="flex flex-col justify-center min-w-0 select-none">
+              <span className="text-xl font-extrabold text-gray-900 dark:text-white truncate tracking-tight leading-tight select-none">
+                {mobilePageInfo.title}
+              </span>
+              <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mt-0.5 select-none">
+                {mobilePageInfo.subtitle}
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* Mobile Shop Name & Subtitle */
+          <div className="flex lg:hidden flex-col justify-center min-w-0 select-none">
+            <span className="text-xl font-extrabold text-gray-900 dark:text-white truncate tracking-tight leading-tight select-none">
+              {authUser?.shop?.name || "Tailor Shop"}
+            </span>
+            <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mt-0.5 select-none">
+              Tailor Management Portal
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 select-none">
           <button
