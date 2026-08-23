@@ -52,7 +52,7 @@ const CustomModal = ({
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
           <Motion.div
-            className={`${fullScreen ? "w-full h-full rounded-none" : className} ${fullScreen ? "" : "rounded-xl"} shadow-2xl px-3 py-6 sm:px-6 border overflow-y-auto no-scrollbar ${
+            className={`${fullScreen ? "w-full h-full rounded-none overflow-hidden" : className + " rounded-xl overflow-y-auto px-3 py-6 sm:px-6"} shadow-2xl border no-scrollbar ${
               isDarkMode
                 ? "bg-[#1A162B] text-white border-white/10"
                 : "bg-white text-gray-800 border-gray-200"
