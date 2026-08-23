@@ -11,19 +11,6 @@ import { useTheme } from "../context/ThemeContext";
 import { useSidebar } from "../context/SidebarContext";
 // Imports End----
 
-const ROLE_LABELS = {
-  super_admin: "Super Admin",
-  owner: "Owner",
-  staff: "Staff",
-};
-
-const ROLE_COLORS = {
-  super_admin:
-    "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
-  owner: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  staff: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-};
-
 const Header = () => {
   const { data: authUser } = useGetAuth();
   const { logoutMutation } = useLogout();
@@ -32,7 +19,7 @@ const Header = () => {
   const dropdownRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -73,7 +60,7 @@ const Header = () => {
 
         {/* Mobile Shop Name & Subtitle */}
         <div className="flex lg:hidden flex-col justify-center min-w-0 select-none">
-          <span className="text-base font-extrabold text-gray-900 dark:text-white truncate tracking-tight leading-tight select-none">
+          <span className="text-xl font-extrabold text-gray-900 dark:text-white truncate tracking-tight leading-tight select-none">
             {authUser?.shop?.name || "Tailor Shop"}
           </span>
           <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mt-0.5 select-none">

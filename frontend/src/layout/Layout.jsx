@@ -9,7 +9,7 @@ import MobileBottomBar from "./MobileBottomBar";
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
 
 const TailorLayoutContent = () => {
-  const { isExpanded, isHovered, isMobileOpen } = useSidebar();
+  const { isExpanded, isHovered } = useSidebar();
 
   return (
     <div className="min-h-screen xl:flex">
