@@ -101,7 +101,7 @@ const DesktopSuitTypePage = ({
         />
         <button
           onClick={onAdd}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 text-sm font-semibold transition cursor-pointer text-white shadow-sm"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-sm font-semibold transition-all cursor-pointer text-white shadow-sm"
         >
           <SquarePen size={18} />
           Add Suit Type

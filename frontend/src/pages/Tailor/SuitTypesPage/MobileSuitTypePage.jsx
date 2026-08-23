@@ -49,7 +49,7 @@ const MobileSuitTypePage = ({
         {/* Add New Suit Type Button */}
         <button
           onClick={onAdd}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold text-sm shadow-md shadow-purple-600/25 transition cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold text-sm shadow-md shadow-purple-600/25 transition-all cursor-pointer"
         >
           <Plus size={18} />
           Add New Suit Type

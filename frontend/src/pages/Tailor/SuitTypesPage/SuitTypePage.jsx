@@ -187,7 +187,7 @@ const SuitTypesPage = () => {
               <button
                 type="button"
                 onClick={() => setModalState({ open: false, data: null })}
-                className="size-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition cursor-pointer"
+                className="size-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-500 dark:text-gray-400 transition-all cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -314,7 +314,7 @@ const SuitTypesPage = () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isPending}
-                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold text-sm shadow-lg shadow-purple-600/25 transition cursor-pointer disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold text-sm shadow-lg shadow-purple-600/25 transition-all cursor-pointer disabled:opacity-60"
               >
                 {isPending ? (
                   <span className="size-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
@@ -332,7 +332,7 @@ const SuitTypesPage = () => {
               <button
                 type="button"
                 onClick={() => setModalState({ open: false, data: null })}
-                className="w-full py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition cursor-pointer"
+                className="w-full py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 active:scale-95 transition-all cursor-pointer"
               >
                 Cancel
               </button>
