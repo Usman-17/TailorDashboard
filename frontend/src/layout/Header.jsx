@@ -1,16 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  X,
-  UserRound,
-  LogOut,
-  Shield,
-  Store,
-  ChevronDown,
-  KeyRound,
-  Menu,
-  Sun,
-  Moon,
-} from "lucide-react";
+import { LogOut, ChevronDown, KeyRound, Menu, Sun, Moon } from "lucide-react";
 
 import useLogout from "../hooks/useLogout";
 import useGetAuth from "../hooks/useGetAuth";
@@ -71,74 +60,84 @@ const Header = () => {
           impersonatorName={authUser?.impersonator?.fullName}
         />
       )}
+
       <header className="sticky top-0 flex items-center justify-between w-full h-14 sm:h-16 px-3 sm:px-4 z-40 transition-all duration-200 bg-transparent">
+        {/* Desktop Sidebar Toggle Button */}
         <button
           onClick={handleToggle}
-          className="flex items-center justify-center w-10 h-10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
+          className="hidden lg:flex items-center justify-center w-10 h-10 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
           aria-label="Toggle Sidebar"
         >
-          {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
+          <Menu size={22} />
         </button>
 
-        <div
-          className={`flex items-center gap-2 ${isMobileOpen ? "invisible" : ""}`}
-        >
-          <div
-            className="flex items-center justify-center w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+        {/* Mobile Shop Name & Subtitle */}
+        <div className="flex lg:hidden flex-col justify-center min-w-0 select-none">
+          <span className="text-base font-extrabold text-gray-900 dark:text-white truncate tracking-tight leading-tight select-none">
+            {authUser?.shop?.name || "Tailor Shop"}
+          </span>
+          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 leading-none mt-0.5 select-none">
+            Tailor Management Portal
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 sm:gap-2 select-none">
+          <button
+            type="button"
+            className="size-9 rounded-xl flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer select-none"
             onClick={toggleTheme}
             title={`Switch to ${isDarkMode ? "Light" : "Dark"} Mode`}
           >
             {isDarkMode ? (
-              <Sun size={18} className="text-yellow-400" />
+              <Sun size={19} className="text-amber-400" />
             ) : (
-              <Moon size={18} className="text-gray-600" />
+              <Moon size={19} className="text-gray-600 dark:text-gray-300" />
             )}
-          </div>
+          </button>
 
           <div className="relative" ref={dropdownRef}>
             <button
+              type="button"
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+              className="flex items-center gap-2 p-0.5 sm:px-2.5 sm:py-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer select-none"
             >
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                <UserRound
-                  size={16}
-                  className="text-gray-600 dark:text-gray-300"
-                />
+              <div className="size-8.5 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs select-none">
+                {authUser?.fullName
+                  ? authUser.fullName.charAt(0).toUpperCase()
+                  : "U"}
               </div>
 
-              <div className="hidden sm:block text-left">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-tight">
+              <div className="hidden sm:block text-left select-none">
+                <p className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight select-none">
                   {authUser?.fullName}
                 </p>
 
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight select-none">
                   {authUser?.email}
                 </p>
               </div>
 
               <ChevronDown
-                size={16}
-                className={`hidden sm:block text-gray-400 dark:text-gray-500 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                size={14}
+                className={`hidden sm:block text-gray-400 dark:text-gray-500 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
               />
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#1a162e] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 py-2 z-50 transition-colors">
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#1a162e] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 py-2 z-50 transition-colors select-none">
                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                      <UserRound
-                        size={20}
-                        className="text-gray-600 dark:text-gray-300"
-                      />
+                  <div className="flex items-center gap-3 select-none">
+                    <div className="size-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-xs select-none">
+                      {authUser?.fullName
+                        ? authUser.fullName.charAt(0).toUpperCase()
+                        : "U"}
                     </div>
 
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <div className="min-w-0 select-none">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate select-none">
                         {authUser?.fullName}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate select-none">
                         {authUser?.email}
                       </p>
                     </div>

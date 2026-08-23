@@ -5,6 +5,7 @@ import useGetAuth from "../hooks/useGetAuth";
 import Header from "./Header";
 import Sidebar from "./TailorSidebar";
 import Backdrop from "./Backdrop";
+import MobileBottomBar from "./MobileBottomBar";
 import { SidebarProvider, useSidebar } from "../context/SidebarContext";
 
 const TailorLayoutContent = () => {
@@ -12,20 +13,22 @@ const TailorLayoutContent = () => {
 
   return (
     <div className="min-h-screen xl:flex">
-      <div>
+      <div className="hidden lg:block">
         <Sidebar />
         <Backdrop />
       </div>
       <div
         className={`flex-1 min-w-0 transition-all duration-300 ease-in-out ${
           isExpanded || isHovered ? "lg:ml-[220px]" : "lg:ml-[68px]"
-        } ${isMobileOpen ? "ml-0" : ""}`}
+        }`}
       >
         <Header />
-        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-5 overflow-x-hidden">
+        <div className="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-5 overflow-x-hidden pb-20 md:pb-5">
           <Outlet />
         </div>
       </div>
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomBar />
     </div>
   );
 };
