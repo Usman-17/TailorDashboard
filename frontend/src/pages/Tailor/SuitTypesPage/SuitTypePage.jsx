@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
-import { X, Tag, Info, Save } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
+import { X, Tag, Info, Save, ChevronLeft } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import CustomModal from "../../../components/CustomModal";
@@ -23,6 +23,15 @@ const SuitTypesPage = () => {
     id: null,
     name: "",
   });
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const queryClient = useQueryClient();
   const { data, isLoading } = useGetAllSuitTypes();
@@ -148,8 +157,11 @@ const SuitTypesPage = () => {
   // Shared handler callbacks passed to both views
   const handleAdd = () => setModalState({ open: true, data: null });
   const handleEdit = (r) => setModalState({ open: true, data: r });
+  const handleCloseModal = () => setModalState({ open: false, data: null });
   const handleVoid = (r) =>
     setVoidModal({ open: true, id: r._id, name: r.name });
+  const handleCloseVoidModal = () =>
+    setVoidModal({ open: false, id: null, name: "" });
   const handleRestore = (id) => restoreSuitType(id);
 
   const sharedProps = {
@@ -175,21 +187,41 @@ const SuitTypesPage = () => {
       {/* ─── Desktop View ─── */}
       <DesktopSuitTypePage {...sharedProps} />
 
-      {/* ─── Mobile Add/Edit Modal (full screen) ─── */}
-      <div className="md:hidden">
-        <CustomModal isOpen={modalState.open} fullScreen>
+      {/* ─── Add/Edit Modal (Mobile fullScreen vs Desktop compact) ─── */}
+      {isMobile ? (
+        <CustomModal
+          isOpen={modalState.open}
+          onClose={handleCloseModal}
+          fullScreen
+        >
           <div className="flex flex-col h-full px-4 pt-1.5 pb-4 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
-                {modalState.data ? "Edit Suit Type" : "Add Suit Type"}
-              </h2>
+            <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="size-8 -ml-1 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-700 dark:text-gray-200 transition-all cursor-pointer"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <div>
+                  <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
+                    {modalState.data ? "Edit Suit Type" : "Add Suit Type"}
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {modalState.data
+                      ? "Update suit type details"
+                      : "Create a new suit type with pricing"}
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={() => setModalState({ open: false, data: null })}
-                className="size-9 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-500 dark:text-gray-400 transition-all cursor-pointer"
+                onClick={handleCloseModal}
+                className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-500 dark:text-gray-400 transition-all cursor-pointer"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
@@ -331,7 +363,7 @@ const SuitTypesPage = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setModalState({ open: false, data: null })}
+                onClick={handleCloseModal}
                 className="w-full py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 active:scale-95 transition-all cursor-pointer"
               >
                 Cancel
@@ -339,11 +371,12 @@ const SuitTypesPage = () => {
             </div>
           </div>
         </CustomModal>
-      </div>
-
-      {/* ─── Desktop Add/Edit Modal (compact) ─── */}
-      <div className="hidden md:block">
-        <CustomModal isOpen={modalState.open} className="w-[92%] max-w-md">
+      ) : (
+        <CustomModal
+          isOpen={modalState.open}
+          onClose={handleCloseModal}
+          className="w-[92%] max-w-md"
+        >
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
               <div className="flex items-center gap-2">
@@ -351,13 +384,20 @@ const SuitTypesPage = () => {
                   size={18}
                   className="text-purple-600 dark:text-purple-400"
                 />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                  {modalState.data ? "Edit Suit Type" : "Add New Suit Type"}
-                </h3>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {modalState.data ? "Edit Suit Type" : "Add New Suit Type"}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {modalState.data
+                      ? "Update suit type details"
+                      : "Create a new suit type with pricing"}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setModalState({ open: false, data: null })}
+                onClick={handleCloseModal}
                 className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
               >
                 <X size={18} />
@@ -427,7 +467,7 @@ const SuitTypesPage = () => {
             </div>
 
             <ModalActionButtons
-              onCancel={() => setModalState({ open: false, data: null })}
+              onCancel={handleCloseModal}
               onSubmit={handleSubmit}
               isSubmitting={isPending}
               submitText={
@@ -437,10 +477,14 @@ const SuitTypesPage = () => {
             />
           </div>
         </CustomModal>
-      </div>
+      )}
 
       {/* ─── Void Confirmation Modal ─── */}
-      <CustomModal isOpen={voidModal.open} className="w-[92%] max-w-sm">
+      <CustomModal
+        isOpen={voidModal.open}
+        onClose={handleCloseVoidModal}
+        className="w-[92%] max-w-sm"
+      >
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
             Void Suit Type?
@@ -452,7 +496,7 @@ const SuitTypesPage = () => {
           </p>
 
           <ModalActionButtons
-            onCancel={() => setVoidModal({ open: false, id: null, name: "" })}
+            onCancel={handleCloseVoidModal}
             onSubmit={() => voidSuitType(voidModal.id)}
             isSubmitting={isVoiding}
             submitText="Void"

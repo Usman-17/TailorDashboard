@@ -27,12 +27,24 @@ const Header = () => {
 
   // Pages that show a back-button + page title on mobile instead of shop name
   const mobilePageTitles = {
-    "/suit-types": { title: "Suit Types", subtitle: "Manage suit types and stitching prices." },
+    "/suit-types": {
+      title: "Suit Types",
+      subtitle: "Manage suit types and stitching prices.",
+      backTo: "/",
+    },
   };
   const mobilePage = Object.entries(mobilePageTitles).find(([route]) =>
     location.pathname.startsWith(route)
   );
   const mobilePageInfo = mobilePage ? mobilePage[1] : null;
+
+  const handleMobileHeaderBack = () => {
+    if (mobilePageInfo?.backTo) {
+      navigate(mobilePageInfo.backTo);
+    } else {
+      navigate(-1);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -75,8 +87,9 @@ const Header = () => {
         {mobilePageInfo ? (
           <div className="flex lg:hidden items-center gap-2.5 min-w-0">
             <button
-              onClick={() => navigate(-1)}
-              className="size-8 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition shrink-0 cursor-pointer"
+              type="button"
+              onClick={handleMobileHeaderBack}
+              className="size-8 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 transition shrink-0 cursor-pointer"
             >
               <ChevronLeft size={22} />
             </button>

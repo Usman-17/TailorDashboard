@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { motion as Motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../context/ThemeContext";
 
 const CustomModal = ({
   isOpen,
+  onClose,
   isDarkMode: isDarkModeProp,
   className = "w-[90%] max-w-lg",
   fullScreen = false,
@@ -11,6 +12,42 @@ const CustomModal = ({
 }) => {
   const themeContext = useTheme();
   const isDarkMode = isDarkModeProp ?? themeContext?.isDarkMode ?? false;
+
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Handle hardware / browser back button on mobile
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const modalId = `modal_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    window.history.pushState({ modalOpen: true, modalId }, "");
+
+    let isPoppedByBack = false;
+
+    const handlePopState = () => {
+      isPoppedByBack = true;
+      if (onCloseRef.current) {
+        onCloseRef.current();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      if (
+        !isPoppedByBack &&
+        window.history.state?.modalOpen &&
+        window.history.state?.modalId === modalId
+      ) {
+        window.history.back();
+      }
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (!isOpen) return;
 
