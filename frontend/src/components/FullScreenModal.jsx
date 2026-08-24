@@ -120,17 +120,20 @@ const FullScreenModal = ({
                       <ChevronLeft size={22} />
                     </button>
                   )}
+
                   <div className="min-w-0">
                     <h2 className="text-base sm:text-xl font-extrabold text-gray-900 dark:text-white tracking-tight truncate">
                       {title}
                     </h2>
+
                     {subtitle && (
-                      <p className="text-[11px] sm:text-xs text-gray-500 dark:text-purple-300/70 font-medium mt-0.5 truncate">
+                      <p className="text-[11px] sm:text-xs text-gray-500 dark:text-purple-300/70 font-medium -mt-1 truncate">
                         {subtitle}
                       </p>
                     )}
                   </div>
                 </div>
+
                 <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                   {showClose && (
                     <button
@@ -146,6 +149,7 @@ const FullScreenModal = ({
                   {actions}
                 </div>
               </div>
+
               <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/40 dark:bg-[#0d0a1d]">
                 {children}
               </div>

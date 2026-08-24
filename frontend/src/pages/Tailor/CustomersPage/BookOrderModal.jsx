@@ -212,10 +212,6 @@ const BookOrderModal = ({ open, onClose, customer }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!customer) return toast.error("No customer selected");
-    if (!existingMeasurement)
-      return toast.error(
-        "Please add measurements for this customer before booking an order",
-      );
     if (!deliveryDate) return toast.error("Please select a delivery date");
     if (suitItems.some((s) => !s.suitType))
       return toast.error("Please select a suit type for every suit");
@@ -269,7 +265,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-3.5 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 transition cursor-pointer whitespace-nowrap"
+            className="hidden sm:block px-3.5 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 transition cursor-pointer whitespace-nowrap"
           >
             Cancel
           </button>
@@ -286,51 +282,45 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     >
       <div className="space-y-5 pb-12">
         {/* ── Customer & Measurement Banner ────────────────── */}
-        <div className="bg-[#fbf9ff] dark:bg-[#1a1232] border border-purple-100 dark:border-purple-900/40 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+        <div className="bg-[#fbf9ff] dark:bg-[#1a1232] border border-purple-100 dark:border-purple-900/40 rounded-2xl p-4 sm:p-5 shadow-xs">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="size-12 rounded-full bg-purple-200/70 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-lg shrink-0">
-                {customer?.name?.charAt(0)?.toUpperCase() || "C"}
-              </div>
-              <div className="min-w-0">
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <div className="min-w-0 flex-1">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
                   {customer?.name}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                  {customer?.customerId || customer?.phone || ""}
+                  {customer?.phone || ""}
                 </p>
               </div>
             </div>
-
-            {customer?.phone && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-[#20173d] text-purple-700 dark:text-purple-300 text-xs font-semibold shrink-0">
-                <Phone size={12} className="text-purple-500" />
-                <span>{customer.phone}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 flex-wrap pt-1">
-            {existingMeasurement ? (
-              <button
-                type="button"
-                onClick={() => setShowMeasurements(!showMeasurements)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-800 text-xs font-bold hover:bg-green-100 dark:hover:bg-green-900/50 transition cursor-pointer"
-              >
-                <Tag size={12} />
-                Measurements Available
-                {showMeasurements ? (
-                  <ChevronUp size={13} />
-                ) : (
-                  <ChevronDown size={13} />
-                )}
-              </button>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold">
-                <Info size={13} />
-                No Measurement Recorded
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              {customer?.customerId && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[11px] font-bold">
+                  ID: {customer.customerId}
+                </span>
+              )}
+              {existingMeasurement ? (
+                <button
+                  type="button"
+                  onClick={() => setShowMeasurements(!showMeasurements)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-800 text-xs font-bold hover:bg-green-100 dark:hover:bg-green-900/50 transition cursor-pointer"
+                >
+                  <Tag size={12} />
+                  Measurements
+                  {showMeasurements ? (
+                    <ChevronUp size={13} />
+                  ) : (
+                    <ChevronDown size={13} />
+                  )}
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold">
+                  <Info size={13} />
+                  No Measurement
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Measurement Preview */}
