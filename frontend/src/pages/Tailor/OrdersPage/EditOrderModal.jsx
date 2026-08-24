@@ -6,7 +6,6 @@ import {
   DollarSign,
   FileText,
   Scissors,
-  Tag,
   ChevronDown,
   ChevronUp,
   Plus,
@@ -96,7 +95,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
   useEffect(() => {
     if (open && order) {
       const items = (order.items || []).map((item) =>
-        createSuitItem(availableSuitTypesList, {
+        createSuitItem({
           suitType: item.suitType || "",
           collarType: item.collarType || "Ban",
           cuffType: item.cuffType || "Simple",
@@ -109,9 +108,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
           remarks: item.description || "",
         }),
       );
-      setSuitItems(
-        items.length > 0 ? items : [createSuitItem(availableSuitTypesList)],
-      );
+      setSuitItems(items.length > 0 ? items : [createSuitItem()]);
       setDeliveryDate(
         order.deliveryDate
           ? moment(order.deliveryDate).format("YYYY-MM-DD")
@@ -143,7 +140,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
   }, []);
 
   const addSuit = () => {
-    const newSuit = createSuitItem(availableSuitTypesList);
+    const newSuit = createSuitItem();
     setCollapsedMap((prev) => {
       const nextMap = { ...prev };
       suitItems.forEach((s) => {
@@ -230,15 +227,20 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
     <FullScreenModal
       open={open}
       onClose={onClose}
-      title={`Edit Order ${order?.orderNumber ? `- ${order.orderNumber}` : ""}`}
-      subtitle={`Customer: ${order?.customer?.name || ""}${order?.customer?.phone ? ` (${order.customer.phone})` : ""}`}
+      title="Edit Order"
+      subtitle={
+        order?.orderNumber
+          ? `Order #${order.orderNumber}`
+          : "Update order details"
+      }
       showClose={false}
+      showBack={true}
       actions={
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition cursor-pointer whitespace-nowrap"
+            className="hidden sm:block px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition cursor-pointer whitespace-nowrap"
           >
             Cancel
           </button>
@@ -268,28 +270,26 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
         </div>
       ) : (
         <div className="space-y-6 pb-12">
-          {/* ── Order Banner ────────────────────────────────── */}
-          <div className="bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-purple-900/30 border border-purple-200 dark:border-purple-800/40 rounded-2xl p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="size-12 rounded-full bg-purple-600/20 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-lg border border-purple-500/30">
-                {order?.customer?.name?.charAt(0)?.toUpperCase() || "C"}
-              </div>
+          {/* ── Order Info Banner ──────────────────────────────── */}
+          <div className="bg-[#fbf9ff] dark:bg-[#1a1232] border border-purple-100 dark:border-purple-900/40 rounded-2xl p-4 sm:p-5 shadow-xs">
+            <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {order?.customer?.name}
-                  </h2>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 font-semibold whitespace-nowrap">
-                    <Tag size={11} />
-                    {order?.orderNumber || "-"}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 truncate">
-                  {order?.customer?.phone} • Created{" "}
-                  {order?.createdAt
-                    ? moment(order.createdAt).format("DD MMM YYYY")
-                    : ""}
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                  {order?.customer?.name}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {order?.customer?.phone || ""} • {order?.orderNumber || ""}
                 </p>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                {order?.orderNumber && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-[11px] font-bold">
+                    {order.orderNumber}
+                  </span>
+                )}
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300 text-[11px] font-bold">
+                  Pending
+                </span>
               </div>
             </div>
           </div>
@@ -375,13 +375,14 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                     </div>
 
                     {!isCollapsed && (
-                      <div className="p-5 space-y-5">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
                           <CustomSelect
                             label="Suit Type"
                             value={suit.suitType}
                             placeholder="Select Suit Type"
                             required
+                            allowClear={false}
                             onChange={(v) => {
                               update("suitType", v);
                               const selected = availableSuitTypesList.find(
@@ -450,42 +451,30 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                           <CustomInput
                             id={`fabric-${suit.id}`}
                             label="Fabric Name"
                             value={suit.fabric}
                             onChange={(e) => update("fabric", e.target.value)}
-                            placeholder="e.g. Cotton, Silk, Khaddar"
+                            placeholder="e.g. Cotton, Silk"
                           />
                           <CustomInput
                             id={`color-${suit.id}`}
                             label="Fabric Color"
                             value={suit.color}
                             onChange={(e) => update("color", e.target.value)}
-                            placeholder="e.g. White, Navy Blue"
+                            placeholder="e.g. White, Blue"
                           />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <CustomInput
-                            id={`price-${suit.id}`}
-                            label="Stitching Price (PKR)"
-                            type="number"
-                            min={0}
-                            value={suit.price}
-                            onChange={(e) =>
-                              update("price", Number(e.target.value))
-                            }
-                          />
-                          <CustomInput
-                            id={`remarks-${suit.id}`}
-                            label="Additional Notes"
-                            value={suit.remarks}
-                            onChange={(e) => update("remarks", e.target.value)}
-                            placeholder="Custom instructions for this suit..."
-                          />
-                        </div>
+                        <CustomInput
+                          id={`remarks-${suit.id}`}
+                          label="Additional Notes"
+                          value={suit.remarks}
+                          onChange={(e) => update("remarks", e.target.value)}
+                          placeholder="Custom instructions for this suit..."
+                        />
                       </div>
                     )}
                   </div>
@@ -494,7 +483,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
             </div>
 
             {/* ── Delivery Date & Financials ─────────────────── */}
-            <div className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
               <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
                 <DollarSign
                   className="text-purple-600 dark:text-purple-400"
@@ -505,17 +494,32 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <CustomDatePicker
-                  id="deliveryDate"
-                  label="Delivery Date"
-                  required
-                  value={deliveryDate}
-                  onChange={(date) =>
-                    setDeliveryDate(date ? date.format("YYYY-MM-DD") : "")
-                  }
-                  placeholder="Select delivery date"
-                />
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <CustomDatePicker
+                    id="deliveryDate"
+                    label="Delivery Date"
+                    required
+                    value={deliveryDate}
+                    onChange={(date) =>
+                      setDeliveryDate(date ? date.format("YYYY-MM-DD") : "")
+                    }
+                    placeholder="Select delivery date"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
+                    Total (PKR)
+                  </label>
+                  <input
+                    id="totalAmount"
+                    readOnly
+                    tabIndex={-1}
+                    value={totalAmount.toLocaleString()}
+                    className="w-full px-3.5 pr-3.5 h-10 rounded-lg text-[14px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-gray-100 dark:bg-[#1a1129] transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none cursor-default"
+                  />
+                </div>
 
                 <CustomInput
                   id="discount"
@@ -525,23 +529,21 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                   max={totalAmount}
                   value={discount}
                   onChange={(e) => setDiscount(e.target.value)}
-                  placeholder="Enter discount amount"
+                  placeholder="Discount"
                 />
 
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
-                    Total Amount (PKR)
-                  </label>
-                  <input
-                    id="totalAmount"
-                    readOnly
-                    tabIndex={-1}
-                    value={netAmount.toLocaleString()}
-                    className="w-full px-3.5 pr-3.5 h-10 rounded-lg text-[14px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-gray-100 dark:bg-[#1a1129] transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none cursor-default"
-                  />
-                </div>
+                <CustomInput
+                  id="advancePaid"
+                  label="Advance (PKR)"
+                  type="number"
+                  min={0}
+                  max={netAmount}
+                  readOnly
+                  value={advancePaid}
+                  placeholder="Advance"
+                />
 
-                <div>
+                <div className="col-span-2 sm:col-span-1">
                   <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
                     Remaining Balance
                   </label>
@@ -557,7 +559,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
             </div>
 
             {/* ── Order Notes ─────────────────────────────── */}
-            <div className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs space-y-3">
+            <div className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
               <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
                 <FileText
                   className="text-purple-600 dark:text-purple-400"

@@ -15,12 +15,14 @@ import {
   Ban,
   ChevronLeft,
   Plus,
+  SquarePen,
 } from "lucide-react";
 
 import useGetCustomerDetail from "../../../hooks/useGetCustomerDetail";
 
 import SummaryCard from "../../../components/SummaryCard";
 import BookOrderModal from "./BookOrderModal";
+import EditOrderModal from "../OrdersPage/EditOrderModal";
 import {
   KAMEEZ_FIELDS,
   SHALWAR_FIELDS,
@@ -211,6 +213,7 @@ const CustomerDetailPage = () => {
 
   const [activeTab, setActiveTab] = useState("orders");
   const [bookOrderOpen, setBookOrderOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState(null);
   const tabRefs = useRef({});
 
   const customer = data?.customer || null;
@@ -569,6 +572,17 @@ const CustomerDetailPage = () => {
                         </span>
                       </div>
                     </div>
+
+                    {order.status === "pending" && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingOrderId(order._id)}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-900/40 active:scale-[0.98] transition-all cursor-pointer"
+                      >
+                        <SquarePen size={14} />
+                        Edit Order
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -893,6 +907,12 @@ const CustomerDetailPage = () => {
         open={bookOrderOpen}
         onClose={() => setBookOrderOpen(false)}
         customer={customer}
+      />
+      {/* Edit Order Modal */}
+      <EditOrderModal
+        open={!!editingOrderId}
+        onClose={() => setEditingOrderId(null)}
+        orderId={editingOrderId}
       />
     </div>
   );
