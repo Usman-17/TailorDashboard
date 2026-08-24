@@ -43,6 +43,10 @@ const FullScreenModal = ({
       if (window.history.state?.modalId === modalId) {
         return;
       }
+      // If another modal (CustomModal/CustomSelect etc.) is still open, don't close this modal
+      if (window.history.state?.modalOpen) {
+        return;
+      }
       isPoppedByBack = true;
       if (onCloseRef.current) {
         onCloseRef.current();

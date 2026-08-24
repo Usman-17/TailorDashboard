@@ -1,10 +1,11 @@
 import moment from "moment";
-import { useState } from "react";
 import toast from "react-hot-toast";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle,
+  ChevronDown,
   Clock,
   CreditCard,
   Edit3,
@@ -18,10 +19,11 @@ import {
 } from "lucide-react";
 
 import { useGetOrder } from "../../../hooks/useGetOrder";
+import useGetAuth from "../../../hooks/useGetAuth";
 
 import CustomModal from "../../../components/CustomModal";
-import CustomSelect from "../../../components/CustomSelect";
 import FullScreenModal from "../../../components/FullScreenModal";
+import ModalActionButtons from "../../../components/ModalActionButtons";
 // Imports End----
 
 const STATUS_FLOW = [
@@ -77,6 +79,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { order, isLoading } = useGetOrder(orderId);
+  const { data: authUser } = useGetAuth();
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -84,6 +87,14 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const [paymentNote, setPaymentNote] = useState("");
   const [paymentRefNo, setPaymentRefNo] = useState("");
   const [showTimeline, setShowTimeline] = useState(false);
+
+  useEffect(() => {
+    if (showPaymentModal) {
+      setPaymentAmount(
+        String(order?.totalAmount - (order?.advancePaid || 0) || ""),
+      );
+    }
+  }, [showPaymentModal, order]);
 
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
     mutationFn: async ({ status, note = "" }) => {
@@ -168,7 +179,10 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
     ? STATUS_FLOW.findIndex((s) => s.value === order.status)
     : -1;
   const canCancel =
-    order && order.status !== "delivered" && order.status !== "cancelled";
+    order &&
+    order.status !== "delivered" &&
+    order.status !== "cancelled" &&
+    order.status !== "ready";
 
   const getNextStatus = () => {
     if (
@@ -342,10 +356,17 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
                             );
                             if (phone.startsWith("0"))
                               phone = "92" + phone.slice(1);
+                            const totalSuits = order.items?.length || 0;
+                            const totalAmount = Number(
+                              order.totalAmount || 0,
+                            ).toLocaleString();
+                            const shopName = authUser?.shop?.name;
+                            const paidAmount = Number(order.advancePaid || 0);
+                            const remaining =
+                              Number(order.totalAmount || 0) - paidAmount;
+                            const msg = `Assalam o Alaikum ${order.customer.name},\n\nThis is to inform you about your order *${order.orderNumber}*.\n\n*Order Summary:*\n- Total Suits: ${totalSuits}\n- Total Amount: PKR ${totalAmount}\n- Paid: PKR ${paidAmount.toLocaleString()}\n- Remaining: PKR ${remaining.toLocaleString()}\n\nKindly visit us at your earliest convenience to collect your order.\n\nJazakAllah,\n*${shopName}*`;
                             window.open(
-                              `https://wa.me/${phone}?text=${encodeURIComponent(
-                                `Assalam o Alaikum ${order.customer.name},\n\nRegarding your order ${order.orderNumber}...`,
-                              )}`,
+                              `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
                               "_blank",
                             );
                           }}
@@ -740,24 +761,34 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
             <input
               type="number"
               min="1"
-              max={remaining}
-              value={paymentAmount || remaining}
+              inputMode="decimal"
+              value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}
-              placeholder={`PKR ${remaining.toLocaleString()}`}
+              placeholder={`Max: PKR ${remaining.toLocaleString()}`}
               className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
           <div>
-            <CustomSelect
-              label="Method"
-              value={paymentMethod}
-              onChange={(val) => setPaymentMethod(val)}
-              options={PAYMENT_METHODS.map((m) => ({
-                value: m.value,
-                label: m.label,
-              }))}
-              placeholder="Select method"
-            />
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Method
+            </label>
+            <div className="relative">
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer"
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
           </div>
           {["bank", "jazzcash", "easypaisa"].includes(paymentMethod) && (
             <div>
@@ -785,26 +816,18 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
               className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={() => setShowPaymentModal(false)}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => addPayment()}
-              disabled={
-                Number(paymentAmount || remaining) <= 0 ||
-                isAddingPayment ||
-                (["bank", "jazzcash", "easypaisa"].includes(paymentMethod) &&
-                  !paymentRefNo)
-              }
-              className="px-4 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 cursor-pointer"
-            >
-              {isAddingPayment ? "Processing..." : "Save Payment"}
-            </button>
-          </div>
+          <ModalActionButtons
+            onCancel={() => setShowPaymentModal(false)}
+            onSubmit={() => addPayment()}
+            isDisabled={
+              (paymentAmount !== "" && Number(paymentAmount) <= 0) ||
+              (["bank", "jazzcash", "easypaisa"].includes(paymentMethod) &&
+                !paymentRefNo)
+            }
+            isSubmitting={isAddingPayment}
+            submitText="Save Payment"
+            loadingText="Processing..."
+          />
         </div>
       </CustomModal>
     </>
