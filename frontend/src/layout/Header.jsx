@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { LogOut, ChevronDown, KeyRound, Menu, Sun, Moon, ChevronLeft } from "lucide-react";
+import {
+  LogOut,
+  ChevronDown,
+  KeyRound,
+  Menu,
+  Sun,
+  Moon,
+  ChevronLeft,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import useLogout from "../hooks/useLogout";
@@ -32,9 +40,14 @@ const Header = () => {
       subtitle: "Manage suit types and stitching prices.",
       backTo: "/",
     },
+    "/customers/": {
+      title: "Customer",
+      subtitle: "Profile, orders, payments & measurements",
+      backTo: "/customers",
+    },
   };
   const mobilePage = Object.entries(mobilePageTitles).find(([route]) =>
-    location.pathname.startsWith(route)
+    location.pathname.startsWith(route),
   );
   const mobilePageInfo = mobilePage ? mobilePage[1] : null;
 

@@ -28,6 +28,10 @@ const CustomModal = ({
     let isPoppedByBack = false;
 
     const handlePopState = () => {
+      // If history state still has our modalId, a child dropdown/element was popped, not this modal
+      if (window.history.state?.modalId === modalId) {
+        return;
+      }
       isPoppedByBack = true;
       if (onCloseRef.current) {
         onCloseRef.current();

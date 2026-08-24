@@ -1,6 +1,6 @@
 import { Select } from "antd";
 import { ChevronDown, Search } from "lucide-react";
-import { forwardRef, useState, useEffect, useRef } from "react";
+import { forwardRef, useState, useEffect, useRef, useMemo } from "react";
 
 const CustomSelect = forwardRef(
   (
@@ -18,15 +18,19 @@ const CustomSelect = forwardRef(
       mode = undefined,
       className = "",
       helperText,
+      searchable = true,
     },
     ref,
   ) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const searchInputRef = useRef(null);
     const historyPushed = useRef(false);
     const selectRef = useRef(null);
 
     const closeDropdown = () => {
       setIsOpen(false);
+      setSearchQuery("");
       if (selectRef.current) {
         selectRef.current.blur();
       }
@@ -70,6 +74,30 @@ const CustomSelect = forwardRef(
       };
     }, [isOpen]);
 
+    // Filter options based on search query
+    const filteredOptions = useMemo(() => {
+      if (!searchQuery.trim()) return options;
+      const q = searchQuery.toLowerCase();
+      return options.filter((opt) =>
+        (opt?.label ?? "").toString().toLowerCase().includes(q),
+      );
+    }, [options, searchQuery]);
+
+    const displayOptions = useMemo(() => {
+      if (mode === "multiple" && filteredOptions.length > 0) {
+        return [
+          {
+            label:
+              value?.length === options.length ? "Deselect All" : "Select All",
+            value: "SELECT_ALL",
+            className: "select-all-option font-bold",
+          },
+          ...filteredOptions,
+        ];
+      }
+      return filteredOptions;
+    }, [mode, filteredOptions, value, options]);
+
     return (
       <div
         className={`flex flex-col w-full ${className}`}
@@ -99,7 +127,8 @@ const CustomSelect = forwardRef(
             else if (ref) ref.current = node;
           }}
           mode={mode}
-          showSearch
+          showSearch={false}
+          inputReadOnly={true}
           allowClear={allowClear}
           value={
             value === "" ||
@@ -112,7 +141,6 @@ const CustomSelect = forwardRef(
           }
           placeholder={placeholder}
           loading={loading}
-          optionFilterProp="label"
           onChange={(selectedValues, selectedOptions) => {
             if (mode === "multiple" && selectedValues.includes("SELECT_ALL")) {
               if (value?.length === options.length) {
@@ -127,36 +155,65 @@ const CustomSelect = forwardRef(
           }}
           disabled={disabled}
           maxTagCount="responsive"
-          className="w-full my-custom-select"
-          filterOption={(input, option) =>
-            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-          }
-          options={
-            mode === "multiple" && options.length > 0
-              ? [
-                  {
-                    label:
-                      value?.length === options.length
-                        ? "Deselect All"
-                        : "Select All",
-                    value: "SELECT_ALL",
-                    className: "select-all-option font-bold",
-                  },
-                  ...options,
-                ]
-              : options
-          }
-          autoComplete="no-autofill"
+          className="w-full my-custom-select cursor-pointer"
+          options={displayOptions}
+          autoComplete="off"
           popupClassName="!z-[9999999] my-custom-select"
           dropdownStyle={{ zIndex: 9999 }}
           styles={{ popup: { root: { borderRadius: "12px" } } }}
-          onOpenChange={(visible) => setIsOpen(visible)}
+          onOpenChange={(visible) => {
+            setIsOpen(visible);
+            if (!visible) setSearchQuery("");
+          }}
+          dropdownRender={(menu) => (
+            <div>
+              {searchable && options.length > 4 && (
+                <div
+                  className="p-2 border-b border-gray-100 dark:border-purple-900/30 bg-gray-50/80 dark:bg-[#18112e] sticky top-0 z-10"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="relative flex items-center">
+                    <Search
+                      size={14}
+                      className="absolute left-2.5 text-gray-400 pointer-events-none"
+                    />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Type to search..."
+                      className="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-purple-800/40 bg-white dark:bg-[#120d24] text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500 transition"
+                      autoFocus={false}
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs px-1"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              {displayOptions.length === 0 ? (
+                <div className="py-4 text-center text-xs text-gray-400 dark:text-gray-500">
+                  No matching options
+                </div>
+              ) : (
+                menu
+              )}
+            </div>
+          )}
           suffixIcon={
-            isOpen ? (
-              <Search size={14} className="text-gray-400" />
-            ) : (
-              <ChevronDown size={16} className="text-gray-500" />
-            )
+            <ChevronDown
+              size={16}
+              className={`text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            />
           }
         />
 

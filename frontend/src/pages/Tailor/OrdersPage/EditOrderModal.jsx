@@ -41,18 +41,17 @@ const LOWER_TYPES = [
   { label: "Trouser", value: "Trouser" },
 ];
 
-const createSuitItem = (suitTypes = [], overrides = {}) => {
-  const first = suitTypes[0];
+const createSuitItem = (overrides = {}) => {
   return {
     id: Date.now() + Math.random(),
-    suitType: first?.name || "",
+    suitType: "",
     collarType: "Ban",
     cuffType: "Simple",
     pocket: "No Pocket",
     lowerType: "Shalwar",
     fabric: "",
     color: "",
-    price: first ? Number(first.price) || 0 : 0,
+    price: 0,
     quantity: 1,
     remarks: "",
     ...overrides,
@@ -110,9 +109,13 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
           remarks: item.description || "",
         }),
       );
-      setSuitItems(items.length > 0 ? items : [createSuitItem(availableSuitTypesList)]);
+      setSuitItems(
+        items.length > 0 ? items : [createSuitItem(availableSuitTypesList)],
+      );
       setDeliveryDate(
-        order.deliveryDate ? moment(order.deliveryDate).format("YYYY-MM-DD") : "",
+        order.deliveryDate
+          ? moment(order.deliveryDate).format("YYYY-MM-DD")
+          : "",
       );
       setDiscount(order.discount ? String(order.discount) : "");
       setGlobalRemarks(order.notes || "");
@@ -139,8 +142,18 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
     );
   }, []);
 
-  const addSuit = () =>
-    setSuitItems((prev) => [...prev, createSuitItem(availableSuitTypesList)]);
+  const addSuit = () => {
+    const newSuit = createSuitItem(availableSuitTypesList);
+    setCollapsedMap((prev) => {
+      const nextMap = { ...prev };
+      suitItems.forEach((s) => {
+        nextMap[s.id] = true;
+      });
+      nextMap[newSuit.id] = false;
+      return nextMap;
+    });
+    setSuitItems((prev) => [...prev, newSuit]);
+  };
 
   const removeSuit = (id) => {
     setSuitItems((prev) =>
@@ -167,6 +180,13 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customerDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["orderPayments"] });
+      queryClient.invalidateQueries({ queryKey: ["orderPaymentSummary"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorDashboardStats"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorRecentOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorLatestCustomers"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorUpcomingDeliveries"] });
       toast.success("Order updated successfully!");
       onClose();
     },
@@ -241,7 +261,10 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
     >
       {orderLoading ? (
         <div className="flex justify-center py-20">
-          <Loader size={24} className="animate-spin text-purple-600 dark:text-purple-400" />
+          <Loader
+            size={24}
+            className="animate-spin text-purple-600 dark:text-purple-400"
+          />
         </div>
       ) : (
         <div className="space-y-6 pb-12">
@@ -309,7 +332,8 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                     className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm"
                   >
                     <div
-                      className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
+                      onClick={() => toggleCollapse(suit.id)}
+                      className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 cursor-pointer select-none transition-colors ${!isCollapsed ? "border-b border-gray-100 dark:border-gray-800" : ""} ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="size-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
@@ -330,24 +354,23 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                         {suitItems.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => removeSuit(suit.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeSuit(suit.id);
+                            }}
                             className="p-1.5 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer"
                             title="Remove this suit"
                           >
                             <Trash2 size={15} />
                           </button>
                         )}
-                        <button
-                          type="button"
-                          onClick={() => toggleCollapse(suit.id)}
-                          className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
-                        >
+                        <span className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition pointer-events-none">
                           {isCollapsed ? (
                             <ChevronDown size={16} />
                           ) : (
                             <ChevronUp size={16} />
                           )}
-                        </button>
+                        </span>
                       </div>
                     </div>
 
@@ -357,6 +380,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                           <CustomSelect
                             label="Suit Type"
                             value={suit.suitType}
+                            placeholder="Select Suit Type"
                             required
                             onChange={(v) => {
                               update("suitType", v);
@@ -368,7 +392,7 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                               }
                             }}
                             options={availableSuitTypesList.map((item) => ({
-                              label: `${item.name}${item.price > 0 ? ` — Rs. ${Number(item.price).toLocaleString()}` : ""}`,
+                              label: item.name,
                               value: item.name,
                             }))}
                           />
@@ -411,12 +435,18 @@ const EditOrderModal = ({ open, onClose, orderId }) => {
                             min={1}
                             required
                             value={suit.quantity}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const val = e.target.value;
                               update(
                                 "quantity",
-                                Math.max(1, Number(e.target.value)),
-                              )
-                            }
+                                val === "" ? "" : Math.max(1, Number(val)),
+                              );
+                            }}
+                            onBlur={() => {
+                              if (!suit.quantity || Number(suit.quantity) < 1) {
+                                update("quantity", 1);
+                              }
+                            }}
                           />
                         </div>
 

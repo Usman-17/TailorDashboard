@@ -13,12 +13,14 @@ import {
   History,
   BadgeCheck,
   Ban,
+  ChevronLeft,
+  Plus,
 } from "lucide-react";
 
 import useGetCustomerDetail from "../../../hooks/useGetCustomerDetail";
 
 import SummaryCard from "../../../components/SummaryCard";
-import SectionHeading from "../../../components/SectionHeading";
+import BookOrderModal from "./BookOrderModal";
 import {
   KAMEEZ_FIELDS,
   SHALWAR_FIELDS,
@@ -208,6 +210,7 @@ const CustomerDetailPage = () => {
   const { data, isLoading } = useGetCustomerDetail(id);
 
   const [activeTab, setActiveTab] = useState("orders");
+  const [bookOrderOpen, setBookOrderOpen] = useState(false);
 
   const customer = data?.customer || null;
   const orders = useMemo(() => data?.orders || [], [data]);
@@ -317,55 +320,84 @@ const CustomerDetailPage = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-2 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
-        <SectionHeading
-          title="Customer Details"
-          subtitle="Complete profile, orders, payments and measurements"
-          subtitleClassName="max-w-56 sm:max-w-none"
-        />
+      {/* Desktop Header (handled by global Header on mobile) */}
+      <div className="hidden md:flex items-center justify-between pb-3.5 mb-3 border-b border-gray-100 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          <Link
+            to="/customers"
+            className="size-8 -ml-1 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-700 dark:text-gray-200 transition-all cursor-pointer"
+          >
+            <ChevronLeft size={22} />
+          </Link>
+          <div>
+            <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
+              Customer
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Profile, orders, payments &amp; measurements
+            </p>
+          </div>
+        </div>
         <Link
           to="/customers"
-          className="p-2 rounded-full border border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:border-purple-600 dark:hover:border-purple-400 transition-colors cursor-pointer shrink-0"
-          title="Close"
+          className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-500 dark:text-gray-400 transition-all cursor-pointer"
         >
-          <X size={18} />
+          <X size={20} />
         </Link>
       </div>
-
       {/* Profile Card */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] p-4 sm:p-5 my-5 flex flex-col sm:flex-row gap-4 sm:gap-5 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
-          <div className="size-12 sm:size-14 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center text-lg sm:text-xl font-bold shrink-0">
-            {(customer.name || "?").charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white break-words">
-                {customer.name}
-              </h2>
+      <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] p-4 sm:p-5 mb-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-12 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
+              {(customer.name || "?").charAt(0).toUpperCase()}
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-5 gap-y-1.5 mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-              <span className="inline-flex items-center gap-1.5">
-                <Hash size={13} className="text-gray-400 shrink-0" />
-                <span className="truncate">{customer.customerId}</span>
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Phone size={13} className="text-gray-400 shrink-0" />
-                {customer.phone}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <User size={13} className="text-gray-400 shrink-0" />
-                Joined {moment(customer.createdAt).format("DD MMM YYYY")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar size={13} className="text-gray-400 shrink-0" />
-                {orders.length} orders
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white break-words">
+                {customer.name}
+              </h3>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {customer.customerId || ""}
               </span>
             </div>
           </div>
         </div>
-      </div>
 
+        <div className="space-y-1.5 mb-4">
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Phone size={14} className="text-gray-400 shrink-0" />
+            <span>{customer.phone}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <Calendar size={14} className="text-gray-400 shrink-0" />
+            <span>
+              Customer Since: {moment(customer.createdAt).format("DD MMM YYYY")}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          <a
+            href={`tel:${customer.phone}`}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-700 to-purple-600 hover:from-purple-800 hover:to-purple-700 active:scale-95 text-white text-sm font-bold shadow-md shadow-purple-600/25 transition-all cursor-pointer"
+          >
+            <Phone size={15} />
+            Call
+          </a>
+          <a
+            href={`https://wa.me/${customer.phone?.replace(/[^0-9]/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 active:scale-95 text-white text-sm font-bold shadow-md shadow-green-600/25 transition-all cursor-pointer"
+          >
+            <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+            Whatsapp
+          </a>
+        </div>
+      </div>
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 my-5">
         {statCards.map((card) => (
@@ -378,7 +410,6 @@ const CustomerDetailPage = () => {
           />
         ))}
       </div>
-
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 mb-4 overflow-x-auto">
         {tabs.map((tab) => (
@@ -395,187 +426,284 @@ const CustomerDetailPage = () => {
             {tab.label}
           </button>
         ))}
-      </div>
-
+      </div>{" "}
       {/* Orders Tab */}
       {activeTab === "orders" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] overflow-hidden">
+        <div>
+          {/* Action Bar with Add New Order Button */}
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <span className="text-sm font-bold text-gray-800 dark:text-gray-200">
+              Orders ({orders.length})
+            </span>
+            <button
+              type="button"
+              onClick={() => setBookOrderOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-600/25 transition-all cursor-pointer"
+            >
+              <Plus size={16} />
+              Add New Order
+            </button>
+          </div>
+
           {orders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-14 text-center px-4">
+            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-[#17102a] flex flex-col items-center justify-center py-14 text-center px-4">
               <ShoppingBag
                 size={40}
                 className="text-gray-300 dark:text-gray-600 mb-3"
               />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
                 No orders found for this customer
               </p>
-              <Link
-                to="/customers"
-                className="mt-3 text-sm font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+              <button
+                type="button"
+                onClick={() => setBookOrderOpen(true)}
+                className="mt-3 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-bold shadow-md shadow-purple-600/20 transition-all cursor-pointer"
               >
-                Book an order from Customers page
-              </Link>
+                <Plus size={15} />
+                Book First Order
+              </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[800px]">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800/50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    <th className="px-4 py-3">Order #</th>
-                    <th className="px-4 py-3">Order Date</th>
-                    <th className="px-4 py-3">Delivery Date</th>
-                    <th className="px-4 py-3">Items</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Total</th>
-                    <th className="px-4 py-3 text-right">Paid</th>
-                    <th className="px-4 py-3 text-right">Balance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr
-                      key={order._id}
-                      className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30"
-                    >
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">
-                          {order.orderNumber}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
-                        {moment(order.createdAt).format("DD MMM YYYY")}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
-                        {moment(order.deliveryDate).format("DD MMM YYYY")}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col gap-0.5">
-                          {(order.items || []).slice(0, 2).map((item, i) => (
-                            <span
-                              key={i}
-                              className="text-xs text-gray-600 dark:text-gray-300"
-                            >
-                              {item.suitType}{" "}
-                              {item.quantity > 1 ? `x${item.quantity}` : ""}
-                            </span>
-                          ))}
-                          {(order.items || []).length > 2 && (
-                            <span className="text-[11px] text-gray-400">
-                              +{(order.items || []).length - 2} more
-                            </span>
-                          )}
+            <>
+              {/* Mobile Cards Grid */}
+              <div className="grid grid-cols-1 gap-3 md:hidden">
+                {orders.map((order, index) => (
+                  <div
+                    key={order._id}
+                    className="bg-white dark:bg-[#17102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm space-y-3"
+                  >
+                    {/* Top Row: Order # + Status Badge */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="size-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center shrink-0">
+                          <ShoppingBag
+                            size={16}
+                            className="text-purple-600 dark:text-purple-400"
+                          />
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
+                        <div className="min-w-0">
+                          <span className="font-mono text-sm font-bold text-gray-900 dark:text-white block truncate">
+                            {order.orderNumber}
+                          </span>
+                          <span className="text-[11px] text-gray-400 block">
+                            #{index + 1}
+                          </span>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold rounded-full px-2.5 py-0.5 shrink-0 ${
+                          STATUS_COLORS[order.status] || STATUS_COLORS.pending
+                        }`}
+                      >
+                        {STATUS_LABELS[order.status] || order.status}
+                      </span>
+                    </div>
+
+                    {/* Items List */}
+                    <div className="flex flex-wrap gap-1.5 py-0.5">
+                      {(order.items || []).map((item, i) => (
                         <span
-                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
-                            STATUS_COLORS[order.status] || STATUS_COLORS.pending
-                          }`}
+                          key={i}
+                          className="inline-flex items-center text-xs bg-gray-100 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 rounded-lg px-2.5 py-1 font-medium"
                         >
-                          {STATUS_LABELS[order.status] || order.status}
+                          {item.suitType}{" "}
+                          {item.quantity > 1 ? `×${item.quantity}` : ""}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs font-semibold text-gray-900 dark:text-gray-100">
-                        Rs. {(order.totalAmount || 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs font-semibold text-green-600 dark:text-green-400">
-                        Rs. {(order.advancePaid || 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs font-semibold text-red-500 dark:text-red-400">
-                        Rs.{" "}
-                        {Math.max(
-                          0,
-                          order.remainingBalance || 0,
-                        ).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      ))}
+                    </div>
+
+                    {/* Dates Row */}
+                    <div className="grid grid-cols-2 gap-2 text-xs py-2 border-t border-b border-dashed border-gray-100 dark:border-gray-800">
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">
+                          Order Date
+                        </span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          {moment(order.createdAt).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">
+                          Delivery Date
+                        </span>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          {moment(order.deliveryDate).format("DD MMM YYYY")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Financials Row: Total / Paid / Balance */}
+                    <div className="flex items-center justify-between text-xs pt-0.5">
+                      <div>
+                        <span className="text-gray-400 block text-[10px]">
+                          Total
+                        </span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">
+                          Rs. {(order.totalAmount || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[10px]">
+                          Paid
+                        </span>
+                        <span className="font-bold text-green-600 dark:text-green-400">
+                          Rs. {(order.advancePaid || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-gray-400 block text-[10px]">
+                          Balance
+                        </span>
+                        <span className="font-bold text-red-500 dark:text-red-400">
+                          Rs.{" "}
+                          {Math.max(
+                            0,
+                            order.remainingBalance || 0,
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[800px]">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-800/50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        <th className="px-4 py-3">Order #</th>
+                        <th className="px-4 py-3">Order Date</th>
+                        <th className="px-4 py-3">Delivery Date</th>
+                        <th className="px-4 py-3">Items</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3 text-right">Total</th>
+                        <th className="px-4 py-3 text-right">Paid</th>
+                        <th className="px-4 py-3 text-right">Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => (
+                        <tr
+                          key={order._id}
+                          className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                        >
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">
+                              {order.orderNumber}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                            {moment(order.createdAt).format("DD MMM YYYY")}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                            {moment(order.deliveryDate).format("DD MMM YYYY")}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col gap-0.5">
+                              {(order.items || [])
+                                .slice(0, 2)
+                                .map((item, i) => (
+                                  <span
+                                    key={i}
+                                    className="text-xs text-gray-600 dark:text-gray-300"
+                                  >
+                                    {item.suitType}{" "}
+                                    {item.quantity > 1
+                                      ? `x${item.quantity}`
+                                      : ""}
+                                  </span>
+                                ))}
+                              {(order.items || []).length > 2 && (
+                                <span className="text-[11px] text-gray-400">
+                                  +{(order.items || []).length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
+                                STATUS_COLORS[order.status] ||
+                                STATUS_COLORS.pending
+                              }`}
+                            >
+                              {STATUS_LABELS[order.status] || order.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs font-semibold text-gray-900 dark:text-gray-100">
+                            Rs. {(order.totalAmount || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs font-semibold text-green-600 dark:text-green-400">
+                            Rs. {(order.advancePaid || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs font-semibold text-red-500 dark:text-red-400">
+                            Rs.{" "}
+                            {Math.max(
+                              0,
+                              order.remainingBalance || 0,
+                            ).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
-
       {/* Payments Tab */}
       {activeTab === "payments" && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] overflow-hidden">
+        <div>
           {payments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-14 text-center px-4">
+            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-[#17102a] flex flex-col items-center justify-center py-14 text-center px-4">
               <Wallet
                 size={40}
                 className="text-gray-300 dark:text-gray-600 mb-3"
               />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
                 No payments found for this customer
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[800px]">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-800/50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    <th className="px-4 py-3">Payment ID</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Order #</th>
-                    <th className="px-4 py-3 text-right">Amount</th>
-                    <th className="px-4 py-3">Method</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Reference</th>
-                    <th className="px-4 py-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((payment) => (
-                    <tr
-                      key={payment._id}
-                      className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30"
-                    >
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">
-                          {payment.paymentId}
+            <>
+              {/* Mobile Payments Grid */}
+              <div className="grid grid-cols-1 gap-3 md:hidden">
+                {payments.map((payment) => (
+                  <div
+                    key={payment._id}
+                    className="bg-white dark:bg-[#17102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm space-y-3"
+                  >
+                    {/* Top Row: Payment ID + Amount */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="size-9 rounded-xl bg-green-50 dark:bg-green-950/50 flex items-center justify-center shrink-0">
+                          <Wallet
+                            size={16}
+                            className="text-green-600 dark:text-green-400"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-mono text-sm font-bold text-gray-900 dark:text-white block truncate">
+                            {payment.paymentId}
+                          </span>
+                          <span className="text-[11px] text-gray-400 block">
+                            Order:{" "}
+                            <span className="font-semibold text-gray-600 dark:text-gray-300">
+                              {payment.orderNumber}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-black text-green-600 dark:text-green-400 block leading-tight">
+                          Rs. {(payment.amount || 0).toLocaleString()}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
-                        {moment(payment.createdAt).format(
-                          "DD MMM YYYY, h:mm A",
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-xs text-gray-600 dark:text-gray-300">
-                          {payment.orderNumber}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs font-semibold text-gray-900 dark:text-gray-100">
-                        Rs. {(payment.amount || 0).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3">
                         <span
-                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
-                            METHOD_COLORS[payment.method] || METHOD_COLORS.cash
-                          }`}
-                        >
-                          {PAYMENT_METHOD_LABELS[payment.method] ||
-                            payment.method}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
-                            TYPE_COLORS[payment.paymentType] ||
-                            TYPE_COLORS.partial
-                          }`}
-                        >
-                          {TYPE_LABELS[payment.paymentType] ||
-                            payment.paymentType}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
-                        {payment.referenceNo || "-"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
+                          className={`inline-block mt-0.5 text-[10px] font-bold rounded-full px-2 py-0.2 ${
                             payment.isVoided
                               ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
                               : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
@@ -583,16 +711,133 @@ const CustomerDetailPage = () => {
                         >
                           {payment.isVoided ? "Voided" : "Paid"}
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </div>
+
+                    {/* Middle Row: Method, Type & Date */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-gray-100 dark:border-gray-800 text-xs">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`text-[10px] font-bold rounded-full px-2.5 py-0.5 ${
+                            METHOD_COLORS[payment.method] || METHOD_COLORS.cash
+                          }`}
+                        >
+                          {PAYMENT_METHOD_LABELS[payment.method] ||
+                            payment.method}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold rounded-full px-2.5 py-0.5 ${
+                            TYPE_COLORS[payment.paymentType] ||
+                            TYPE_COLORS.partial
+                          }`}
+                        >
+                          {TYPE_LABELS[payment.paymentType] ||
+                            payment.paymentType}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-400 shrink-0">
+                        {moment(payment.createdAt).format(
+                          "DD MMM YYYY, h:mm A",
+                        )}
+                      </span>
+                    </div>
+
+                    {/* Reference (if present) */}
+                    {payment.referenceNo && (
+                      <div className="text-[11px] text-gray-400 font-mono bg-gray-50 dark:bg-gray-800/40 rounded-lg px-2.5 py-1">
+                        Ref: {payment.referenceNo}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[800px]">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-800/50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        <th className="px-4 py-3">Payment ID</th>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Order #</th>
+                        <th className="px-4 py-3 text-right">Amount</th>
+                        <th className="px-4 py-3">Method</th>
+                        <th className="px-4 py-3">Type</th>
+                        <th className="px-4 py-3">Reference</th>
+                        <th className="px-4 py-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {payments.map((payment) => (
+                        <tr
+                          key={payment._id}
+                          className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                        >
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-200">
+                              {payment.paymentId}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                            {moment(payment.createdAt).format(
+                              "DD MMM YYYY, h:mm A",
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-mono text-xs text-gray-600 dark:text-gray-300">
+                              {payment.orderNumber}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right text-xs font-semibold text-gray-900 dark:text-gray-100">
+                            Rs. {(payment.amount || 0).toLocaleString()}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
+                                METHOD_COLORS[payment.method] ||
+                                METHOD_COLORS.cash
+                              }`}
+                            >
+                              {PAYMENT_METHOD_LABELS[payment.method] ||
+                                payment.method}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
+                                TYPE_COLORS[payment.paymentType] ||
+                                TYPE_COLORS.partial
+                              }`}
+                            >
+                              {TYPE_LABELS[payment.paymentType] ||
+                                payment.paymentType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                            {payment.referenceNo || "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${
+                                payment.isVoided
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                  : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                              }`}
+                            >
+                              {payment.isVoided ? "Voided" : "Paid"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
       )}
-
       {/* Measurements Tab */}
       {activeTab === "measurements" && (
         <div>
@@ -637,6 +882,12 @@ const CustomerDetailPage = () => {
           )}
         </div>
       )}
+      {/* Book Order Modal */}
+      <BookOrderModal
+        open={bookOrderOpen}
+        onClose={() => setBookOrderOpen(false)}
+        customer={customer}
+      />
     </div>
   );
 };

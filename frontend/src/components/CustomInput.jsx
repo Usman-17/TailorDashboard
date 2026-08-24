@@ -7,6 +7,7 @@ const CustomInput = ({
   type = "text",
   value,
   onChange,
+  onBlur,
   placeholder = "",
   disabled = false,
   inputMode,
@@ -57,6 +58,7 @@ const CustomInput = ({
             id={id}
             value={value}
             onChange={onChange}
+            onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}
             ref={ref}
@@ -78,6 +80,7 @@ const CustomInput = ({
             type={isPassword && showPassword ? "text" : type}
             value={value}
             onChange={onChange}
+            onBlur={onBlur}
             onWheel={
               type === "number" ? (e) => e.currentTarget.blur() : undefined
             }

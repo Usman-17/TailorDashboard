@@ -14,6 +14,7 @@ import {
   Plus,
   Trash2,
   Loader,
+  Phone,
 } from "lucide-react";
 
 import CustomInput from "../../../components/CustomInput";
@@ -43,18 +44,17 @@ const LOWER_TYPES = [
 ];
 
 // ─── Default Suit Item Factory ─────────────────────────────────
-const createSuitItem = (suitTypes = [], overrides = {}) => {
-  const first = suitTypes[0];
+const createSuitItem = (overrides = {}) => {
   return {
     id: Date.now() + Math.random(),
-    suitType: first?.name || "",
-    collarType: "Ban Collar",
+    suitType: "",
+    collarType: "Ban",
     cuffType: "Simple",
     pocket: "No Pocket",
     lowerType: "Shalwar",
     fabric: "",
     color: "",
-    price: first ? Number(first.price) || 0 : 0,
+    price: 0,
     quantity: 1,
     remarks: "",
     ...overrides,
@@ -85,7 +85,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     retry: false,
   });
 
-  const { data: nextOrderData, isLoading: isLoadingNextNo } = useQuery({
+  const { data: nextOrderData } = useQuery({
     queryKey: ["nextOrderNumber"],
     enabled: open,
     queryFn: async () => {
@@ -158,8 +158,18 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     );
   }, []);
 
-  const addSuit = () =>
-    setSuitItems((prev) => [...prev, createSuitItem(availableSuitTypesList)]);
+  const addSuit = () => {
+    const newSuit = createSuitItem(availableSuitTypesList);
+    setCollapsedMap((prev) => {
+      const nextMap = { ...prev };
+      suitItems.forEach((s) => {
+        nextMap[s.id] = true;
+      });
+      nextMap[newSuit.id] = false;
+      return nextMap;
+    });
+    setSuitItems((prev) => [...prev, newSuit]);
+  };
 
   const removeSuit = (id) => {
     setSuitItems((prev) =>
@@ -185,6 +195,14 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customerDetail"] });
+      queryClient.invalidateQueries({ queryKey: ["orderPayments"] });
+      queryClient.invalidateQueries({ queryKey: ["orderPaymentSummary"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorDashboardStats"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorRecentOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorLatestCustomers"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorUpcomingDeliveries"] });
+      queryClient.invalidateQueries({ queryKey: ["nextOrderNumber"] });
       toast.success("Order booked successfully!");
       onClose();
     },
@@ -243,14 +261,15 @@ const BookOrderModal = ({ open, onClose, customer }) => {
       open={open}
       onClose={onClose}
       title="Book New Order"
-      subtitle={`Customer: ${customer?.name || ""}`}
+      subtitle="Create a new order for your customer"
       showClose={false}
+      showBack={true}
       actions={
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition cursor-pointer whitespace-nowrap"
+            className="px-3.5 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-gray-900 transition cursor-pointer whitespace-nowrap"
           >
             Cancel
           </button>
@@ -258,65 +277,60 @@ const BookOrderModal = ({ open, onClose, customer }) => {
             type="button"
             onClick={() => formRef.current?.requestSubmit()}
             disabled={isPending}
-            className="inline-flex items-center justify-center px-5 sm:px-6 py-2 text-sm font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full shadow-md hover:shadow-purple-500/25 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
+            className="inline-flex items-center justify-center px-4 sm:px-5 py-2 text-sm font-bold bg-purple-600 hover:bg-purple-700 active:scale-95 text-white rounded-xl shadow-md shadow-purple-600/25 transition-all cursor-pointer disabled:opacity-50 whitespace-nowrap"
           >
-            {isPending
-              ? "Saving..."
-              : "Book Order"}
+            {isPending ? "Saving..." : "Book Order"}
           </button>
         </div>
       }
     >
-      <div className="space-y-6 pb-12">
+      <div className="space-y-5 pb-12">
         {/* ── Customer & Measurement Banner ────────────────── */}
-        <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 dark:from-purple-900/30 dark:via-indigo-900/20 dark:to-purple-900/30 border border-purple-200 dark:border-purple-800/40 rounded-2xl p-4 sm:p-5 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="size-12 rounded-full bg-purple-100 dark:bg-purple-600/20 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-lg border border-purple-200 dark:border-purple-500/30">
+        <div className="bg-[#fbf9ff] dark:bg-[#1a1232] border border-purple-100 dark:border-purple-900/40 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="size-12 rounded-full bg-purple-200/70 dark:bg-purple-600/30 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold text-lg shrink-0">
                 {customer?.name?.charAt(0)?.toUpperCase() || "C"}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                    {customer?.name}
-                  </h2>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-mono bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-700 font-semibold whitespace-nowrap">
-                    <Tag size={11} />
-                    {isLoadingNextNo ? (
-                      <Loader size={10} className="animate-spin" />
-                    ) : (
-                      orderNumber || "ORD-0001"
-                    )}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                  {customer?.phone}
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                  {customer?.name}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                  {customer?.customerId || customer?.phone || ""}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
-              {existingMeasurement ? (
-                <button
-                  type="button"
-                  onClick={() => setShowMeasurements(!showMeasurements)}
-                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-green-500/10 text-green-700 dark:text-green-300 border border-green-500/30 text-xs font-semibold hover:bg-green-500/20 transition cursor-pointer"
-                >
-                  <Ruler size={14} />
-                  Measurements Available
-                  {showMeasurements ? (
-                    <ChevronUp size={14} />
-                  ) : (
-                    <ChevronDown size={14} />
-                  )}
-                </button>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold">
-                  <Info size={14} />
-                  No Measurement Recorded
-                </span>
-              )}
-            </div>
+            {customer?.phone && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-[#20173d] text-purple-700 dark:text-purple-300 text-xs font-semibold shrink-0">
+                <Phone size={12} className="text-purple-500" />
+                <span>{customer.phone}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap pt-1">
+            {existingMeasurement ? (
+              <button
+                type="button"
+                onClick={() => setShowMeasurements(!showMeasurements)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-800 text-xs font-bold hover:bg-green-100 dark:hover:bg-green-900/50 transition cursor-pointer"
+              >
+                <Tag size={12} />
+                Measurements Available
+                {showMeasurements ? (
+                  <ChevronUp size={13} />
+                ) : (
+                  <ChevronDown size={13} />
+                )}
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold">
+                <Info size={13} />
+                No Measurement Recorded
+              </span>
+            )}
           </div>
 
           {/* Measurement Preview */}
@@ -430,21 +444,21 @@ const BookOrderModal = ({ open, onClose, customer }) => {
               <div className="flex items-center gap-2">
                 <Scissors
                   className="text-purple-600 dark:text-purple-400"
-                  size={20}
+                  size={18}
                 />
-                <h3 className="text-base font-bold text-gray-900 dark:text-white uppercase tracking-wide">
-                  Suit Items
+                <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">
+                  SUIT ITEMS
                 </h3>
-                <span className="size-6 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs font-bold">
+                <span className="size-5 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs font-bold">
                   {suitItems.length}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={addSuit}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-dashed border-purple-400 dark:border-purple-600 text-purple-600 dark:text-purple-400 text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition cursor-pointer"
+                className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border-2 border-dashed border-purple-400 dark:border-purple-500 text-purple-600 dark:text-purple-400 text-xs sm:text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition cursor-pointer"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 Add Suit
               </button>
             </div>
@@ -462,7 +476,8 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                 >
                   {/* Card Header */}
                   <div
-                    className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
+                    onClick={() => toggleCollapse(suit.id)}
+                    className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 cursor-pointer select-none transition-colors ${!isCollapsed ? "border-b border-gray-100 dark:border-gray-800" : ""} ${suit.suitType ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50/50 dark:bg-[#1a1129]"}`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="size-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
@@ -483,35 +498,36 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                       {suitItems.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeSuit(suit.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeSuit(suit.id);
+                          }}
                           className="p-1.5 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition cursor-pointer"
                           title="Remove this suit"
                         >
                           <Trash2 size={15} />
                         </button>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => toggleCollapse(suit.id)}
-                        className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
-                      >
+                      <span className="p-1.5 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition pointer-events-none">
                         {isCollapsed ? (
                           <ChevronDown size={16} />
                         ) : (
                           <ChevronUp size={16} />
                         )}
-                      </button>
+                      </span>
                     </div>
                   </div>
 
                   {/* Card Body */}
                   {!isCollapsed && (
-                    <div className="p-5 space-y-5">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
                         <CustomSelect
                           label="Suit Type"
                           value={suit.suitType}
+                          placeholder="Select Suit Type"
                           required
+                          allowClear={false}
                           onChange={(v) => {
                             update("suitType", v);
                             const selected = availableSuitTypesList.find(
@@ -522,7 +538,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                             }
                           }}
                           options={availableSuitTypesList.map((item) => ({
-                            label: `${item.name}${item.price > 0 ? ` — Rs. ${Number(item.price).toLocaleString()}` : ""}`,
+                            label: item.name,
                             value: item.name,
                           }))}
                         />
@@ -565,29 +581,35 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                           min={1}
                           required
                           value={suit.quantity}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const val = e.target.value;
                             update(
                               "quantity",
-                              Math.max(1, Number(e.target.value)),
-                            )
-                          }
+                              val === "" ? "" : Math.max(1, Number(val)),
+                            );
+                          }}
+                          onBlur={() => {
+                            if (!suit.quantity || Number(suit.quantity) < 1) {
+                              update("quantity", 1);
+                            }
+                          }}
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                         <CustomInput
                           id={`fabric-${suit.id}`}
                           label="Fabric Name"
                           value={suit.fabric}
                           onChange={(e) => update("fabric", e.target.value)}
-                          placeholder="e.g. Cotton, Silk, Khaddar"
+                          placeholder="e.g. Cotton, Silk"
                         />
                         <CustomInput
                           id={`color-${suit.id}`}
                           label="Fabric Color"
                           value={suit.color}
                           onChange={(e) => update("color", e.target.value)}
-                          placeholder="e.g. White, Navy Blue"
+                          placeholder="e.g. White, Blue"
                         />
                       </div>
 
@@ -640,21 +662,27 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                   })}
                   <div className="border-t border-purple-300 dark:border-purple-700 pt-2 mt-2 space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500 dark:text-gray-400">Subtotal</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Subtotal
+                      </span>
                       <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">
                         Rs. {totalAmount.toLocaleString()}
                       </span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500 dark:text-gray-400">Discount</span>
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Discount
+                        </span>
                         <span className="font-mono font-semibold text-red-500">
                           - Rs. {discountAmount.toLocaleString()}
                         </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between font-bold text-base">
-                      <span className="text-gray-900 dark:text-white">Total</span>
+                      <span className="text-gray-900 dark:text-white">
+                        Total
+                      </span>
                       <span className="font-mono text-purple-700 dark:text-purple-300">
                         Rs. {netAmount.toLocaleString()}
                       </span>
@@ -666,7 +694,7 @@ const BookOrderModal = ({ open, onClose, customer }) => {
           </div>
 
           {/* ── Delivery Date & Financials ─────────────────── */}
-          <div className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs space-y-4">
+          <div className="bg-white dark:bg-[#15102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
               <DollarSign
                 className="text-purple-600 dark:text-purple-400"
@@ -677,23 +705,25 @@ const BookOrderModal = ({ open, onClose, customer }) => {
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
               {/* Delivery Date */}
-              <CustomDatePicker
-                id="deliveryDate"
-                label="Delivery Date"
-                required
-                value={deliveryDate}
-                onChange={(date) =>
-                  setDeliveryDate(date ? date.format("YYYY-MM-DD") : "")
-                }
-                placeholder="Select delivery date"
-              />
+              <div className="col-span-2 sm:col-span-1">
+                <CustomDatePicker
+                  id="deliveryDate"
+                  label="Delivery Date"
+                  required
+                  value={deliveryDate}
+                  onChange={(date) =>
+                    setDeliveryDate(date ? date.format("YYYY-MM-DD") : "")
+                  }
+                  placeholder="Select delivery date"
+                />
+              </div>
 
               {/* Total (auto-calculated, read-only) */}
               <div>
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
-                  Total Amount (PKR)
+                  Total (PKR)
                 </label>
                 <input
                   id="totalAmount"
@@ -713,23 +743,23 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                 max={totalAmount}
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
-                placeholder="Enter discount amount"
+                placeholder="Discount"
               />
 
               {/* Advance */}
               <CustomInput
                 id="advancePaid"
-                label="Advance Paid (PKR)"
+                label="Advance (PKR)"
                 type="number"
                 min={0}
                 max={netAmount}
                 value={advancePaid}
                 onChange={(e) => setAdvancePaid(e.target.value)}
-                placeholder="Enter advance"
+                placeholder="Advance"
               />
 
               {/* Remaining */}
-              <div>
+              <div className="col-span-2 sm:col-span-1">
                 <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
                   Remaining Balance
                 </label>
