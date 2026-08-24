@@ -174,12 +174,6 @@ export const addOrder = async (req, res) => {
         .json({ error: "Customer, delivery date, and items are required" });
     }
 
-    if (!measurement) {
-      return res
-        .status(400)
-        .json({ error: "Measurement is required before booking an order" });
-    }
-
     const customerDoc = await Customer.findOne({ _id: customer, shopId });
     if (!customerDoc) {
       return res.status(404).json({ error: "Customer not found" });
@@ -338,7 +332,10 @@ export const updateOrder = async (req, res) => {
         };
       });
 
-      const rawTotal = order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const rawTotal = order.items.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0,
+      );
 
       if (discount !== undefined) {
         order.discount = Math.min(Math.max(Number(discount) || 0, 0), rawTotal);
@@ -349,7 +346,10 @@ export const updateOrder = async (req, res) => {
       if (order.advancePaid > order.totalAmount) {
         order.advancePaid = order.totalAmount;
       }
-      order.remainingBalance = Math.max(0, order.totalAmount - order.advancePaid);
+      order.remainingBalance = Math.max(
+        0,
+        order.totalAmount - order.advancePaid,
+      );
       order.isPaid = order.remainingBalance <= 0;
     }
 

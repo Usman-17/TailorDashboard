@@ -86,7 +86,7 @@ const orderSchema = new mongoose.Schema(
     measurement: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Measurement",
-      required: [true, "Measurement is required"],
+      default: null,
     },
 
     items: {
@@ -210,7 +210,7 @@ orderSchema.pre("aggregate", function () {
     (stage) =>
       stage.$match &&
       (stage.$match.isDeleted === false ||
-        stage.$match.isDeleted === { $ne: true }),
+        (stage.$match.isDeleted && typeof stage.$match.isDeleted === "object" && "$ne" in stage.$match.isDeleted)),
   );
   if (!hasDeletedMatch) {
     this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
