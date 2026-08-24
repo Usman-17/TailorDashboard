@@ -1,19 +1,18 @@
 import moment from "moment";
 import toast from "react-hot-toast";
-import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import {  useSearchParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
   Ruler,
   UserCheck,
   UserPlus,
-  UserRound,
   X,
   PlusCircle,
+  ChevronLeft,
 } from "lucide-react";
 
-import CustomTable from "../../../components/CustomTable";
 import CustomInput from "../../../components/CustomInput";
 import CustomModal from "../../../components/CustomModal";
 import ModalActionButtons from "../../../components/ModalActionButtons";
@@ -21,12 +20,10 @@ import ModalActionButtons from "../../../components/ModalActionButtons";
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
 import useGetAllCustomers from "../../../hooks/useGetAllCustomers";
 
-import SummaryCard from "../../../components/SummaryCard";
-import ActionButtons from "../../../components/ActionButtons";
-import SectionHeading from "../../../components/SectionHeading";
-
 import BookOrderModal from "./BookOrderModal";
 import MeasurementModal from "./MeasurementModal";
+import MobileCustomersPage from "./MobileCustomersPage";
+import DesktopCustomersPage from "./DesktopCustomersPage";
 import { initialMeasurementState } from "./measurementFields";
 // Imports End----
 
@@ -61,7 +58,9 @@ const CustomersPage = () => {
     open: false,
     customer: null,
   });
-  const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const modalParam = searchParams.get("modal");
 
@@ -77,6 +76,12 @@ const CustomersPage = () => {
 
   const queryClient = useQueryClient();
   const { data, isLoading } = useGetAllCustomers();
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const customers = useMemo(() => data?.customers || [], [data]);
 
@@ -245,242 +250,288 @@ const CustomersPage = () => {
     "customerId",
   ]);
 
-  const columns = [
-    {
-      title: "Sr.",
-      key: "sr",
-      width: 60,
-      align: "center",
-      sorter: (a, b) => a.sr - b.sr,
-      render: (_, record) => record.sr,
-    },
-    {
-      title: "Customer ID",
-      dataIndex: "customerId",
-      key: "customerId",
-      sorter: (a, b) => (a.customerId || "").localeCompare(b.customerId || ""),
-      render: (v) => (
-        <span className="font-mono text-xs text-gray-500 dark:text-gray-400 font-semibold">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Full Name",
-      dataIndex: "name",
-      key: "name",
-      sorter: (a, b) => (a.name || "").localeCompare(b.name || ""),
-      render: (v) => (
-        <span className="font-medium text-gray-900 dark:text-gray-100">
-          {v}
-        </span>
-      ),
-    },
-    {
-      title: "Mobile Number",
-      dataIndex: "phone",
-      key: "phone",
-      sorter: (a, b) => (a.phone || "").localeCompare(b.phone || ""),
-      render: (v) => (
-        <span className="text-gray-700 dark:text-gray-300">{v}</span>
-      ),
-    },
-    {
-      title: "Measurement",
-      key: "measurement",
-      sorter: (a, b) => (a.measurement ? 1 : 0) - (b.measurement ? 1 : 0),
-      render: (_, record) =>
-        record.measurement ? (
-          <button
-            onClick={() => openMeasureModal(record, "view")}
-            className="inline-flex items-center gap-1.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 px-2.5 py-0.5 text-xs font-semibold cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors"
-            title="View Measurement"
-          >
-            <span className="size-1.5 rounded-full bg-green-500 dark:bg-green-400" />
-            Available
-          </button>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300 px-2.5 py-0.5 text-xs font-semibold">
-            <span className="size-1.5 rounded-full bg-red-500 dark:bg-red-400" />
-            Not Added
-          </span>
-        ),
-    },
-    {
-      title: "Orders",
-      key: "orders",
-      sorter: (a, b) =>
-        (a.orders?.filter((o) => !o.isDeleted)?.length || 0) -
-        (b.orders?.filter((o) => !o.isDeleted)?.length || 0),
-      render: (_, record) => {
-        const count = record.orders?.filter((o) => !o.isDeleted)?.length || 0;
-        return (
-          <span
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              count > 0
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
-            }`}
-          >
-            {count} Order{count !== 1 ? "s" : ""}
-          </span>
-        );
-      },
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      align: "center",
-      render: (_, record) => (
-        <div className="flex items-center justify-center gap-1 flex-nowrap">
-          <ActionButtons record={record} onEdit={(r) => openEdit(r)} />
-
-          {!record.measurement && (
-            <button
-              onClick={() => openMeasureModal(record, "add")}
-              className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:text-orange-400 cursor-pointer active:scale-90"
-              title="Add Measurement"
-            >
-              <Ruler size={16} />
-            </button>
-          )}
-
-          {record.measurement && (
-            <button
-              onClick={() => openMeasureModal(record, "edit")}
-              className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-yellow-600 dark:text-yellow-500 hover:bg-yellow-50 dark:hover:text-yellow-400 cursor-pointer active:scale-90"
-              title="Edit Measurement"
-            >
-              <Ruler size={16} />
-            </button>
-          )}
-          <button
-            onClick={() => openBookOrderModal(record)}
-            className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:text-purple-300 cursor-pointer active:scale-90"
-            title="Book Order"
-          >
-            <PlusCircle size={16} />
-          </button>
-          <button
-            onClick={() => navigate(`/customers/${record._id}`)}
-            className="p-2 rounded-full border transition-all duration-200 shadow-sm flex items-center justify-center outline-none bg-white dark:bg-[#1a1129] border-gray-300 dark:border-[#3b1f5a] text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-[#2a1b44] dark:hover:text-blue-300 cursor-pointer active:scale-90"
-            title="View"
-          >
-            <UserRound size={16} />
-          </button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-2 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
-        <SectionHeading
-          title="Customers"
-          subtitle="Manage customer records and measurements"
-        />
-        <button
-          onClick={openCreate}
-          className="ml-auto inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-sm font-semibold transition-all cursor-pointer text-white shadow-md hover:shadow-purple-500/30 active:scale-95 shrink-0"
-        >
-          <UserPlus size={16} />
-          Add Customer
-        </button>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 my-5">
-        {statCards.map((card) => (
-          <SummaryCard
-            key={card.id}
-            icon={card.icon}
-            title={card.title}
-            count={card.count}
-            color={card.color}
-            isSelected={filterType === card.id}
-            onClick={() =>
-              setFilterType(
-                filterType === card.id && card.id !== "all" ? "all" : card.id,
-              )
-            }
-          />
-        ))}
-      </div>
-
-      <CustomTable
-        rowKey="_id"
-        loading={isLoading}
-        columns={columns}
-        dataSource={filtered.map((item, index) => ({ ...item, sr: index + 1 }))}
-        globalSearch={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search customer name, mobile number, ID..."
-        totalLabel="Total Customers"
+      {/* ─── Mobile View ─── */}
+      <MobileCustomersPage
+        customers={customers}
+        filtered={filtered}
+        search={search}
+        setSearch={setSearch}
+        filterType={filterType}
+        setFilterType={setFilterType}
+        isLoading={isLoading}
+        formModalOpen={formModalOpen}
+        form={form}
+        errors={errors}
+        editCustomer={editCustomer}
+        isSaving={isSaving}
+        handleSubmit={handleSubmit}
+        openCreate={openCreate}
+        openEdit={openEdit}
+        closeFormModal={closeFormModal}
+        openMeasureModal={openMeasureModal}
+        openBookOrderModal={openBookOrderModal}
+        setForm={setForm}
+        setErrors={setErrors}
       />
 
-      {/* Custom Modal for Add/Edit Customer */}
-      <CustomModal isOpen={formModalOpen} className="w-[92%] max-w-md">
-        <div className="flex flex-col gap-5">
-          {/* Modal Header */}
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              {editCustomer ? "Edit Customer" : "Add New Customer"}
-            </h3>
-            <button
-              onClick={closeFormModal}
-              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
-            >
-              <X size={18} />
-            </button>
-          </div>
+      {/* ─── Desktop View ─── */}
+      <DesktopCustomersPage
+        customers={customers}
+        filtered={filtered}
+        search={search}
+        setSearch={setSearch}
+        filterType={filterType}
+        setFilterType={setFilterType}
+        statCards={statCards}
+        isLoading={isLoading}
+        openCreate={openCreate}
+        openEdit={openEdit}
+        openMeasureModal={openMeasureModal}
+        openBookOrderModal={openBookOrderModal}
+      />
 
-          {/* Form Fields */}
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-col gap-4.5"
-            noValidate
-          >
-            {/* Full Name */}
-            <CustomInput
-              id="name"
-              label="Full Name"
-              required
-              value={form.name}
-              onChange={(e) => {
-                setForm({ ...form, name: e.target.value });
-                if (errors.name) setErrors({ ...errors, name: "" });
-              }}
-              placeholder="Enter customer name"
-              error={errors.name}
-            />
+      {/* Shared Modals (both mobile + desktop) */}
+      {/* Add/Edit Customer Modal — Mobile fullScreen, Desktop compact */}
+      {isMobile ? (
+        <CustomModal isOpen={formModalOpen} fullScreen onClose={closeFormModal}>
+          <div className="flex flex-col h-full px-4 pt-1.5 pb-4 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={closeFormModal}
+                  className="size-8 -ml-1 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-700 dark:text-gray-200 transition-all cursor-pointer"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <div>
+                  <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">
+                    {editCustomer ? "Edit Customer" : "Add New Customer"}
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {editCustomer
+                      ? "Update customer details"
+                      : "Create a new customer profile"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={closeFormModal}
+                className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-500 dark:text-gray-400 transition-all cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
-            {/* Mobile Number */}
-            <CustomInput
-              id="phone"
-              label="Mobile Number"
-              required
-              placeholder="03XXXXXXXXX"
-              maxLength={11}
-              error={errors.phone}
-              value={form.phone}
-              onChange={(e) => {
-                setForm({ ...form, phone: e.target.value });
-                if (errors.phone) setErrors({ ...errors, phone: "" });
-              }}
-            />
-
-            {/* Footer Buttons */}
-            <ModalActionButtons
-              onCancel={closeFormModal}
+            {/* Form */}
+            <form
               onSubmit={handleSubmit}
-              isSubmitting={isSaving}
-              submitText={editCustomer ? "Update Customer" : "Save Customer"}
-              loadingText={editCustomer ? "Updating..." : "Saving..."}
-            />
-          </form>
-        </div>
-      </CustomModal>
+              className="flex flex-col gap-4 flex-1"
+              noValidate
+            >
+              {/* Hero Illustration */}
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-100 via-purple-50 to-indigo-100 dark:from-purple-950/60 dark:via-purple-900/40 dark:to-indigo-950/60 py-6 flex items-center justify-center">
+                <div className="relative flex items-center gap-4">
+                  {/* Avatar silhouette */}
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="size-16 rounded-full bg-purple-200/80 dark:bg-purple-800/50 flex items-center justify-center">
+                      <Users
+                        size={28}
+                        className="text-purple-500 dark:text-purple-300"
+                      />
+                    </div>
+                    <div className="w-10 h-1.5 rounded-full bg-purple-200/60 dark:bg-purple-800/40" />
+                  </div>
+                  {/* Dress form silhouette */}
+                  <div className="w-10 h-20 rounded-t-full bg-purple-200/50 dark:bg-purple-800/30" />
+                  {/* Plus badge */}
+                  <div className="absolute -right-1 -bottom-1 size-9 rounded-full bg-purple-600 shadow-lg shadow-purple-600/30 flex items-center justify-center">
+                    <PlusCircle size={18} className="text-white" />
+                  </div>
+                </div>
+              </div>
+
+              <CustomInput
+                id="mName"
+                label="Full Name"
+                required
+                value={form.name}
+                onChange={(e) => {
+                  setForm({ ...form, name: e.target.value });
+                  if (errors.name) setErrors({ ...errors, name: "" });
+                }}
+                placeholder="Enter customer name"
+                error={errors.name}
+              />
+
+              {/* Mobile Number with flag */}
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <div
+                  className={`flex items-center gap-2 px-3.5 h-10 rounded-lg border-[1.5px] bg-white dark:bg-[#0f0d1b] shadow-xs transition-all duration-200 ${
+                    errors.phone
+                      ? "!border-red-400 !shadow-[0_0_0_3px_rgba(239,68,68,0.2)]"
+                      : "border-gray-200 dark:border-purple-500/30 hover:border-gray-400 dark:hover:border-purple-400 focus-within:border-[var(--secondary-color)] dark:focus-within:border-purple-400 focus-within:shadow-[0_0_0_3px_rgba(168,85,247,0.25)]"
+                  }`}
+                >
+                  <div className="flex items-center pr-2.5 border-r border-gray-200 dark:border-gray-700 shrink-0">
+                    <span className="text-lg leading-none">🇵🇰</span>
+                  </div>
+                  <input
+                    type="tel"
+                    id="mPhone"
+                    placeholder="03XXXXXXXXX"
+                    maxLength={11}
+                    value={form.phone}
+                    onChange={(e) => {
+                      setForm({ ...form, phone: e.target.value });
+                      if (errors.phone) setErrors({ ...errors, phone: "" });
+                    }}
+                    className="flex-1 bg-transparent text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="text-xs text-red-500 pl-1">{errors.phone}</p>
+                )}
+              </div>
+
+              {/* Security Notice */}
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/50">
+                <div className="size-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg
+                    className="size-4 text-purple-600 dark:text-purple-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-purple-800 dark:text-purple-300">
+                    Your customer data is safe
+                  </p>
+                  <p className="text-[11px] text-purple-600/70 dark:text-purple-400/60 mt-0.5 leading-relaxed">
+                    We respect the security and privacy of all customer
+                    information.
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="space-y-2 pt-2 mt-auto">
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold text-sm shadow-lg shadow-purple-600/25 transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {isSaving ? (
+                    <span className="size-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <svg
+                      className="size-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                      />
+                    </svg>
+                  )}
+                  {isSaving
+                    ? editCustomer
+                      ? "Updating..."
+                      : "Saving..."
+                    : editCustomer
+                      ? "Update Customer"
+                      : "Save Customer"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeFormModal}
+                  className="w-full py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 active:scale-95 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </CustomModal>
+      ) : (
+        <CustomModal isOpen={formModalOpen} className="w-[92%] max-w-md">
+          <div className="flex flex-col gap-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                {editCustomer ? "Edit Customer" : "Add New Customer"}
+              </h3>
+              <button
+                onClick={closeFormModal}
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-4.5"
+              noValidate
+            >
+              <CustomInput
+                id="name"
+                label="Full Name"
+                required
+                value={form.name}
+                onChange={(e) => {
+                  setForm({ ...form, name: e.target.value });
+                  if (errors.name) setErrors({ ...errors, name: "" });
+                }}
+                placeholder="Enter customer name"
+                error={errors.name}
+              />
+
+              <CustomInput
+                id="phone"
+                label="Mobile Number"
+                required
+                placeholder="03XXXXXXXXX"
+                maxLength={11}
+                error={errors.phone}
+                value={form.phone}
+                onChange={(e) => {
+                  setForm({ ...form, phone: e.target.value });
+                  if (errors.phone) setErrors({ ...errors, phone: "" });
+                }}
+              />
+
+              <ModalActionButtons
+                onCancel={closeFormModal}
+                onSubmit={handleSubmit}
+                isSubmitting={isSaving}
+                submitText={editCustomer ? "Update Customer" : "Save Customer"}
+                loadingText={editCustomer ? "Updating..." : "Saving..."}
+              />
+            </form>
+          </div>
+        </CustomModal>
+      )}
 
       <MeasurementModal
         open={measureModal.open && modalParam === "measurements"}

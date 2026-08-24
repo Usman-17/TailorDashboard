@@ -148,11 +148,11 @@ const MobileDashboardView = () => {
 
   const quickActionsRow1 = [
     {
-      id: "new_customer",
-      title: "New Customer",
+      id: "customers",
+      title: "Customers",
       image: addUsersIcon,
       bgColor: "bg-[#f2ebfe] dark:bg-purple-950/40",
-      onClick: () => setModalOpen(true),
+      onClick: () => navigate("/customers"),
     },
     {
       id: "measurements",
