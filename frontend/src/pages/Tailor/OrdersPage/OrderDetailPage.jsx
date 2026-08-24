@@ -7,21 +7,22 @@ import {
   CheckCircle,
   Clock,
   CreditCard,
-  SquarePen,
-  MessageCircle,
+  Edit3,
   Phone,
   Scissors,
   Shirt,
-  Tag,
-  User,
   XCircle,
+  ChevronRight,
+  MapPin,
+  Package,
 } from "lucide-react";
 
-import useGetAuth from "../../../hooks/useGetAuth";
 import { useGetOrder } from "../../../hooks/useGetOrder";
-import FullScreenModal from "../../../components/FullScreenModal";
+
 import CustomModal from "../../../components/CustomModal";
 import CustomSelect from "../../../components/CustomSelect";
+import FullScreenModal from "../../../components/FullScreenModal";
+// Imports End----
 
 const STATUS_FLOW = [
   { value: "pending", label: "Pending", icon: Clock, color: "text-yellow-500" },
@@ -76,15 +77,14 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { order, isLoading } = useGetOrder(orderId);
-  const { data: authUser } = useGetAuth();
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [paymentNote, setPaymentNote] = useState("");
   const [paymentRefNo, setPaymentRefNo] = useState("");
+  const [showTimeline, setShowTimeline] = useState(false);
 
-  // Status update mutation
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
     mutationFn: async ({ status, note = "" }) => {
       const res = await fetch(`/api/orders/status/${orderId}`, {
@@ -107,7 +107,6 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
     onError: (err) => toast.error(err.message),
   });
 
-  // Payment mutation
   const { mutate: addPayment, isPending: isAddingPayment } = useMutation({
     mutationFn: async () => {
       const amount = paymentAmount ? Number(paymentAmount) : remaining;
@@ -141,7 +140,6 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
     onError: (err) => toast.error(err.message),
   });
 
-  // Cancel order mutation
   const { mutate: cancelOrder, isPending: isCancelling } = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/orders/status/${orderId}`, {
@@ -189,21 +187,18 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
       <FullScreenModal
         open={open}
         onClose={onClose}
+        showClose={false}
         title={
           isLoading
             ? "Order Details"
             : order
-              ? `Order ${order.orderNumber}`
+              ? `Order Details`
               : "Order Details"
         }
-        subtitle={
-          order
-            ? `Created ${moment(order.createdAt).format("DD MMM YYYY, hh:mm A")}`
-            : ""
-        }
+        subtitle={order ? order.orderNumber : ""}
         actions={
           order && (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
               {order.status !== "ready" &&
                 order.status !== "delivered" &&
                 order.status !== "cancelled" && (
@@ -215,7 +210,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
                     }
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
                   >
-                    <SquarePen size={14} /> Edit
+                    <Edit3 size={14} /> Edit
                   </button>
                 )}
               {canCancel && (
@@ -230,37 +225,16 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
                     }
                   }}
                   disabled={isCancelling}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition disabled:opacity-50 cursor-pointer"
                 >
                   <XCircle size={14} /> Cancel
-                </button>
-              )}
-              {order.status === "ready" && order.customer?.phone && (
-                <button
-                  onClick={() => {
-                    let phone = order.customer.phone.replace(/[^0-9]/g, "");
-                    if (phone.startsWith("0")) phone = "92" + phone.slice(1);
-                    const totalSuits = order.items?.length || 0;
-                    const totalAmount = Number(
-                      order.totalAmount || 0,
-                    ).toLocaleString();
-                    const shopName = authUser?.shop?.name || "our shop";
-                    const msg = `Assalam o Alaikum ${order.customer.name},\n\nThis is to inform you that your order *${order.orderNumber}* is now *ready for pickup*.\n\n*Order Summary:*\n- Total Suits: ${totalSuits}\n- Total Amount: Rs. ${totalAmount}\n\nKindly visit us at your earliest convenience to collect your order.\n\nJazakAllah,\n*${shopName}*`;
-                    window.open(
-                      `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,
-                      "_blank",
-                    );
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-[#25D366] text-white hover:bg-[#1da851] transition cursor-pointer"
-                >
-                  <MessageCircle size={14} /> WhatsApp
                 </button>
               )}
             </div>
           )
         }
       >
-        <div className="space-y-5">
+        <div className="space-y-4">
           {isLoading && (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
@@ -282,294 +256,160 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
           )}
 
           {!isLoading && order && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-              {/* Left Column — Customer + Order Info + Suit Items */}
-              <div className="lg:col-span-2 space-y-5">
-                {/* Customer Info */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                    <User size={16} className="text-purple-500" /> Customer
-                  </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Name
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {order.customer?.name || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Mobile
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1">
-                        <Phone size={12} /> {order.customer?.phone || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Customer ID
-                      </p>
-                      <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
-                        {order.customer?.customerId || "-"}
-                      </p>
-                    </div>
+            <>
+              {/* Status + Total Amount Bar */}
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}
+                  >
+                    {order.status === "in_progress" && <Scissors size={12} />}
+                    {order.status === "pending" && <Clock size={12} />}
+                    {order.status === "ready" && <CheckCircle size={12} />}
+                    {order.status === "delivered" && <CheckCircle size={12} />}
+                    {STATUS_LABELS[order.status] || order.status}
+                  </span>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Total Amount
+                    </p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">
+                      PKR {(order.totalAmount || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
-
-                {/* Order Info */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                    <Tag size={16} className="text-purple-500" /> Order Details
-                  </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Order #
-                      </p>
-                      <p className="text-sm font-mono font-semibold text-gray-900 dark:text-white">
-                        {order.orderNumber}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Created
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {moment(order.createdAt).format("DD MMM YYYY")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Delivery
-                      </p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {order.deliveryDate
-                          ? moment(order.deliveryDate).format("DD MMM YYYY")
-                          : "-"}
-                      </p>
-                    </div>
-                    {order.status === "delivered" &&
-                      (() => {
-                        const deliveredEvent = (order.statusHistory || []).find(
-                          (sh) => sh.status === "delivered",
-                        );
-                        if (!deliveredEvent) return null;
-                        return (
-                          <div>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                              Delivered On
-                            </p>
-                            <p className="text-sm font-semibold text-green-600 dark:text-green-400">
-                              {moment(deliveredEvent.changedAt).format(
-                                "DD MMM YYYY",
-                              )}
-                            </p>
-                          </div>
-                        );
-                      })()}
-                    <div>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                        Status
-                      </p>
-                      <span
-                        className={`inline-block text-[11px] font-semibold rounded-full px-2.5 py-0.5 ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}
-                      >
-                        {STATUS_LABELS[order.status] || order.status}
-                      </span>
-                    </div>
+                <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      Order #
+                    </p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white font-mono">
+                      {order.orderNumber}
+                    </p>
                   </div>
-                </div>
-
-                {/* Suit Items */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-4">
-                    <Shirt size={16} className="text-purple-500" /> Suit Items
-                    <span className="ml-auto text-xs font-normal text-gray-400 dark:text-gray-500">
-                      {order.items?.length || 0}{" "}
-                      {order.items?.length === 1 ? "suit" : "suits"}
-                    </span>
-                  </h2>
-                  <div className="space-y-3">
-                    {(order.items || []).map((item, i) => (
-                      <div
-                        key={item._id || i}
-                        className="relative border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-purple-300 dark:hover:border-purple-700 transition-colors"
-                      >
-                        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xs font-bold">
-                              {i + 1}
-                            </span>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {item.suitType}
-                            </span>
-                          </div>
-                          <span className="text-sm font-bold text-gray-900 dark:text-white">
-                            Rs. {(item.totalPrice || 0).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="p-4">
-                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                            {item.lowerType && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
-                                  Lower
-                                </p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                  {item.lowerType}
-                                </p>
-                              </div>
-                            )}
-                            {item.collarType && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
-                                  Collar
-                                </p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                  {item.collarType}
-                                </p>
-                              </div>
-                            )}
-                            {item.cuffType && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
-                                  Cuff
-                                </p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                  {item.cuffType}
-                                </p>
-                              </div>
-                            )}
-                            {item.pocket && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
-                                  Pocket
-                                </p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                  {item.pocket}
-                                </p>
-                              </div>
-                            )}
-                            {item.fabric && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
-                                  Fabric
-                                </p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                  {item.fabric}
-                                </p>
-                              </div>
-                            )}
-                            {item.color && (
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
-                                  Color
-                                </p>
-                                <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
-                                  {item.color}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              Qty:{" "}
-                              <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                {item.quantity}
-                              </span>
-                            </span>
-                            {item.quantity > 1 && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                Unit:{" "}
-                                <span className="font-semibold text-gray-700 dark:text-gray-300">
-                                  Rs. {(item.unitPrice || 0).toLocaleString()}
-                                </span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      Created
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {moment(order.createdAt).format("DD MMM YYYY")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                      Delivery
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {order.deliveryDate
+                        ? moment(order.deliveryDate).format("DD MMM YYYY")
+                        : "-"}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column — Payment + Status */}
-              <div className="space-y-5">
-                {/* Payment Summary */}
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                    <CreditCard size={16} className="text-purple-500" /> Payment
-                  </h2>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Total
-                      </span>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                        Rs. {(order.totalAmount || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Paid
-                      </span>
-                      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                        Rs. {totalPaid.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          Remaining
-                        </span>
-                        <span
-                          className={`text-sm font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}
-                        >
-                          Rs. {remaining.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
+              {/* Customer Card */}
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500 font-medium">
+                      Customer
+                    </p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
+                      {order.customer?.name || "-"}
+                    </p>
+                    {order.customer?.phone && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                        <Phone size={10} />
+                        {order.customer.phone}
+                      </p>
+                    )}
                   </div>
-                  {!order.isPaid && (
-                    <button
-                      onClick={() => setShowPaymentModal(true)}
-                      className="w-full mt-3 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition cursor-pointer"
-                    >
-                      Receive Payment
-                    </button>
-                  )}
-                  {order.isPaid && (
-                    <div className="mt-3 py-2 text-center text-sm font-semibold rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                      Fully Paid
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {order.customer?.phone && (
+                      <>
+                        <a
+                          href={`tel:${order.customer.phone}`}
+                          className="w-9 h-9 rounded-full bg-green-500 flex items-center justify-center text-white hover:bg-green-600 transition"
+                        >
+                          <Phone size={16} />
+                        </a>
+                        <button
+                          onClick={() => {
+                            let phone = order.customer.phone.replace(
+                              /[^0-9]/g,
+                              "",
+                            );
+                            if (phone.startsWith("0"))
+                              phone = "92" + phone.slice(1);
+                            window.open(
+                              `https://wa.me/${phone}?text=${encodeURIComponent(
+                                `Assalam o Alaikum ${order.customer.name},\n\nRegarding your order ${order.orderNumber}...`,
+                              )}`,
+                              "_blank",
+                            );
+                          }}
+                          className="w-9 h-9 rounded-full bg-[#25D366] flex items-center justify-center text-white hover:bg-[#1da851] transition"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                          >
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
+              </div>
 
-                {/* Status Management */}
+              {/* Order Progress Timeline */}
+              {order.status !== "cancelled" && (
                 <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                    <Clock size={16} className="text-purple-500" /> Status
-                  </h2>
-                  {order.status !== "cancelled" ? (
-                    <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                      Order Progress
+                    </h3>
+                    <button
+                      onClick={() => setShowTimeline(!showTimeline)}
+                      className="text-xs text-purple-600 dark:text-purple-400 font-medium flex items-center gap-1 hover:text-purple-700 transition cursor-pointer"
+                    >
+                      {showTimeline ? "Hide" : "View Timeline"}{" "}
+                      <ChevronRight
+                        size={12}
+                        className={`transition-transform ${showTimeline ? "rotate-90" : ""}`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Horizontal Timeline */}
+                  <div className="relative">
+                    <div className="flex items-start justify-between">
                       {STATUS_FLOW.map((step, i) => {
                         const isCurrent = order.status === step.value;
                         const isPast = currentStatusIndex > i;
-                        const isDelivered =
-                          step.value === "delivered" &&
-                          order.status === "delivered";
+                        const isDone =
+                          isPast ||
+                          (step.value === "delivered" &&
+                            order.status === "delivered");
                         const StepIcon = step.icon;
-                        const isDone = isPast || isDelivered;
+
                         return (
                           <div
                             key={step.value}
-                            className="flex items-center gap-2"
+                            className="flex flex-col items-center relative z-10"
                           >
                             <div
-                              className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${isDone ? "bg-green-500 text-white" : isCurrent ? "bg-purple-600 text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"}`}
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 ${
+                                isDone
+                                  ? "bg-green-500 border-green-500 text-white"
+                                  : isCurrent
+                                    ? "bg-purple-600 border-purple-600 text-white"
+                                    : "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500"
+                              }`}
                             >
                               {isDone ? (
                                 <CheckCircle size={14} />
@@ -577,47 +417,303 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
                                 <StepIcon size={14} />
                               )}
                             </div>
-                            <span
-                              className={`text-xs font-medium flex-1 ${isDone ? "text-green-600 dark:text-green-400" : isCurrent ? "text-purple-600 dark:text-purple-400" : "text-gray-400 dark:text-gray-500"}`}
+                            <p
+                              className={`text-[10px] font-medium mt-1.5 text-center leading-tight ${
+                                isDone
+                                  ? "text-green-600 dark:text-green-400"
+                                  : isCurrent
+                                    ? "text-purple-600 dark:text-purple-400 font-bold"
+                                    : "text-gray-400 dark:text-gray-500"
+                              }`}
                             >
                               {step.label}
-                            </span>
+                            </p>
                             {isDone && (
-                              <CheckCircle
-                                size={12}
-                                className="text-green-500"
-                              />
+                              <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+                                {(() => {
+                                  const event = (
+                                    order.statusHistory || []
+                                  ).find((sh) => sh.status === step.value);
+                                  return event
+                                    ? moment(event.changedAt).format("DD MMM")
+                                    : "";
+                                })()}
+                              </p>
+                            )}
+                            {isCurrent && !isDone && (
+                              <p className="text-[9px] text-purple-500 dark:text-purple-400 mt-0.5 font-medium">
+                                {moment(order.updatedAt).format("DD MMM")}
+                              </p>
                             )}
                           </div>
                         );
                       })}
-                      {nextStatus && (
-                        <button
-                          onClick={() =>
-                            updateStatus({
-                              status: nextStatus,
-                              note: `Status changed to ${STATUS_LABELS[nextStatus]}`,
-                            })
-                          }
-                          disabled={isUpdatingStatus}
-                          className="w-full mt-3 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 cursor-pointer"
-                        >
-                          {isUpdatingStatus
-                            ? "Updating..."
-                            : `Mark as ${STATUS_LABELS[nextStatus]}`}
-                        </button>
-                      )}
                     </div>
-                  ) : (
-                    <div className="py-3 text-center">
-                      <span className="text-xs font-semibold rounded-full px-4 py-1.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
-                        Order Cancelled
-                      </span>
+                    {/* Progress line behind circles */}
+                    <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-200 dark:bg-gray-700 -z-0">
+                      <div
+                        className="h-full bg-green-500 transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, (currentStatusIndex / (STATUS_FLOW.length - 1)) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Next Status Button */}
+                  {nextStatus && (
+                    <button
+                      onClick={() =>
+                        updateStatus({
+                          status: nextStatus,
+                          note: `Status changed to ${STATUS_LABELS[nextStatus]}`,
+                        })
+                      }
+                      disabled={isUpdatingStatus}
+                      className="w-full mt-4 py-2.5 text-sm font-semibold rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isUpdatingStatus
+                        ? "Updating..."
+                        : `Mark as ${STATUS_LABELS[nextStatus]}`}
+                    </button>
+                  )}
+
+                  {/* Expanded Timeline */}
+                  {showTimeline && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                      {(order.statusHistory || [])
+                        .slice()
+                        .reverse()
+                        .map((event, i) => (
+                          <div key={i} className="flex items-start gap-3">
+                            <div className="w-2 h-2 rounded-full bg-purple-500 mt-1.5 shrink-0" />
+                            <div>
+                              <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                                {STATUS_LABELS[event.status] || event.status}
+                              </p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                                {moment(event.changedAt).format(
+                                  "DD MMM YYYY, hh:mm A",
+                                )}
+                                {event.note && ` — ${event.note}`}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      {(order.statusHistory || []).length === 0 && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                          No status history
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
+              )}
+
+              {order.status === "cancelled" && (
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-red-200 dark:border-red-800 p-4 text-center">
+                  <span className="text-xs font-semibold rounded-full px-4 py-1.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                    Order Cancelled
+                  </span>
+                </div>
+              )}
+
+              {/* Suit Items — Order Details */}
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Package
+                      size={16}
+                      className="text-purple-600 dark:text-purple-400"
+                    />{" "}
+                    Order Details
+                  </h3>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full px-2.5 py-0.5 font-medium">
+                    {order.items?.length || 0}{" "}
+                    {order.items?.length === 1 ? "Suit" : "Suits"}
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {(order.items || []).map((item, i) => (
+                    <div
+                      key={item._id || i}
+                      className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden"
+                    >
+                      <div className="p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900 dark:text-white">
+                              {item.suitType}
+                            </p>
+                            {item.fabric && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {item.fabric}
+                                {item.color ? ` · ${item.color}` : ""}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-bold text-gray-900 dark:text-white">
+                              PKR {(item.totalPrice || 0).toLocaleString()}
+                            </p>
+                            {item.quantity > 1 && (
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                                {item.quantity} × PKR{" "}
+                                {(item.unitPrice || 0).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Attributes */}
+                      <div className="px-3 pb-3">
+                        <div className="flex flex-wrap gap-1.5">
+                          {item.fabric && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full px-2 py-1">
+                              <Shirt size={10} className="shrink-0" />
+                              {item.fabric}
+                            </span>
+                          )}
+                          {item.color && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full px-2 py-1">
+                              {item.color}
+                            </span>
+                          )}
+                          {item.lowerType && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full px-2 py-1">
+                              {item.lowerType}
+                            </span>
+                          )}
+                          {item.collarType && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full px-2 py-1">
+                              Collar: {item.collarType}
+                            </span>
+                          )}
+                          {item.cuffType && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full px-2 py-1">
+                              Cuff: {item.cuffType}
+                            </span>
+                          )}
+                          {item.pocket && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 rounded-full px-2 py-1">
+                              Pocket: {item.pocket}
+                            </span>
+                          )}
+                          {item.quantity && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full px-2 py-1">
+                              Qty: {item.quantity}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+
+              {/* Payment Summary */}
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                  <CreditCard
+                    size={16}
+                    className="text-purple-600 dark:text-purple-400"
+                  />{" "}
+                  Payment
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Total
+                    </span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      PKR {(order.totalAmount || 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      Paid
+                    </span>
+                    <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                      PKR {totalPaid.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-bold text-gray-900 dark:text-white">
+                        Remaining
+                      </span>
+                      <span
+                        className={`text-sm font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"}`}
+                      >
+                        PKR {remaining.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {order.payments && order.payments.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                    {order.payments.map((p, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {moment(p.date).format("DD MMM")} · {p.method}
+                          {p.note && ` · ${p.note}`}
+                        </span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">
+                          +PKR {(p.amount || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!order.isPaid ? (
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="w-full mt-3 py-2.5 text-sm font-semibold rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition cursor-pointer"
+                  >
+                    Receive Payment
+                  </button>
+                ) : (
+                  <div className="mt-3 py-2.5 text-center text-sm font-semibold rounded-xl bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                    Fully Paid ✓
+                  </div>
+                )}
+              </div>
+
+              {/* Delivery Address */}
+              {order.deliveryAddress && (
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-2">
+                    <MapPin
+                      size={16}
+                      className="text-purple-600 dark:text-purple-400"
+                    />{" "}
+                    Delivery Address
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {order.deliveryAddress}
+                  </p>
+                </div>
+              )}
+
+              {/* Remarks */}
+              {order.remarks && (
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2">
+                    Remarks
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {order.remarks}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </FullScreenModal>
@@ -639,7 +735,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
 
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Amount (Remaining: Rs. {remaining.toLocaleString()})
+              Amount (Remaining: PKR {remaining.toLocaleString()})
             </label>
             <input
               type="number"
@@ -647,7 +743,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
               max={remaining}
               value={paymentAmount || remaining}
               onChange={(e) => setPaymentAmount(e.target.value)}
-              placeholder={`Rs. ${remaining.toLocaleString()}`}
+              placeholder={`PKR ${remaining.toLocaleString()}`}
               className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
