@@ -1,6 +1,6 @@
 import moment from "moment";
 import { Link, useParams } from "react-router-dom";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   X,
   User,
@@ -211,6 +211,7 @@ const CustomerDetailPage = () => {
 
   const [activeTab, setActiveTab] = useState("orders");
   const [bookOrderOpen, setBookOrderOpen] = useState(false);
+  const tabRefs = useRef({});
 
   const customer = data?.customer || null;
   const orders = useMemo(() => data?.orders || [], [data]);
@@ -347,20 +348,15 @@ const CustomerDetailPage = () => {
       </div>
       {/* Profile Card */}
       <div className="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#17102a] p-4 sm:p-5 mb-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="size-12 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
-              {(customer.name || "?").charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white break-words">
-                {customer.name}
-              </h3>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {customer.customerId || ""}
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white break-words">
+            {customer.name}
+          </h3>
+          {customer.customerId && (
+            <span className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-300 shrink-0">
+              ID: {customer.customerId}
+            </span>
+          )}
         </div>
 
         <div className="space-y-1.5 mb-4">
@@ -411,11 +407,21 @@ const CustomerDetailPage = () => {
         ))}
       </div>
       {/* Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 mb-4 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 mb-4 overflow-x-auto no-scrollbar">
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            ref={(el) => {
+              tabRefs.current[tab.id] = el;
+            }}
+            onClick={() => {
+              setActiveTab(tab.id);
+              tabRefs.current[tab.id]?.scrollIntoView({
+                behavior: "smooth",
+                inline: "center",
+                block: "nearest",
+              });
+            }}
             className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === tab.id
                 ? "border-purple-600 text-purple-600 dark:text-purple-400"
