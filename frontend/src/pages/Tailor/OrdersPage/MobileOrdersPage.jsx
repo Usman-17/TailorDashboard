@@ -166,10 +166,8 @@ const MobileOrdersPage = ({
                 <div
                   key={order._id}
                   onClick={() => setSelectedOrderId(order._id)}
-                  className={`bg-white dark:bg-[#17102a] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-all duration-150 ${
-                    isUrgent
-                      ? "border-l-4 border-l-red-400"
-                      : "border-l-4 border-l-purple-400"
+                  className={`bg-white dark:bg-[#17102a] border border-gray-200 dark:border-gray-800 border-l-4 rounded-2xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-all duration-150 ${
+                    isUrgent ? "order-urgent" : "order-normal"
                   }`}
                 >
                   {/* Top Row: Order # + Status */}

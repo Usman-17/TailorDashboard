@@ -354,6 +354,17 @@ input:-webkit-autofill:focus {
   background-color: rgba(239, 68, 68, 0.12) !important;
 }
 
+/* --- Order card urgency left border (mobile) --- */
+.order-urgent,
+[data-theme="dark"] .order-urgent {
+  border-left-color: #ef4444 !important;
+}
+
+.order-normal,
+[data-theme="dark"] .order-normal {
+  border-left-color: #a78bfa !important;
+}
+
 [data-theme="dark"] .ant-table-wrapper .ant-table-tbody > tr > td {
   color: #ffffff !important;
 }
