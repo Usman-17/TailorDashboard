@@ -125,7 +125,7 @@ const MobileDashboardView = () => {
       title: "Active Orders",
       count: statsLoading ? "..." : (stats?.pendingOrders ?? 0),
       image: shoppingBagIcon,
-      bgColor: "bg-[#f2ebfe] dark:bg-purple-950/40",
+      bgColor: "bg-[#f2ebfe] dark:bg-[#2a1f4e]",
       onClick: () => navigate("/orders"),
     },
     {
@@ -133,7 +133,7 @@ const MobileDashboardView = () => {
       title: "Total Customers",
       count: statsLoading ? "..." : (stats?.totalCustomers ?? 0),
       image: teamIcon,
-      bgColor: "bg-[#e6f9ed] dark:bg-emerald-950/40",
+      bgColor: "bg-[#e6f9ed] dark:bg-[#1a3a2a]",
       onClick: () => navigate("/customers"),
     },
     {
@@ -141,7 +141,7 @@ const MobileDashboardView = () => {
       title: "Payments",
       count: statsLoading ? "..." : (stats?.readyOrders ?? 0),
       image: moneyIcon,
-      bgColor: "bg-[#fff2e6] dark:bg-amber-950/40",
+      bgColor: "bg-[#fff2e6] dark:bg-[#3a2f1a]",
       onClick: () => navigate("/payments"),
     },
   ];
@@ -151,21 +151,21 @@ const MobileDashboardView = () => {
       id: "customers",
       title: "Customers",
       image: addUsersIcon,
-      bgColor: "bg-[#f2ebfe] dark:bg-purple-950/40",
+      bgColor: "bg-[#f2ebfe] dark:bg-[#2a1f4e]",
       onClick: () => navigate("/customers"),
     },
     {
       id: "measurements",
       title: "Measurements",
       image: measuringTapeIcon,
-      bgColor: "bg-[#e6f9ed] dark:bg-emerald-950/40",
+      bgColor: "bg-[#e6f9ed] dark:bg-[#1a3a2a]",
       onClick: () => navigate("/customers"),
     },
     {
       id: "add_orders",
       title: "Add Orders",
       image: addOrdersIcon,
-      bgColor: "bg-[#ebf3fe] dark:bg-blue-950/40",
+      bgColor: "bg-[#ebf3fe] dark:bg-[#1a2a3a]",
       onClick: () => navigate("/orders"),
     },
   ];
@@ -175,14 +175,14 @@ const MobileDashboardView = () => {
       id: "add_suit_type",
       title: "Add Suit Type",
       image: suitIcon,
-      bgColor: "bg-[#fff2e6] dark:bg-amber-950/40",
+      bgColor: "bg-[#fff2e6] dark:bg-[#3a2f1a]",
       onClick: () => navigate("/suit-types"),
     },
     {
       id: "expenses",
       title: "Expenses",
       image: expenseIcon,
-      bgColor: "bg-[#fef3f2] dark:bg-rose-950/40",
+      bgColor: "bg-[#fef3f2] dark:bg-[#3a1a1a]",
       onClick: () => navigate("/expenses"),
     },
   ];

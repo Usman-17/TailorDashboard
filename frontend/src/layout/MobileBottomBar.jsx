@@ -62,7 +62,7 @@ const MobileBottomBar = () => {
                   size={22}
                   className={`transition-colors duration-200 ${
                     active
-                      ? "text-purple-600 dark:text-purple-400 fill-purple-600 dark:fill-purple-400"
+                      ? "text-purple-600 dark:text-purple-400"
                       : "text-gray-600 dark:text-gray-300"
                   }`}
                   strokeWidth={active ? 2 : 1.8}
