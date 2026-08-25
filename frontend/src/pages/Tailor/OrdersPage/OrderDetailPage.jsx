@@ -609,7 +609,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
                           )}
                           {item.collarType && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-full px-2 py-1">
-                              Collar: {item.collarType}
+                              {item.collarType}
                             </span>
                           )}
                           {item.cuffType && (

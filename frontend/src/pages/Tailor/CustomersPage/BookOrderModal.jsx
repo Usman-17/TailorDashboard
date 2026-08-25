@@ -736,30 +736,31 @@ const BookOrderModal = ({ open, onClose, customer }) => {
                 placeholder="Discount"
               />
 
-              {/* Advance */}
-              <CustomInput
-                id="advancePaid"
-                label="Advance (PKR)"
-                type="number"
-                min={0}
-                max={netAmount}
-                value={advancePaid}
-                onChange={(e) => setAdvancePaid(e.target.value)}
-                placeholder="Advance"
-              />
-
-              {/* Remaining */}
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
-                  Remaining Balance
-                </label>
-                <input
-                  id="remainingBalance"
-                  readOnly
-                  tabIndex={-1}
-                  value={remaining.toLocaleString()}
-                  className={`w-full px-3.5 pr-3.5 h-10 rounded-lg text-[14px] font-mono font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"} bg-gray-100 dark:bg-[#1a1129] transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none cursor-default`}
+              {/* Advance & Remaining */}
+              <div className="col-span-2 grid grid-cols-2 gap-2.5 sm:gap-4">
+                <CustomInput
+                  id="advancePaid"
+                  label="Advance (PKR)"
+                  type="number"
+                  min={0}
+                  max={netAmount}
+                  value={advancePaid}
+                  onChange={(e) => setAdvancePaid(e.target.value)}
+                  placeholder="Advance"
                 />
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium mb-1.5 text-gray-700 dark:text-purple-100/90 tracking-wide">
+                    Remaining Balance
+                  </label>
+                  <input
+                    id="remainingBalance"
+                    readOnly
+                    tabIndex={-1}
+                    value={remaining.toLocaleString()}
+                    className={`w-full px-3.5 pr-3.5 h-10 rounded-lg text-[14px] font-mono font-bold ${remaining === 0 ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"} bg-gray-100 dark:bg-[#1a1129] transition-all duration-200 border-[1.5px] border-gray-200 dark:border-purple-500/30 shadow-xs focus:outline-none cursor-default`}
+                  />
+                </div>
               </div>
             </div>
           </div>
