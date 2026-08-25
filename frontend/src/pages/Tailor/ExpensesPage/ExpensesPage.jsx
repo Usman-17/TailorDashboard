@@ -4,26 +4,21 @@ import toast from "react-hot-toast";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Ban,
   Banknote,
   CalendarDays,
   Clock,
-  Search,
-  Redo,
   XCircle,
   ArrowLeft,
   Shield,
 } from "lucide-react";
 
-import CustomTable from "../../../components/CustomTable";
 import CustomModal from "../../../components/CustomModal";
 import CustomInput from "../../../components/CustomInput";
 import CustomSelect from "../../../components/CustomSelect";
-import ActionButtons from "../../../components/ActionButtons";
-import SectionHeading from "../../../components/SectionHeading";
 import CustomDatePicker from "../../../components/CustomDatePicker";
 import ConfirmDeleteModal from "../../../components/ConfirmDeleteModal";
 import MobileExpensesPage from "./MobileExpensesPage";
+import DesktopExpensesPage from "./DesktopExpensesPage";
 
 import { useGetExpenses } from "../../../hooks/useGetExpenses";
 import { useExpenseSummary } from "../../../hooks/useExpenseSummary";
@@ -84,14 +79,6 @@ const CATEGORY_LABELS = Object.fromEntries(
 const METHOD_LABELS = Object.fromEntries(
   METHODS.map((m) => [m.value, m.label]),
 );
-
-const isCurrentMonth = (date) => {
-  const now = new Date();
-  const d = new Date(date);
-  return (
-    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
-  );
-};
 
 const emptyForm = {
   title: "",
@@ -319,114 +306,6 @@ const ExpensesPage = () => {
     addExpense(form);
   };
 
-  const columns = [
-    {
-      title: "Sr.",
-      key: "sr",
-      width: 50,
-      align: "center",
-      render: (_, __, index) => index + 1,
-    },
-    {
-      title: "Expense ID",
-      dataIndex: "expenseId",
-      key: "expenseId",
-      render: (v) => (
-        <span className="font-mono text-xs font-semibold text-purple-600 dark:text-purple-400">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Title",
-      dataIndex: "title",
-      key: "title",
-      render: (v) => (
-        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Category",
-      dataIndex: "category",
-      key: "category",
-      render: (v) => (
-        <span
-          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${CATEGORY_COLORS[v] || ""}`}
-        >
-          {CATEGORY_LABELS[v] || v}
-        </span>
-      ),
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      align: "right",
-      sorter: (a, b) => (a.amount || 0) - (b.amount || 0),
-      render: (v) => (
-        <span className="font-semibold text-sm text-red-600 dark:text-red-400">
-          Rs. {(v || 0).toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      title: "Payment Method",
-      dataIndex: "method",
-      key: "method",
-      render: (v) => (
-        <span
-          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${METHOD_COLORS[v] || ""}`}
-        >
-          {METHOD_LABELS[v] || v}
-        </span>
-      ),
-    },
-    {
-      title: "Date",
-      dataIndex: "date",
-      key: "date",
-      sorter: (a, b) => new Date(a.date) - new Date(b.date),
-      render: (v) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {v ? moment(v).format("DD MMM YYYY") : "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      align: "center",
-      width: 100,
-      render: (_, record) => {
-        if (record.isVoided) {
-          return (
-            <button
-              onClick={() => restoreExpense(record._id)}
-              className="flex items-center gap-1 text-[11px] font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 cursor-pointer transition-colors"
-            >
-              <Redo size={12} />
-              Restore
-            </button>
-          );
-        }
-        const canEdit = isCurrentMonth(record.date);
-        return (
-          <ActionButtons
-            record={record}
-            onEdit={openEditModal}
-            onDelete={(rec) => setDeleteModal({ open: true, expense: rec })}
-            editDisabled={!canEdit}
-            deleteDisabled={!canEdit}
-            deleteTitle="Void"
-            deleteIcon={Ban}
-          />
-        );
-      },
-    },
-  ];
-
   const sharedProps = {
     search,
     setSearch,
@@ -460,127 +339,7 @@ const ExpensesPage = () => {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden sm:block">
-        <div className="flex items-center justify-between gap-3 mb-2 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
-          <SectionHeading
-            title="Expenses"
-            subtitle="Track and manage all your business expenses"
-          />
-          <button
-            onClick={openAddModal}
-            className="ml-auto inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-sm font-semibold transition-all cursor-pointer text-white shadow-md hover:shadow-purple-500/30 active:scale-95 shrink-0"
-          >
-            <Redo size={16} /> Add Expense
-          </button>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-3 sm:gap-4 my-4 sm:my-5">
-          {statCards.map((card) => (
-            <div
-              key={card.id}
-              onClick={() => handleCardClick(card.id)}
-              className="bg-white dark:bg-gray-900 rounded-xl p-4 sm:p-5 flex items-center gap-3 sm:gap-4 border-l-4 transition-all duration-200 cursor-pointer hover:shadow-lg"
-              style={{
-                borderColor: card.color,
-                boxShadow:
-                  activeCard === card.id
-                    ? `0 0 0 2px ${card.color}40, 0 4px 12px ${card.color}20`
-                    : undefined,
-              }}
-            >
-              <div
-                className="p-2.5 sm:p-3 rounded-full shrink-0"
-                style={{
-                  backgroundColor: `${card.color}1A`,
-                  color: card.color,
-                }}
-              >
-                <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div className="min-w-0">
-                <h4 className="text-gray-500 dark:text-gray-400 text-[13px] sm:text-sm truncate">
-                  {card.title}
-                </h4>
-                <p
-                  className="text-lg sm:text-xl font-bold whitespace-nowrap overflow-hidden text-ellipsis"
-                  style={{ color: card.color }}
-                >
-                  {card.count}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 my-4 px-1">
-          <div className="col-span-2 lg:col-span-1 min-w-0">
-            <CustomInput
-              icon={Search}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by expense ID or title..."
-            />
-          </div>
-          <div className="min-w-0">
-            <CustomDatePicker
-              value={dateFrom || null}
-              onChange={(d) => setDateFrom(d ? d.format("YYYY-MM-DD") : "")}
-              placeholder="From"
-              allowClear
-            />
-          </div>
-          <div className="min-w-0">
-            <CustomDatePicker
-              value={dateTo || null}
-              onChange={(d) => setDateTo(d ? d.format("YYYY-MM-DD") : "")}
-              placeholder="To"
-              allowClear
-            />
-          </div>
-          <div className="min-w-0">
-            <CustomSelect
-              value={filterCategory}
-              onChange={(val) => setFilterCategory(val)}
-              options={[
-                { value: "all", label: "All Categories" },
-                ...CATEGORIES,
-              ]}
-              placeholder="Category"
-            />
-          </div>
-          <div className="min-w-0">
-            <CustomSelect
-              value={filterStatus}
-              onChange={(val) => setFilterStatus(val)}
-              options={[
-                { value: "active", label: "Active" },
-                { value: "voided", label: "Voided" },
-              ]}
-              placeholder="Status"
-              allowClear={false}
-            />
-          </div>
-          <div className="min-w-0">
-            <CustomSelect
-              value={filterMethod}
-              onChange={(val) => setFilterMethod(val)}
-              options={[{ value: "all", label: "All Methods" }, ...METHODS]}
-              placeholder="Payment Method"
-            />
-          </div>
-        </div>
-
-        <CustomTable
-          rowKey="_id"
-          loading={isLoading}
-          columns={columns}
-          dataSource={expenses}
-          hideSearch
-          totalLabel="Total Expenses"
-        />
-      </div>
+      <DesktopExpensesPage {...sharedProps} />
 
       {/* Add / Edit Expense Modal */}
       <CustomModal
