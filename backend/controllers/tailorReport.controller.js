@@ -240,7 +240,7 @@ export const getTailorReports = async (req, res) => {
       Order.countDocuments({
         shopId: shopOid,
         isDeleted: { $ne: true },
-        status: { $in: ["pending", "in_progress"] },
+        status: { $in: ["pending", "in_progress", "ready"] },
         deliveryDate: { $lt: todayStart },
       }),
 

@@ -652,7 +652,13 @@ export const getDashboardStats = async (req, res) => {
       ]),
       Order.countDocuments({
         shopId,
-        status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.IN_PROGRESS] },
+        status: {
+          $in: [
+            ORDER_STATUS.PENDING,
+            ORDER_STATUS.IN_PROGRESS,
+            ORDER_STATUS.READY,
+          ],
+        },
         deliveryDate: { $lt: now },
       }),
     ]);
