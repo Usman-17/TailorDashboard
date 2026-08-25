@@ -10,6 +10,7 @@ import {
   addExpense,
   updateExpense,
   voidExpense,
+  restoreExpense,
 } from "../controllers/expenseRecord.controller.js";
 
 router.use(protectRoute, attachTenantContext);
@@ -20,5 +21,6 @@ router.post("/add", addExpense);
 router.get("/:id", getExpenseById);
 router.put("/update/:id", updateExpense);
 router.put("/void/:id", voidExpense);
+router.put("/restore/:id", restoreExpense);
 
 export default router;

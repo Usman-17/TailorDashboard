@@ -266,3 +266,30 @@ export const voidExpense = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// PUT /api/expense-records/restore/:id
+export const restoreExpense = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { shopId } = req;
+
+    const expense = await ExpenseRecord.findOne({ _id: id, shopId });
+    if (!expense) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+
+    if (!expense.isVoided) {
+      return res.status(400).json({ error: "Expense is not voided" });
+    }
+
+    expense.isVoided = false;
+    expense.voidedBy = null;
+    expense.voidedAt = null;
+    await expense.save();
+
+    return res.status(200).json(expense);
+  } catch (error) {
+    console.error("Error in restoreExpense:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
