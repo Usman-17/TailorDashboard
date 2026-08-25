@@ -1,5 +1,5 @@
 import moment from "moment";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 
 import CustomModal from "../../../components/CustomModal";
@@ -54,7 +54,6 @@ const OrdersPage = () => {
   ]);
 
   const openBookOrder = (customer) => {
-    setPickerOpen(false);
     setCustomerSearch("");
     setBookOrderCustomer(customer);
   };
@@ -156,66 +155,147 @@ const OrdersPage = () => {
       />
 
       {/* Customer Picker for New Order */}
-      <CustomModal isOpen={pickerOpen} className="w-[92%] max-w-md">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-              Select Customer
-            </h3>
-            <button
-              onClick={() => setPickerOpen(false)}
-              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="relative">
-            <Search
-              size={16}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              value={customerSearch}
-              onChange={(e) => setCustomerSearch(e.target.value)}
-              placeholder="Search by name, phone, ID..."
-              className="w-full pl-10 pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-[#0f0d1b] border-[1.5px] border-gray-200 dark:border-purple-500/30 focus:border-[var(--secondary-color)] dark:focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(168,85,247,0.25)] focus:outline-none transition-all duration-200"
-            />
-          </div>
-
-          <div className="max-h-80 overflow-y-auto flex flex-col gap-2 pr-1">
-            {customersLoading ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
-                Loading customers...
-              </p>
-            ) : filteredCustomers.length === 0 ? (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
-                No customers found
-              </p>
-            ) : (
-              filteredCustomers.map((cust) => (
-                <button
-                  key={cust._id}
-                  onClick={() => openBookOrder(cust)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15102a] hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition cursor-pointer text-left"
-                >
-                  <div className="size-9 rounded-full bg-purple-600/15 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-sm border border-purple-500/30 shrink-0">
-                    {(cust.name || "?").charAt(0).toUpperCase()}
-                  </div>
+      {isMobile ? (
+        <>
+          {pickerOpen && (
+            <div className="fixed inset-0 z-[99999] bg-white dark:bg-[#0d0a1d] flex flex-col">
+              <div className="flex items-center justify-between gap-2 px-3 py-3 bg-white dark:bg-[#120e24] border-b border-gray-200 dark:border-purple-500/20 shrink-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPickerOpen(false);
+                      setCustomerSearch("");
+                    }}
+                    className="size-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 text-gray-700 dark:text-gray-200 transition-all cursor-pointer shrink-0"
+                  >
+                    <ChevronLeft size={22} />
+                  </button>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                      {cust.name}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {cust.phone} • {cust.customerId}
+                    <h2 className="text-base font-extrabold text-gray-900 dark:text-white tracking-tight truncate">
+                      Select Customer
+                    </h2>
+                    <p className="text-[11px] text-gray-500 dark:text-purple-300/70 font-medium -mt-1 truncate">
+                      Choose a customer to create an order
                     </p>
                   </div>
-                </button>
-              ))
-            )}
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 bg-gray-50/40 dark:bg-[#0d0a1d]">
+                <div className="relative mb-3">
+                  <Search
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    value={customerSearch}
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    placeholder="Search by name, phone, ID..."
+                    className="w-full pl-10 pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 bg-white dark:bg-[#0f0d1b] border-[1.5px] border-gray-200 dark:border-purple-500/30 focus:border-[var(--secondary-color)] dark:focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(168,85,247,0.25)] focus:outline-none transition-all duration-200"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  {customersLoading ? (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                      Loading customers...
+                    </p>
+                  ) : filteredCustomers.length === 0 ? (
+                    <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                      No customers found
+                    </p>
+                  ) : (
+                    filteredCustomers.map((cust) => (
+                      <button
+                        key={cust._id}
+                        onClick={() => openBookOrder(cust)}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15102a] hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 active:scale-[0.98] active:bg-purple-50 dark:active:bg-purple-900/20 transition-all duration-150 cursor-pointer text-left"
+                      >
+                        <div className="size-9 rounded-full bg-purple-600/15 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-sm border border-purple-500/30 shrink-0">
+                          {(cust.name || "?").charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                            {cust.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {cust.phone} • {cust.customerId}
+                          </p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <CustomModal isOpen={pickerOpen} className="w-[92%] max-w-md">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3.5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Select Customer
+              </h3>
+              <button
+                onClick={() => {
+                  setPickerOpen(false);
+                  setCustomerSearch("");
+                }}
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="relative">
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+                placeholder="Search by name, phone, ID..."
+                className="w-full pl-10 pr-3.5 h-10 rounded-lg text-[14px] font-['Outfit',sans-serif] text-gray-900 dark:text-white placeholder-gray-400 bg-gray-50 dark:bg-[#0f0d1b] border-[1.5px] border-gray-200 dark:border-purple-500/30 focus:border-[var(--secondary-color)] dark:focus:border-purple-400 focus:shadow-[0_0_0_3px_rgba(168,85,247,0.25)] focus:outline-none transition-all duration-200"
+              />
+            </div>
+
+            <div className="max-h-80 overflow-y-auto flex flex-col gap-2 pr-1">
+              {customersLoading ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                  Loading customers...
+                </p>
+              ) : filteredCustomers.length === 0 ? (
+                <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-8">
+                  No customers found
+                </p>
+              ) : (
+                filteredCustomers.map((cust) => (
+                  <button
+                    key={cust._id}
+                    onClick={() => openBookOrder(cust)}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#15102a] hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 active:scale-[0.98] active:bg-purple-50 dark:active:bg-purple-900/20 transition-all duration-150 cursor-pointer text-left"
+                  >
+                    <div className="size-9 rounded-full bg-purple-600/15 text-purple-600 dark:text-purple-300 flex items-center justify-center font-bold text-sm border border-purple-500/30 shrink-0">
+                      {(cust.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                        {cust.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {cust.phone} • {cust.customerId}
+                      </p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      </CustomModal>
+        </CustomModal>
+      )}
     </>
   );
 };
