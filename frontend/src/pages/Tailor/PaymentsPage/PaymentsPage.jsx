@@ -1,42 +1,59 @@
 ﻿import dayjs from "dayjs";
-import moment from "moment";
-import { useState, useMemo } from "react";
-import { Banknote, CalendarDays, Clock, Search, Wallet } from "lucide-react";
+import toast from "react-hot-toast";
+import { useState, useMemo, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  Banknote,
+  CalendarDays,
+  Clock,
+  Wallet,
+  ChevronDown,
+} from "lucide-react";
 
-import CustomTable from "../../../components/CustomTable";
-import CustomInput from "../../../components/CustomInput";
-import CustomSelect from "../../../components/CustomSelect";
-import SectionHeading from "../../../components/SectionHeading";
-import CustomDatePicker from "../../../components/CustomDatePicker";
+import MobilePaymentsPage from "./MobilePaymentsPage";
+import DesktopPaymentsPage from "./DesktopPaymentsPage";
+import CustomModal from "../../../components/CustomModal";
+import ModalActionButtons from "../../../components/ModalActionButtons";
+
+import OrderDetailPage from "../OrdersPage/OrderDetailPage";
 
 import { usePendingOrders } from "../../../hooks/usePendingOrders";
 import { useGetOrderPayments } from "../../../hooks/useGetOrderPayments";
 import { useOrderPaymentSummary } from "../../../hooks/useOrderPaymentSummary";
-// Imports Emd-----
+// Imports End-----
 
-const METHOD_LABELS = {
-  cash: "Cash",
-  bank: "Bank Transfer",
-  jazzcash: "JazzCash",
-  easypaisa: "EasyPaisa",
-};
-
-const METHOD_COLORS = {
-  cash: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
-  bank: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-  jazzcash:
-    "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
-  easypaisa:
-    "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-};
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "bank", label: "Bank Transfer" },
+  { value: "jazzcash", label: "JazzCash" },
+  { value: "easypaisa", label: "EasyPaisa" },
+];
 
 const PaymentsPage = () => {
+  const queryClient = useQueryClient();
   const [view, setView] = useState("history");
   const [search, setSearch] = useState("");
   const [filterMethod, setFilterMethod] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [activeCard, setActiveCard] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentNote, setPaymentNote] = useState("");
+  const [paymentRefNo, setPaymentRefNo] = useState("");
+  const [detailOrderId, setDetailOrderId] = useState(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const handleCardClick = (cardId) => {
     if (cardId === "pending") {
@@ -60,6 +77,53 @@ const PaymentsPage = () => {
       setActiveCard(activeCard === "month" ? null : "month");
     }
   };
+
+  const handleReceivePayment = (order) => {
+    const remaining = (order.totalAmount || 0) - (order.advancePaid || 0);
+    setSelectedOrder(order);
+    setPaymentAmount(String(remaining));
+    setPaymentMethod("cash");
+    setPaymentNote("");
+    setPaymentRefNo("");
+    setShowPaymentModal(true);
+  };
+
+  const { mutate: addPayment, isPending: isAddingPayment } = useMutation({
+    mutationFn: async () => {
+      const amount = paymentAmount
+        ? Number(paymentAmount)
+        : selectedOrder.totalAmount - (selectedOrder.advancePaid || 0);
+      const res = await fetch(`/api/orders/payment/${selectedOrder._id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          amount,
+          method: paymentMethod,
+          note: paymentNote,
+          referenceNo: paymentRefNo,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to add payment");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Payment recorded");
+      setShowPaymentModal(false);
+      setSelectedOrder(null);
+      setPaymentAmount("");
+      setPaymentMethod("cash");
+      setPaymentNote("");
+      setPaymentRefNo("");
+      queryClient.invalidateQueries({ queryKey: ["orderPayments"] });
+      queryClient.invalidateQueries({ queryKey: ["orderPaymentSummary"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingOrders"] });
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const filters = useMemo(
     () => ({
@@ -109,279 +173,265 @@ const PaymentsPage = () => {
     [summary],
   );
 
-  const paymentColumns = [
-    {
-      title: "Sr.",
-      key: "sr",
-      width: 50,
-      align: "center",
-      render: (_, __, index) => index + 1,
+  const sharedProps = {
+    view,
+    setView,
+    search,
+    setSearch,
+    filterMethod,
+    setFilterMethod,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    statCards,
+    activeCard,
+    setActiveCard,
+    handleCardClick,
+    payments,
+    isLoading,
+    pendingOrders,
+    pendingLoading,
+    onReceivePayment: handleReceivePayment,
+    onCardClick: (p) => {
+      if (p?.order) setDetailOrderId(p.order);
     },
-    {
-      title: "Payment ID",
-      dataIndex: "paymentId",
-      key: "paymentId",
-      render: (v) => (
-        <span className="font-mono text-xs font-semibold text-purple-600 dark:text-purple-400">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Customer",
-      dataIndex: "customerName",
-      key: "customerName",
-      sorter: (a, b) =>
-        (a.customerName || "").localeCompare(b.customerName || ""),
-      render: (v) => (
-        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Order #",
-      dataIndex: "orderNumber",
-      key: "orderNumber",
-      render: (v) => (
-        <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Amount",
-      dataIndex: "amount",
-      key: "amount",
-      align: "right",
-      sorter: (a, b) => (a.amount || 0) - (b.amount || 0),
-      render: (v) => (
-        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-          Rs. {(v || 0).toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      title: "Method",
-      dataIndex: "method",
-      key: "method",
-      render: (v) => (
-        <span
-          className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${METHOD_COLORS[v] || ""}`}
-        >
-          {METHOD_LABELS[v] || v}
-        </span>
-      ),
-    },
-    {
-      title: "Date",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-      render: (v) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {v ? moment(v).format("DD MMM YYYY") : "-"}
-        </span>
-      ),
-    },
-  ];
+  };
 
-  const pendingColumns = [
-    {
-      title: "Sr.",
-      key: "sr",
-      width: 50,
-      align: "center",
-      render: (_, __, index) => index + 1,
-    },
-    {
-      title: "Order #",
-      dataIndex: "orderNumber",
-      key: "orderNumber",
-      render: (v) => (
-        <span className="font-mono text-xs font-semibold text-purple-600 dark:text-purple-400">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Customer",
-      dataIndex: "customerName",
-      key: "customerName",
-      render: (v) => (
-        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Phone",
-      dataIndex: "customerPhone",
-      key: "customerPhone",
-      render: (v) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {v || "-"}
-        </span>
-      ),
-    },
-    {
-      title: "Total",
-      dataIndex: "totalAmount",
-      key: "totalAmount",
-      align: "right",
-      render: (v) => (
-        <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-          Rs. {(v || 0).toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      title: "Paid",
-      dataIndex: "advancePaid",
-      key: "advancePaid",
-      align: "right",
-      render: (v) => (
-        <span className="font-semibold text-sm text-green-600 dark:text-green-400">
-          Rs. {(v || 0).toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      title: "Remaining",
-      dataIndex: "remainingBalance",
-      key: "remainingBalance",
-      align: "right",
-      render: (v) => (
-        <span className="font-bold text-sm text-amber-600 dark:text-amber-400">
-          Rs. {(v || 0).toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      title: "Delivery",
-      dataIndex: "deliveryDate",
-      key: "deliveryDate",
-      render: (v) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">
-          {v ? moment(v).format("DD MMM YYYY") : "-"}
-        </span>
-      ),
-    },
-  ];
+  const selectedRemaining = selectedOrder
+    ? (selectedOrder.totalAmount || 0) - (selectedOrder.advancePaid || 0)
+    : 0;
+
+  if (isMobile) {
+    return (
+      <>
+        <MobilePaymentsPage {...sharedProps} />
+
+        {/* Payment Detail Modal */}
+        {detailOrderId && (
+          <OrderDetailPage
+            orderId={detailOrderId}
+            open={!!detailOrderId}
+            onClose={() => setDetailOrderId(null)}
+            fullScreen
+          />
+        )}
+
+        {/* Payment Modal */}
+        <CustomModal isOpen={showPaymentModal}>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Receive Payment
+              </h3>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {selectedOrder && (
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                {selectedOrder.orderNumber} · {selectedOrder.customerName} ·
+                Remaining: PKR {selectedRemaining.toLocaleString()}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Amount
+              </label>
+              <input
+                type="number"
+                min="1"
+                inputMode="decimal"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder={`Max: PKR ${selectedRemaining.toLocaleString()}`}
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Method
+              </label>
+              <div className="relative">
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer"
+                >
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={14}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+              </div>
+            </div>
+            {["bank", "jazzcash", "easypaisa"].includes(paymentMethod) && (
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Reference/Transaction ID{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentRefNo}
+                  onChange={(e) => setPaymentRefNo(e.target.value)}
+                  placeholder="Enter reference or transaction ID"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Note (Optional)
+              </label>
+              <input
+                type="text"
+                value={paymentNote}
+                onChange={(e) => setPaymentNote(e.target.value)}
+                placeholder="Optional note"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <ModalActionButtons
+              onCancel={() => setShowPaymentModal(false)}
+              onSubmit={() => addPayment()}
+              isDisabled={
+                (paymentAmount !== "" && Number(paymentAmount) <= 0) ||
+                (["bank", "jazzcash", "easypaisa"].includes(paymentMethod) &&
+                  !paymentRefNo)
+              }
+              isSubmitting={isAddingPayment}
+              submitText="Save Payment"
+              loadingText="Processing..."
+            />
+          </div>
+        </CustomModal>
+      </>
+    );
+  }
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-3 px-1 py-2 border-b border-gray-200 dark:border-gray-800">
-        <SectionHeading
-          title="Payments"
-          subtitle="View all payment history and track collections"
+      <DesktopPaymentsPage {...sharedProps} />
+
+      {/* Order Detail Modal */}
+      {detailOrderId && (
+        <OrderDetailPage
+          orderId={detailOrderId}
+          open={!!detailOrderId}
+          onClose={() => setDetailOrderId(null)}
+          fullScreen
         />
-      </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 my-4 sm:my-5">
-        {statCards.map((card) => (
-          <div
-            key={card.id}
-            onClick={() => handleCardClick(card.id)}
-            className="bg-white dark:bg-gray-900 rounded-xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 border-l-4 transition-all duration-200 cursor-pointer hover:shadow-lg"
-            style={{
-              borderColor: card.color,
-              boxShadow:
-                activeCard === card.id
-                  ? `0 0 0 2px ${card.color}40, 0 4px 12px ${card.color}20`
-                  : undefined,
-            }}
-          >
-            <div
-              className="p-2.5 sm:p-3 rounded-full shrink-0"
-              style={{ backgroundColor: `${card.color}1A`, color: card.color }}
-            >
-              <card.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="min-w-0">
-              <h4 className="text-gray-500 dark:text-gray-400 text-[13px] sm:text-sm truncate">
-                {card.title}
-              </h4>
-              <p
-                className="text-base sm:text-xl font-bold"
-                style={{ color: card.color }}
-              >
-                {card.count}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {view === "history" ? (
-        <>
-          {/* Filters */}
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 my-4 px-1">
-            <div className="col-span-2 lg:col-span-2 min-w-0">
-              <CustomInput
-                icon={Search}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by payment ID, customer, or order #"
-              />
-            </div>
-            <div className="min-w-0">
-              <CustomDatePicker
-                value={dateFrom || null}
-                onChange={(d) => setDateFrom(d ? d.format("YYYY-MM-DD") : "")}
-                placeholder="From"
-                allowClear
-              />
-            </div>
-            <div className="min-w-0">
-              <CustomDatePicker
-                value={dateTo || null}
-                onChange={(d) => setDateTo(d ? d.format("YYYY-MM-DD") : "")}
-                placeholder="To"
-                allowClear
-              />
-            </div>
-            <div className="col-span-2 lg:col-span-2 min-w-0">
-              <CustomSelect
-                value={filterMethod}
-                onChange={(val) => setFilterMethod(val)}
-                options={[
-                  { value: "all", label: "All Methods" },
-                  { value: "cash", label: "Cash" },
-                  { value: "bank", label: "Bank Transfer" },
-                  { value: "jazzcash", label: "JazzCash" },
-                  { value: "easypaisa", label: "EasyPaisa" },
-                ]}
-                placeholder="Payment Method"
-              />
-            </div>
-          </div>
-          <CustomTable
-            rowKey="_id"
-            loading={isLoading}
-            columns={paymentColumns}
-            dataSource={payments}
-            globalSearch={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search payments..."
-            hideSearch
-            totalLabel="Total Payments"
-          />
-        </>
-      ) : (
-        <>
-          <CustomTable
-            rowKey="_id"
-            loading={pendingLoading}
-            columns={pendingColumns}
-            dataSource={pendingOrders}
-            hideSearch
-            searchPlaceholder="Search pending orders..."
-            totalLabel="Pending Orders"
-          />
-        </>
       )}
+
+      {/* Payment Modal */}
+      <CustomModal isOpen={showPaymentModal}>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Receive Payment
+            </h3>
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          {selectedOrder && (
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {selectedOrder.orderNumber} · {selectedOrder.customerName} ·
+              Remaining: PKR {selectedRemaining.toLocaleString()}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Amount
+            </label>
+            <input
+              type="number"
+              min="1"
+              inputMode="decimal"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              placeholder={`Max: PKR ${selectedRemaining.toLocaleString()}`}
+              className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Method
+            </label>
+            <div className="relative">
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none cursor-pointer"
+              >
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
+          </div>
+          {["bank", "jazzcash", "easypaisa"].includes(paymentMethod) && (
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Reference/Transaction ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={paymentRefNo}
+                onChange={(e) => setPaymentRefNo(e.target.value)}
+                placeholder="Enter reference or transaction ID"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Note (Optional)
+            </label>
+            <input
+              type="text"
+              value={paymentNote}
+              onChange={(e) => setPaymentNote(e.target.value)}
+              placeholder="Optional note"
+              className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <ModalActionButtons
+            onCancel={() => setShowPaymentModal(false)}
+            onSubmit={() => addPayment()}
+            isDisabled={
+              (paymentAmount !== "" && Number(paymentAmount) <= 0) ||
+              (["bank", "jazzcash", "easypaisa"].includes(paymentMethod) &&
+                !paymentRefNo)
+            }
+            isSubmitting={isAddingPayment}
+            submitText="Save Payment"
+            loadingText="Processing..."
+          />
+        </div>
+      </CustomModal>
     </>
   );
 };
