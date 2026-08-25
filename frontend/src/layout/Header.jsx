@@ -45,6 +45,11 @@ const Header = () => {
       subtitle: "Profile, orders, payments & measurements",
       backTo: "/customers",
     },
+    "/expenses": {
+      title: "Expenses",
+      subtitle: "Track and manage your business expenses.",
+      backTo: "/",
+    },
   };
   const mobilePage = Object.entries(mobilePageTitles).find(([route]) =>
     location.pathname.startsWith(route),
