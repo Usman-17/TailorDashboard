@@ -1,5 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
 import {
   LogOut,
   ChevronDown,
@@ -8,10 +10,13 @@ import {
   Sun,
   Moon,
   ChevronLeft,
+  Download,
+  Upload,
+  Loader2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 import useLogout from "../hooks/useLogout";
+import useBackup from "../hooks/useBackup";
 import useGetAuth from "../hooks/useGetAuth";
 
 import ChangePasswordModal from "../components/ChangePasswordModal";
@@ -24,14 +29,49 @@ import { useSidebar } from "../context/SidebarContext";
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  
   const { data: authUser } = useGetAuth();
   const { logoutMutation } = useLogout();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const dropdownRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const { toggleSidebar, toggleMobileSidebar } = useSidebar();
+
+  const [lastBackup, setLastBackup] = useState(() => {
+    return localStorage.getItem("last_backup_date") || "26 Aug 2026";
+  });
+
+  const { downloadBackup, isDownloading, restoreBackup, isRestoring } =
+    useBackup({
+      downloadOptions: {
+        onSuccess: () => {
+          const todayFormatted = dayjs().format("D MMM YYYY");
+          localStorage.setItem("last_backup_date", todayFormatted);
+          setLastBackup(todayFormatted);
+        },
+      },
+      restoreOptions: {
+        onSuccess: () => {
+          const todayFormatted = dayjs().format("D MMM YYYY");
+          localStorage.setItem("last_backup_date", todayFormatted);
+          setLastBackup(todayFormatted);
+          setDropdownOpen(false);
+        },
+      },
+    });
+
+  const handleRestoreFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      restoreBackup({ file });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   // Pages that show a back-button + page title on mobile instead of shop name
   const mobilePageTitles = {
@@ -206,6 +246,76 @@ const Header = () => {
                     <KeyRound size={16} />
                     Change Password
                   </button>
+
+                  <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+
+                  <div className="px-4 pt-1.5 pb-1">
+                    <p className="text-[11px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+                      Data Backup
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => downloadBackup()}
+                    disabled={isDownloading || isRestoring}
+                    className="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-3">
+                      {isDownloading ? (
+                        <Loader2
+                          size={16}
+                          className="animate-spin text-purple-600 dark:text-purple-400"
+                        />
+                      ) : (
+                        <Download
+                          size={16}
+                          className="text-purple-600 dark:text-purple-400"
+                        />
+                      )}
+                      <span>Download Backup</span>
+                    </div>
+                  </button>
+
+                  <label
+                    className={`flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors cursor-pointer ${
+                      isDownloading || isRestoring
+                        ? "opacity-50 pointer-events-none"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {isRestoring ? (
+                        <Loader2
+                          size={16}
+                          className="animate-spin text-emerald-600 dark:text-emerald-400"
+                        />
+                      ) : (
+                        <Upload
+                          size={16}
+                          className="text-emerald-600 dark:text-emerald-400"
+                        />
+                      )}
+                      <span>Restore Backup</span>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleRestoreFileChange}
+                      disabled={isDownloading || isRestoring}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <div className="px-4 py-1.5 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                    <span>Last Backup:</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                      {lastBackup}
+                    </span>
+                  </div>
+
+                  <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
 
                   <button
                     onClick={() => {
