@@ -21,6 +21,7 @@ import useGetAuth from "../hooks/useGetAuth";
 
 import ChangePasswordModal from "../components/ChangePasswordModal";
 import ImpersonationBanner from "../components/ImpersonationBanner";
+import SyncStatus from "../components/SyncStatus";
 
 import { useTheme } from "../context/ThemeContext";
 import { useSidebar } from "../context/SidebarContext";
@@ -173,6 +174,12 @@ const Header = () => {
         )}
 
         <div className="flex items-center gap-1.5 sm:gap-2 select-none">
+          <div className="hidden sm:block">
+            <SyncStatus />
+          </div>
+          <div className="sm:hidden">
+            <SyncStatus />
+          </div>
           <button
             type="button"
             className="size-9 rounded-xl flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer select-none"

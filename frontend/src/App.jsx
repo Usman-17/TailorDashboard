@@ -13,7 +13,6 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 import useGetAuth from "./hooks/useGetAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
-import OfflineIndicator from "./components/OfflineIndicator";
 
 import AdminLayout from "./layout/AdminLayout";
 import TailorLayout from "./layout/Layout";
@@ -70,7 +69,6 @@ const App = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <OfflineIndicator />
       <Suspense
         fallback={
           <div className="flex items-center justify-center h-screen">

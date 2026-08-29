@@ -19,6 +19,8 @@ import ModalActionButtons from "../../../components/ModalActionButtons";
 
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
 import useGetAllCustomers from "../../../hooks/useGetAllCustomers";
+import useGetAuth from "../../../hooks/useGetAuth";
+import * as customerRepo from "../../../offline/repos/customerRepo";
 
 import BookOrderModal from "./BookOrderModal";
 import MeasurementModal from "./MeasurementModal";
@@ -97,6 +99,9 @@ const CustomersPage = () => {
     setErrors({});
   }, [editCustomer, formModalOpen]);
 
+  const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
+
   const { mutate: saveCustomer, isPending: isSaving } = useMutation({
     mutationFn: async (data) => {
       const payload = {
@@ -104,21 +109,39 @@ const CustomersPage = () => {
         phone: data.phone.replace(/[\s\-()]/g, ""),
       };
 
-      const method = editCustomer ? "PUT" : "POST";
-      const url = editCustomer
-        ? `/api/customers/update/${editCustomer._id}`
-        : "/api/customers/add";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to save customer");
-      return result;
+      if (editCustomer) {
+        if (navigator.onLine) {
+          const res = await fetch(`/api/customers/update/${editCustomer._id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(payload),
+          });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "Failed to update customer");
+          return result;
+        } else {
+          const localId = editCustomer.localId || editCustomer._id;
+          return customerRepo.update(shopId, localId, payload);
+        }
+      } else {
+        if (navigator.onLine) {
+          const res = await fetch("/api/customers/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(payload),
+          });
+          const result = await res.json();
+          if (!res.ok) throw new Error(result.error || "Failed to save customer");
+          if (shopId && result._id) {
+            await customerRepo.upsertFromServer(shopId, result);
+          }
+          return result;
+        } else {
+          return customerRepo.create(shopId, payload);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });

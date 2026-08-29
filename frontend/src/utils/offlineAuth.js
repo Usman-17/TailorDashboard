@@ -242,12 +242,12 @@ export const getActiveOfflineSession = () => {
 };
 
 /**
- * Clears active session and offline device authorization upon explicit logout.
+ * Clears active session upon explicit logout.
+ * Keeps the vault (credential verifiers) intact so the user can log in offline again.
  */
 export const clearOfflineAuthSession = () => {
   try {
     localStorage.removeItem(ACTIVE_OFFLINE_SESSION_KEY);
-    localStorage.removeItem(OFFLINE_AUTH_VAULT_KEY);
   } catch (_) {
     // ignore
   }

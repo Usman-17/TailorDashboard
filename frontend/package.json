@@ -16,6 +16,7 @@
     "@tanstack/react-query-persist-client": "^5.80.7",
     "antd": "^5.26.2",
     "dayjs": "^1.11.13",
+    "dexie": "^4.4.5",
     "framer-motion": "^13.0.0",
     "lucide-react": "^0.511.0",
     "moment": "^2.30.1",
