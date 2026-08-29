@@ -3,6 +3,10 @@ import Measurement from "../models/measurement.model.js";
 import Order from "../models/order.model.js";
 import OrderPayment from "../models/orderPayment.model.js";
 import Counter from "../models/counter.model.js";
+import {
+  checkIdempotency,
+  storeIdempotencyResult,
+} from "../middlewares/idempotency.js";
 
 const PHONE_REGEX = /^(\+?92|0)?[3]\d{9}$/;
 
@@ -98,7 +102,18 @@ export const getCustomer = async (req, res) => {
 export const addCustomer = async (req, res) => {
   try {
     const { shopId } = req;
-    const { name, phone, notes } = req.body;
+    const { name, phone, notes, clientId } = req.body;
+
+    const idempotencyKey = clientId || req.headers["x-client-id"];
+    if (idempotencyKey) {
+      const { isDuplicate, result } = await checkIdempotency(
+        idempotencyKey,
+        "create-customer",
+      );
+      if (isDuplicate && result) {
+        return res.status(200).json(result);
+      }
+    }
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Customer name is required" });
@@ -116,9 +131,14 @@ export const addCustomer = async (req, res) => {
       phone: cleanedPhone,
     });
     if (existing) {
-      return res
-        .status(400)
-        .json({ error: "A customer with this phone number already exists" });
+      if (idempotencyKey) {
+        await storeIdempotencyResult(
+          idempotencyKey,
+          "create-customer",
+          existing.toObject(),
+        );
+      }
+      return res.status(200).json(existing);
     }
 
     const customerNum = await Counter.getNextValue(shopId, "customer");
@@ -132,11 +152,36 @@ export const addCustomer = async (req, res) => {
       notes: notes || "",
     });
 
+    if (idempotencyKey) {
+      await storeIdempotencyResult(
+        idempotencyKey,
+        "create-customer",
+        customer.toObject(),
+      );
+    }
+
     return res.status(201).json(customer);
   } catch (error) {
     console.error("Error in addCustomer:", error.message);
     if (error.code === 11000) {
       const field = Object.keys(error.keyValue)[0];
+      if (field === "phone") {
+        const existing = await TailorCustomer.findOne({
+          shopId: req.shopId,
+          phone: req.body.phone?.replace(/[\s\-()]/g, ""),
+        });
+        if (existing) {
+          const clientId = req.body.clientId || req.headers["x-client-id"];
+          if (clientId) {
+            await storeIdempotencyResult(
+              clientId,
+              "create-customer",
+              existing.toObject(),
+            );
+          }
+          return res.status(200).json(existing);
+        }
+      }
       return res.status(400).json({ error: `This ${field} already exists` });
     }
     return res.status(500).json({ error: error.message });

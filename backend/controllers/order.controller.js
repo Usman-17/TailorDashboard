@@ -3,6 +3,10 @@ import Customer from "../models/tailorCustomer.model.js";
 import Counter from "../models/counter.model.js";
 import Shop from "../models/shop.model.js";
 import { ROLES } from "../models/user.model.js";
+import {
+  checkIdempotency,
+  storeIdempotencyResult,
+} from "../middlewares/idempotency.js";
 
 const VALID_TRANSITIONS = {
   [ORDER_STATUS.PENDING]: [ORDER_STATUS.IN_PROGRESS, ORDER_STATUS.CANCELLED],
@@ -166,7 +170,19 @@ export const addOrder = async (req, res) => {
       discount = 0,
       priority = "normal",
       notes = "",
+      clientId,
     } = req.body;
+
+    const idempotencyKey = clientId || req.headers["x-client-id"];
+    if (idempotencyKey) {
+      const { isDuplicate, result } = await checkIdempotency(
+        idempotencyKey,
+        "create-order",
+      );
+      if (isDuplicate && result) {
+        return res.status(200).json(result);
+      }
+    }
 
     if (!customer || !deliveryDate || !items || !items.length) {
       return res
@@ -279,11 +295,21 @@ export const addOrder = async (req, res) => {
       { path: "createdBy", select: "fullName" },
     ]);
 
+    if (idempotencyKey) {
+      await storeIdempotencyResult(
+        idempotencyKey,
+        "create-order",
+        populated.toObject(),
+      );
+    }
+
     return res.status(201).json(populated);
   } catch (error) {
     console.error("Error in addOrder:", error.message);
     if (error.code === 11000) {
-      return res.status(409).json({ error: "Order number conflict" });
+      return res
+        .status(409)
+        .json({ error: "Order number conflict", duplicate: true });
     }
     return res
       .status(500)
