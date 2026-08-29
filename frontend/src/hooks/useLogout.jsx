@@ -1,6 +1,7 @@
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { clearOfflineAuthSession } from "../utils/offlineAuth";
 
 const useLogout = () => {
   const navigate = useNavigate();
@@ -8,30 +9,39 @@ const useLogout = () => {
 
   const { mutate: logoutMutation } = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      // Clear offline authorization credentials and active session on device
+      clearOfflineAuthSession();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Logout failed:", data);
-        throw new Error(data.error || "Failed to logout");
+      if (navigator.onLine) {
+        try {
+          const res = await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            console.warn("Server logout response:", data);
+          }
+          return data;
+        } catch (netErr) {
+          console.warn("Offline during logout, cleared local session:", netErr);
+        }
       }
-
-      return data;
+      return { success: true };
     },
 
     onSuccess: () => {
-      toast.success("Logout successful!");
-      queryClient.invalidateQueries(["authUser"]);
+      queryClient.setQueryData(["authUser"], null);
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      toast.success("Logged out successfully");
       navigate("/login");
     },
 
     onError: (error) => {
       console.error("Logout error:", error);
-      toast.error(error.message || "Logout failed");
+      queryClient.setQueryData(["authUser"], null);
+      queryClient.invalidateQueries({ queryKey: ["authUser"] });
+      navigate("/login");
     },
   });
 

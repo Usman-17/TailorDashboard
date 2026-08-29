@@ -1,6 +1,6 @@
 import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -12,8 +12,8 @@ import {
 import "react-loading-skeleton/dist/skeleton.css";
 
 import useGetAuth from "./hooks/useGetAuth";
-
 import ProtectedRoute from "./components/ProtectedRoute";
+import OfflineIndicator from "./components/OfflineIndicator";
 
 import AdminLayout from "./layout/AdminLayout";
 import TailorLayout from "./layout/Layout";
@@ -49,8 +49,17 @@ const ScrollToTop = () => {
 
 const App = () => {
   const { data: authUser, isLoading } = useGetAuth();
+  const [initTimeout, setInitTimeout] = useState(false);
 
-  if (isLoading && !authUser) {
+  // Safety fallback: Never stay stuck on initial loading spinner for more than 4 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setInitTimeout(true);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading && !authUser && !initTimeout) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-10 animate-spin text-gray-400" />
@@ -61,6 +70,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <OfflineIndicator />
       <Suspense
         fallback={
           <div className="flex items-center justify-center h-screen">

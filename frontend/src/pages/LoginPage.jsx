@@ -1,10 +1,14 @@
 import toast from "react-hot-toast";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, WifiOff } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import LoadingSpinner from "../components/LoadingSpinner";
+import {
+  saveOfflineAuthSession,
+  verifyOfflineCredentials,
+} from "../utils/offlineAuth";
 
 const LoginPage = () => {
   const queryClient = useQueryClient();
@@ -48,19 +52,87 @@ const LoginPage = () => {
 
   const { mutate: loginMutation, isPending } = useMutation({
     mutationFn: async ({ identifier, password, rememberMe }) => {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: identifier, password, rememberMe }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Login failed. Please try again.");
+      // ─── Scenario A: Browser is explicitly Offline ──────────────────────────
+      if (!navigator.onLine) {
+        const offlineResult = await verifyOfflineCredentials(
+          identifier,
+          password,
+        );
+        if (!offlineResult.success) {
+          throw new Error(
+            offlineResult.message || "Invalid email/phone or password",
+          );
+        }
+        return {
+          user: offlineResult.user,
+          isOfflineLogin: true,
+        };
       }
 
-      return data;
+      // ─── Scenario B: Browser appears Online ─────────────────────────────────
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout to prevent hanging
+
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: identifier, password, rememberMe }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        // Explicit server credential / account errors (DO NOT fallback to offline login)
+        if (!res.ok) {
+          let errorMsg = "Login failed. Please try again.";
+          try {
+            const data = await res.json();
+            errorMsg = data.error || errorMsg;
+          } catch (_) {}
+          throw new Error(errorMsg);
+        }
+
+        const data = await res.json();
+
+        // Save local cryptographic verifier for future offline logins
+        await saveOfflineAuthSession(data.user, password);
+
+        return {
+          user: data.user,
+          isOfflineLogin: false,
+        };
+      } catch (networkOrServerError) {
+        // If the error was an explicit invalid credentials error from server, re-throw it
+        const msg = networkOrServerError.message || "";
+        const isAuthError =
+          msg.includes("Invalid") ||
+          msg.includes("deactivated") ||
+          msg.includes("locked") ||
+          msg.includes("Password") ||
+          msg.includes("Email");
+
+        if (isAuthError) {
+          throw networkOrServerError;
+        }
+
+        // ─── Scenario C: Network / Server Unreachable -> Switch to Offline Auth ─
+        const offlineResult = await verifyOfflineCredentials(
+          identifier,
+          password,
+        );
+        if (offlineResult.success) {
+          return {
+            user: offlineResult.user,
+            isOfflineLogin: true,
+          };
+        }
+
+        throw new Error(
+          offlineResult.message ||
+            "Unable to connect to server and no valid offline session found.",
+        );
+      }
     },
 
     onSuccess: (data) => {
@@ -73,6 +145,12 @@ const LoginPage = () => {
       } else {
         localStorage.removeItem("rememberedEmail");
         localStorage.removeItem("rememberedPassword");
+      }
+
+      if (data.isOfflineLogin) {
+        toast.success("Signed in offline successfully");
+      } else {
+        toast.success("Login successful!");
       }
 
       const role = data.user.role;
@@ -101,6 +179,16 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#111127] text-black dark:text-white">
       <div className="w-full max-w-md sm:p-6 p-4">
+        {!navigator.onLine && (
+          <div className="mb-4 flex items-center gap-2 px-3.5 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-600 dark:text-amber-400 text-xs">
+            <WifiOff size={15} />
+            <span>
+              You are offline. You can sign in using previously authenticated
+              credentials on this device.
+            </span>
+          </div>
+        )}
+
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Welcome Back</h1>
           <p className="text-base text-gray-500 dark:text-gray-400 px-4 sm:px-8">
