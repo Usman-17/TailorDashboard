@@ -72,7 +72,7 @@ const LoginPage = () => {
       // ─── Scenario B: Browser appears Online ─────────────────────────────────
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout to prevent hanging
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const res = await fetch("/api/auth/login", {
           method: "POST",
@@ -103,7 +103,6 @@ const LoginPage = () => {
           isOfflineLogin: false,
         };
       } catch (networkOrServerError) {
-        // If the error was an explicit invalid credentials error from server, re-throw it
         const msg = networkOrServerError.message || "";
         const isAuthError =
           msg.includes("Invalid") ||
@@ -116,7 +115,7 @@ const LoginPage = () => {
           throw networkOrServerError;
         }
 
-        // ─── Scenario C: Network / Server Unreachable -> Switch to Offline Auth ─
+        // ─── Scenario C: Network / Server Unreachable -> Try Offline Auth ─────
         const offlineResult = await verifyOfflineCredentials(
           identifier,
           password,
@@ -126,6 +125,12 @@ const LoginPage = () => {
             user: offlineResult.user,
             isOfflineLogin: true,
           };
+        }
+
+        if (navigator.onLine) {
+          throw new Error(
+            "Server is unreachable. Please check your connection and try again.",
+          );
         }
 
         throw new Error(

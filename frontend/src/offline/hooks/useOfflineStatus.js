@@ -39,15 +39,20 @@ export function useOfflineStatus(shopId) {
     refreshStats();
     const interval = setInterval(refreshStats, 5000);
 
-    const hook = db.syncQueue.hook("creating", refreshStats);
-    const hook2 = db.syncQueue.hook("updating", refreshStats);
-    const hook3 = db.syncQueue.hook("deleting", refreshStats);
+    let hooks = [];
+    try {
+      hooks = [
+        db.syncQueue.hook("creating", refreshStats),
+        db.syncQueue.hook("updating", refreshStats),
+        db.syncQueue.hook("deleting", refreshStats),
+      ];
+    } catch (_) {}
 
     return () => {
       clearInterval(interval);
-      hook.unsubscribe();
-      hook2.unsubscribe();
-      hook3.unsubscribe();
+      hooks.forEach((h) => {
+        if (h && typeof h.unsubscribe === "function") h.unsubscribe();
+      });
     };
   }, [refreshStats]);
 

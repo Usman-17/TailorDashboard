@@ -361,7 +361,9 @@ export async function fetchAndCacheServerData(shopId) {
     for (const c of customers) {
       if (pendingLocalIds.has(c._id)) continue;
       const record = await customerRepo.upsertFromServer(shopId, c);
-      customerServerIdMap[c._id] = record.localId;
+      if (record?.localId) {
+        customerServerIdMap[c._id] = record.localId;
+      }
     }
 
     const orders = await fetchAllOrders(shopId);

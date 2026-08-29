@@ -51,8 +51,11 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // 1. Never cache non-GET requests or backend API calls
   if (request.method !== "GET" || url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
     return;
   }
 

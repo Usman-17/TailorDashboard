@@ -1,10 +1,24 @@
-import { useEffect } from "react";
+import { Component, useEffect } from "react";
 import { useOfflineStatus } from "../offline/hooks/useOfflineStatus";
 import { fetchAndCacheServerData } from "../offline/sync/syncManager";
 import useGetAuth from "../hooks/useGetAuth";
 import { RefreshCw, Check, AlertTriangle, CloudOff } from "lucide-react";
 
-export default function SyncStatus() {
+class SyncErrorBoundary extends Component {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err) {
+    console.warn("[SyncStatus] Error caught:", err);
+  }
+  render() {
+    if (this.state.hasError) return null;
+    return this.props.children;
+  }
+}
+
+function SyncStatusInner() {
   const { data: authUser } = useGetAuth();
   const shopId = authUser?.shop?._id || authUser?.shop;
   const { isOffline, syncStats, hasPending, hasFailed } =
@@ -50,5 +64,13 @@ export default function SyncStatus() {
       <Check size={12} />
       <span>Synced</span>
     </div>
+  );
+}
+
+export default function SyncStatus() {
+  return (
+    <SyncErrorBoundary>
+      <SyncStatusInner />
+    </SyncErrorBoundary>
   );
 }
