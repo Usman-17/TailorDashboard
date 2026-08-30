@@ -115,15 +115,6 @@ export const addMeasurement = async (req, res) => {
       return res.status(404).json({ error: "Customer not found" });
     }
 
-    const missingFields = MEASUREMENT_FIELDS.filter(
-      (field) => req.body[field] === undefined || req.body[field] === null,
-    );
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        error: `Missing required fields: ${missingFields.join(", ")}`,
-      });
-    }
-
     const measurementData = { shopId, customer: customerId };
 
     // Handle lower type
@@ -137,13 +128,19 @@ export const addMeasurement = async (req, res) => {
     }
 
     for (const field of MEASUREMENT_FIELDS) {
-      const value = Number(req.body[field]);
-      if (isNaN(value) || value < 0) {
-        return res.status(400).json({
-          error: `${field} must be a valid non-negative number`,
-        });
+      if (
+        req.body[field] !== undefined &&
+        req.body[field] !== null &&
+        req.body[field] !== ""
+      ) {
+        const value = Number(req.body[field]);
+        if (isNaN(value) || value < 0) {
+          return res.status(400).json({
+            error: `${field} must be a valid non-negative number`,
+          });
+        }
+        measurementData[field] = value;
       }
-      measurementData[field] = value;
     }
     if (req.body.remarks !== undefined) {
       measurementData.remarks = req.body.remarks;

@@ -141,6 +141,7 @@ export const addCustomer = async (req, res) => {
     } catch (createErr) {
       if (createErr.code === 11000) {
         const keyPattern = createErr.keyPattern || {};
+
         if (keyPattern.shopId && !keyPattern.customerId && !keyPattern.phone) {
           try {
             await TailorCustomer.collection.dropIndex("shopId_1");
@@ -152,9 +153,27 @@ export const addCustomer = async (req, res) => {
               notes: notes || "",
             });
           } catch (retryErr) {
+            if (retryErr.code === 11000) {
+              const existing = await TailorCustomer.findOne({
+                shopId,
+                phone: cleanedPhone,
+              }).lean();
+              if (existing) {
+                return res.status(200).json({ ...existing, duplicate: true });
+              }
+            }
             throw retryErr;
           }
         } else {
+          if (keyPattern.phone || keyPattern.shopId) {
+            const existing = await TailorCustomer.findOne({
+              shopId,
+              phone: cleanedPhone,
+            }).lean();
+            if (existing) {
+              return res.status(200).json({ ...existing, duplicate: true });
+            }
+          }
           throw createErr;
         }
       } else {
