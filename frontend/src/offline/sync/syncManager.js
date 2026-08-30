@@ -1,6 +1,7 @@
 import * as customerRepo from "../repos/customerRepo";
 import * as measurementRepo from "../repos/measurementRepo";
 import * as orderRepo from "../repos/orderRepo";
+import * as suitTypeRepo from "../repos/suitTypeRepo";
 import {
   getPendingSyncItems,
   updateSyncItemStatus,
@@ -11,7 +12,7 @@ import db from "../db/database";
 
 const MAX_RETRIES = 5;
 
-const ENTITY_ORDER = ["customer", "measurement", "order"];
+const ENTITY_ORDER = ["customer", "measurement", "order", "suitType"];
 
 let syncInProgress = false;
 let syncTimeout = null;
@@ -106,6 +107,9 @@ async function processSyncItem(item) {
         break;
       case "order":
         await syncOrderItem(item);
+        break;
+      case "suitType":
+        await syncSuitTypeItem(item);
         break;
       default:
         console.warn(`Unknown entity type: ${item.entity}`);
@@ -382,6 +386,70 @@ async function syncOrderItem(item) {
   }
 }
 
+async function syncSuitTypeItem(item) {
+  const { operation, localId, serverId, payload, shopId } = item;
+
+  if (operation === "create") {
+    const localST = await suitTypeRepo.getById(shopId, localId);
+    if (localST?.serverId && localST.syncStatus === "synced") {
+      return;
+    }
+
+    const bodyPayload = {
+      name: payload?.name || localST?.name,
+      price: payload?.price ?? localST?.price ?? 0,
+      description: payload?.description || localST?.description || "",
+      isActive: payload?.isActive ?? localST?.isActive ?? true,
+    };
+
+    const res = await fetch("/api/suit-types/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Client-Id": localId,
+      },
+      credentials: "include",
+      body: JSON.stringify({ ...bodyPayload, clientId: localId }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      if (
+        res.status === 409 ||
+        data.duplicate ||
+        (res.status === 400 && /already exists/i.test(data.error || ""))
+      ) {
+        await suitTypeRepo.markSynced(localId, data._id || serverId, data);
+        return;
+      }
+      throw new Error(data.error || "Suit type sync failed");
+    }
+
+    await suitTypeRepo.markSynced(localId, data._id, data);
+  } else if (operation === "update") {
+    const res = await fetch(`/api/suit-types/update/${serverId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Client-Id": localId,
+      },
+      credentials: "include",
+      body: JSON.stringify({ ...payload, clientId: localId }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.error || "Suit type update sync failed");
+    }
+
+    await suitTypeRepo.markSynced(localId, serverId, data);
+  } else if (operation === "delete") {
+    await suitTypeRepo.markSynced(localId, serverId, null);
+  }
+}
+
 async function fetchAllCustomers() {
   const res = await fetch("/api/customers/all", { credentials: "include" });
   if (!res.ok) return [];
@@ -474,6 +542,16 @@ export async function fetchAndCacheServerData(shopId) {
     }
 
     await fetchCustomerMeasurements(shopId, customers);
+
+    const suitRes = await fetch("/api/suit-types/all", {
+      credentials: "include",
+    });
+    if (suitRes.ok) {
+      const suitData = await suitRes.json();
+      for (const s of suitData.suitTypes || []) {
+        await suitTypeRepo.upsertFromServer(shopId, s);
+      }
+    }
   } catch (err) {
     console.error("Failed to fetch server data:", err);
     initialSyncDone[shopId] = false;

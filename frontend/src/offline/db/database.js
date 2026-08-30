@@ -14,6 +14,15 @@ class TailorOfflineDB extends Dexie {
       syncQueue:
         "++id, entity, operation, localId, serverId, shopId, status, createdAt, retryCount",
     });
+
+    this.version(2)
+      .stores({
+        suitTypes:
+          "++id, localId, serverId, shopId, name, syncStatus, updatedAt",
+      })
+      .upgrade(async (tx) => {
+        // No data migration needed — table starts empty
+      });
   }
 
   getDatabaseForShop(shopId) {
@@ -21,6 +30,7 @@ class TailorOfflineDB extends Dexie {
       customers: this.customers.where("shopId").equals(shopId),
       measurements: this.measurements.where("shopId").equals(shopId),
       orders: this.orders.where("shopId").equals(shopId),
+      suitTypes: this.suitTypes.where("shopId").equals(shopId),
     };
   }
 }

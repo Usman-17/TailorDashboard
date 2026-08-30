@@ -8,7 +8,9 @@ import CustomInput from "../../../components/CustomInput";
 import ModalActionButtons from "../../../components/ModalActionButtons";
 
 import useGlobalFilter from "../../../hooks/useGlobalFilter";
+import useGetAuth from "../../../hooks/useGetAuth";
 import { useGetAllSuitTypes } from "../../../hooks/useGetSuitTypes.jsx";
+import * as suitTypeRepo from "../../../offline/repos/suitTypeRepo";
 
 import MobileSuitTypePage from "./MobileSuitTypePage";
 import DesktopSuitTypePage from "./DesktopSuitTypePage";
@@ -35,6 +37,8 @@ const SuitTypesPage = () => {
 
   const queryClient = useQueryClient();
   const { data, isLoading } = useGetAllSuitTypes();
+  const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
 
   const suitTypes = useMemo(() => data?.suitTypes || [], [data]);
   const searchFiltered = useGlobalFilter(suitTypes, search, ["name"]);
@@ -77,19 +81,31 @@ const SuitTypesPage = () => {
   const { mutate: saveSuitType, isPending } = useMutation({
     mutationFn: async (payload) => {
       const isEdit = Boolean(modalState.data?._id);
-      const url = isEdit
-        ? `/api/suit-types/update/${modalState.data._id}`
-        : "/api/suit-types/add";
-      const method = isEdit ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to save suit type");
-      return result;
+
+      if (navigator.onLine) {
+        const url = isEdit
+          ? `/api/suit-types/update/${modalState.data._id}`
+          : "/api/suit-types/add";
+        const method = isEdit ? "PUT" : "POST";
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+        const result = await res.json();
+        if (!res.ok)
+          throw new Error(result.error || "Failed to save suit type");
+        await suitTypeRepo.upsertFromServer(shopId, result);
+        return result;
+      } else {
+        if (isEdit) {
+          const localId = modalState.data.localId || modalState.data._id;
+          return suitTypeRepo.update(shopId, localId, payload);
+        } else {
+          return suitTypeRepo.create(shopId, payload);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suitTypes"] });
@@ -116,15 +132,22 @@ const SuitTypesPage = () => {
 
   const { mutate: voidSuitType, isPending: isVoiding } = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`/api/suit-types/update/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ isActive: false }),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to void suit type");
-      return result;
+      if (navigator.onLine) {
+        const res = await fetch(`/api/suit-types/update/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ isActive: false }),
+        });
+        const result = await res.json();
+        if (!res.ok)
+          throw new Error(result.error || "Failed to void suit type");
+        await suitTypeRepo.upsertFromServer(shopId, result);
+        return result;
+      } else {
+        const localId = id;
+        return suitTypeRepo.update(shopId, localId, { isActive: false });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suitTypes"] });
@@ -136,16 +159,22 @@ const SuitTypesPage = () => {
 
   const { mutate: restoreSuitType, isPending: isRestoring } = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`/api/suit-types/update/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ isActive: true }),
-      });
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.error || "Failed to restore suit type");
-      return result;
+      if (navigator.onLine) {
+        const res = await fetch(`/api/suit-types/update/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ isActive: true }),
+        });
+        const result = await res.json();
+        if (!res.ok)
+          throw new Error(result.error || "Failed to restore suit type");
+        await suitTypeRepo.upsertFromServer(shopId, result);
+        return result;
+      } else {
+        const localId = id;
+        return suitTypeRepo.update(shopId, localId, { isActive: true });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suitTypes"] });
