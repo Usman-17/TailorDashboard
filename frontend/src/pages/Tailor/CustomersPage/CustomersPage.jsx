@@ -1,6 +1,6 @@
 import moment from "moment";
 import toast from "react-hot-toast";
-import {  useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -118,7 +118,8 @@ const CustomersPage = () => {
             body: JSON.stringify(payload),
           });
           const result = await res.json();
-          if (!res.ok) throw new Error(result.error || "Failed to update customer");
+          if (!res.ok)
+            throw new Error(result.error || "Failed to update customer");
           return result;
         } else {
           const localId = editCustomer.localId || editCustomer._id;
@@ -133,7 +134,8 @@ const CustomersPage = () => {
             body: JSON.stringify(payload),
           });
           const result = await res.json();
-          if (!res.ok) throw new Error(result.error || "Failed to save customer");
+          if (!res.ok)
+            throw new Error(result.error || "Failed to save customer");
           if (shopId && result._id) {
             await customerRepo.upsertFromServer(shopId, result);
           }
@@ -143,8 +145,12 @@ const CustomersPage = () => {
         }
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["customers"] });
+      await queryClient.refetchQueries({
+        queryKey: ["customers"],
+        type: "active",
+      });
       toast.success(
         `Customer ${editCustomer ? "updated" : "saved"} successfully`,
       );

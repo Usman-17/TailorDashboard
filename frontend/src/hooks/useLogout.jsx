@@ -2,11 +2,7 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { clearOfflineAuthSession } from "../utils/offlineAuth";
-import * as customerRepo from "../offline/repos/customerRepo";
-import * as measurementRepo from "../offline/repos/measurementRepo";
-import * as orderRepo from "../offline/repos/orderRepo";
-import { clearSyncQueue } from "../offline/db/syncQueue";
-import { resetInitialSync } from "../offline/sync/syncManager";
+import { runSync } from "../offline/sync/syncManager";
 
 const useLogout = () => {
   const navigate = useNavigate();
@@ -14,22 +10,20 @@ const useLogout = () => {
 
   const { mutate: logoutMutation } = useMutation({
     mutationFn: async () => {
-      const authUser = queryClient.getQueryData(["authUser"]);
-      const shopId = authUser?.shop?._id || authUser?.shop;
-
-      if (shopId) {
-        await Promise.all([
-          customerRepo.clearAll(shopId),
-          measurementRepo.clearAll(shopId),
-          orderRepo.clearAll(shopId),
-          clearSyncQueue(shopId),
-        ]);
-        resetInitialSync(shopId);
+      // 1. If online, flush any pending sync items before clearing session
+      if (typeof navigator !== "undefined" && navigator.onLine) {
+        try {
+          await runSync(true);
+        } catch (syncErr) {
+          console.warn("Flush sync before logout:", syncErr);
+        }
       }
 
+      // 2. Clear offline active auth session
       clearOfflineAuthSession();
 
-      if (navigator.onLine) {
+      // 3. Inform backend if online
+      if (typeof navigator !== "undefined" && navigator.onLine) {
         try {
           const res = await fetch("/api/auth/logout", {
             method: "POST",

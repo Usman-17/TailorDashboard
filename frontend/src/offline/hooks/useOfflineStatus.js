@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { getSyncQueueStats } from "../db/syncQueue";
-import db from "../db/database";
 
 export function useOfflineStatus(shopId) {
   const [syncStats, setSyncStats] = useState({
@@ -37,22 +36,17 @@ export function useOfflineStatus(shopId) {
 
   useEffect(() => {
     refreshStats();
-    const interval = setInterval(refreshStats, 5000);
+    const interval = setInterval(refreshStats, 2000);
 
-    let hooks = [];
-    try {
-      hooks = [
-        db.syncQueue.hook("creating", refreshStats),
-        db.syncQueue.hook("updating", refreshStats),
-        db.syncQueue.hook("deleting", refreshStats),
-      ];
-    } catch (_) {}
+    const handleSyncEvent = () => refreshStats();
+
+    window.addEventListener("tailor-sync-queue-changed", handleSyncEvent);
+    window.addEventListener("tailor-offline-synced", handleSyncEvent);
 
     return () => {
       clearInterval(interval);
-      hooks.forEach((h) => {
-        if (h && typeof h.unsubscribe === "function") h.unsubscribe();
-      });
+      window.removeEventListener("tailor-sync-queue-changed", handleSyncEvent);
+      window.removeEventListener("tailor-offline-synced", handleSyncEvent);
     };
   }, [refreshStats]);
 

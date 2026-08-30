@@ -1,6 +1,6 @@
 import { Component, useEffect } from "react";
 import { useOfflineStatus } from "../offline/hooks/useOfflineStatus";
-import { fetchAndCacheServerData } from "../offline/sync/syncManager";
+import { fetchAndCacheServerData, runSync } from "../offline/sync/syncManager";
 import useGetAuth from "../hooks/useGetAuth";
 import { RefreshCw, Check, AlertTriangle, CloudOff } from "lucide-react";
 
@@ -43,27 +43,42 @@ function SyncStatusInner() {
 
   if (hasFailed) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium">
+      <button
+        onClick={() => runSync(true)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-medium cursor-pointer hover:bg-red-200 transition-colors"
+        title="Click to retry sync"
+      >
         <AlertTriangle size={12} />
         <span>{syncStats.failed} failed</span>
-      </div>
+      </button>
     );
   }
 
   if (hasPending || syncStats.syncing > 0) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium">
-        <RefreshCw size={12} className={syncStats.syncing > 0 ? "animate-spin" : ""} />
+      <button
+        onClick={() => runSync(true)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium cursor-pointer"
+        title="Click to force sync"
+      >
+        <RefreshCw
+          size={12}
+          className={syncStats.syncing > 0 ? "animate-spin" : ""}
+        />
         <span>{syncStats.pending + syncStats.syncing} syncing</span>
-      </div>
+      </button>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium">
+    <button
+      onClick={() => runSync(true)}
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium cursor-pointer"
+      title="All data synced"
+    >
       <Check size={12} />
       <span>Synced</span>
-    </div>
+    </button>
   );
 }
 

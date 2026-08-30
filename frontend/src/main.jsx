@@ -25,6 +25,15 @@ const queryClient = new QueryClient({
 registerServiceWorker();
 startSyncManager();
 
+if (typeof window !== "undefined") {
+  window.addEventListener("tailor-offline-synced", () => {
+    queryClient.invalidateQueries({ queryKey: ["customers"] });
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboardLatestCustomers"] });
+    queryClient.invalidateQueries({ queryKey: ["tailorLatestCustomers"] });
+  });
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>

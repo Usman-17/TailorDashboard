@@ -126,31 +126,41 @@ export const addCustomer = async (req, res) => {
 
     const cleanedPhone = phone.replace(/[\s\-()]/g, "");
 
-    const existing = await TailorCustomer.findOne({
-      shopId,
-      phone: cleanedPhone,
-    });
-    if (existing) {
-      if (idempotencyKey) {
-        await storeIdempotencyResult(
-          idempotencyKey,
-          "create-customer",
-          existing.toObject(),
-        );
-      }
-      return res.status(200).json(existing);
-    }
-
     const customerNum = await Counter.getNextValue(shopId, "customer");
     const customerId = `C${String(customerNum).padStart(4, "0")}`;
 
-    const customer = await TailorCustomer.create({
-      customerId,
-      shopId,
-      name: name.trim(),
-      phone: cleanedPhone,
-      notes: notes || "",
-    });
+    let customer;
+    try {
+      customer = await TailorCustomer.create({
+        customerId,
+        shopId,
+        name: name.trim(),
+        phone: cleanedPhone,
+        notes: notes || "",
+      });
+    } catch (createErr) {
+      if (createErr.code === 11000) {
+        const keyPattern = createErr.keyPattern || {};
+        if (keyPattern.shopId && !keyPattern.customerId && !keyPattern.phone) {
+          try {
+            await TailorCustomer.collection.dropIndex("shopId_1");
+            customer = await TailorCustomer.create({
+              customerId,
+              shopId,
+              name: name.trim(),
+              phone: cleanedPhone,
+              notes: notes || "",
+            });
+          } catch (retryErr) {
+            throw retryErr;
+          }
+        } else {
+          throw createErr;
+        }
+      } else {
+        throw createErr;
+      }
+    }
 
     if (idempotencyKey) {
       await storeIdempotencyResult(
@@ -164,24 +174,7 @@ export const addCustomer = async (req, res) => {
   } catch (error) {
     console.error("Error in addCustomer:", error.message);
     if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
-      if (field === "phone") {
-        const existing = await TailorCustomer.findOne({
-          shopId: req.shopId,
-          phone: req.body.phone?.replace(/[\s\-()]/g, ""),
-        });
-        if (existing) {
-          const clientId = req.body.clientId || req.headers["x-client-id"];
-          if (clientId) {
-            await storeIdempotencyResult(
-              clientId,
-              "create-customer",
-              existing.toObject(),
-            );
-          }
-          return res.status(200).json(existing);
-        }
-      }
+      const field = Object.keys(error.keyValue || {})[0] || "field";
       return res.status(400).json({ error: `This ${field} already exists` });
     }
     return res.status(500).json({ error: error.message });

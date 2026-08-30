@@ -11,7 +11,6 @@ const tailorCustomerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shop",
       required: [true, "Shop ID is required"],
-      index: true,
     },
 
     name: {
@@ -45,9 +44,14 @@ const tailorCustomerSchema = new mongoose.Schema(
   },
 );
 
-tailorCustomerSchema.index({ shopId: 1, customerId: 1 });
+tailorCustomerSchema.index({ shopId: 1, customerId: 1 }, { unique: true });
 tailorCustomerSchema.index({ shopId: 1, phone: 1 });
 
 const TailorCustomer = mongoose.model("TailorCustomer", tailorCustomerSchema);
+
+// Drop stale single-field unique index if present
+TailorCustomer.collection.dropIndex("shopId_1").catch(() => {});
+TailorCustomer.collection.dropIndex("phone_1").catch(() => {});
+TailorCustomer.collection.dropIndex("customerId_1").catch(() => {});
 
 export default TailorCustomer;

@@ -6,7 +6,8 @@ const TABLE = "orders";
 
 export async function getAll(shopId) {
   if (!shopId) return [];
-  return db[TABLE].where("shopId").equals(shopId).toArray();
+  const results = await db[TABLE].where("shopId").equals(shopId).toArray();
+  return results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 }
 
 export async function search(shopId, query) {
@@ -14,7 +15,7 @@ export async function search(shopId, query) {
   const q = (query || "").toLowerCase().trim();
   if (!q) return getAll(shopId);
 
-  return db[TABLE]
+  const results = await db[TABLE]
     .where("shopId")
     .equals(shopId)
     .and(
@@ -23,6 +24,8 @@ export async function search(shopId, query) {
         (o.customerName || "").toLowerCase().includes(q),
     )
     .toArray();
+
+  return results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 }
 
 export async function getById(shopId, localId) {
@@ -50,13 +53,13 @@ export async function create(shopId, data) {
   const record = {
     localId,
     serverId: null,
-    shopId,
+    shopId: String(shopId || ""),
     orderNumber: data.orderNumber || null,
-    customerId: data.customerServerId || null,
-    customerLocalId: data.customerLocalId || null,
+    customerId: data.customerServerId ? String(data.customerServerId) : null,
+    customerLocalId: data.customerLocalId ? String(data.customerLocalId) : null,
     customerName: data.customerName || "",
-    measurementId: data.measurementServerId || null,
-    measurementLocalId: data.measurementLocalId || null,
+    measurementId: data.measurementServerId ? String(data.measurementServerId) : null,
+    measurementLocalId: data.measurementLocalId ? String(data.measurementLocalId) : null,
     items: data.items || [],
     deliveryDate: data.deliveryDate,
     status: data.status || "pending",
@@ -80,8 +83,8 @@ export async function create(shopId, data) {
     operation: "create",
     localId,
     serverId: null,
-    shopId,
-    payload: data,
+    shopId: String(shopId || ""),
+    payload: JSON.parse(JSON.stringify(data || {})),
   });
 
   return record;

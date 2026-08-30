@@ -26,59 +26,70 @@ export function resetInitialSync(shopId) {
 }
 
 export function startSyncManager() {
-  window.addEventListener("online", () => scheduleSync());
+  if (typeof window === "undefined") return;
+
+  window.addEventListener("online", () => scheduleSync(100));
+  window.addEventListener("tailor-sync-queue-changed", () => {
+    if (navigator.onLine) scheduleSync(100);
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible" && navigator.onLine) {
-      scheduleSync();
+      scheduleSync(100);
     }
   });
-  if (navigator.onLine) {
-    scheduleSync();
+
+  // Safety periodic sync every 4 seconds when online
+  setInterval(() => {
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+      scheduleSync(100);
+    }
+  }, 4000);
+
+  if (typeof navigator !== "undefined" && navigator.onLine) {
+    scheduleSync(100);
   }
 }
 
-export function scheduleSync(delay = 1000) {
+export function scheduleSync(delay = 300) {
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(() => runSync(), delay);
 }
 
-export async function runSync() {
+export async function runSync(force = false) {
   if (syncInProgress) return;
   if (!navigator.onLine) return;
 
   syncInProgress = true;
 
   try {
-    const shopIds = new Set();
-    await db.customers
-      .toCollection()
-      .each((c) => {
-        if (c.shopId) shopIds.add(c.shopId);
-      });
+    const allPending = await getPendingSyncItems();
+    if (allPending.length === 0) {
+      syncInProgress = false;
+      return;
+    }
 
-    for (const shopId of shopIds) {
-      await syncShop(shopId);
+    let anySynced = false;
+
+    for (const entity of ENTITY_ORDER) {
+      const entityItems = allPending.filter((i) => i.entity === entity);
+
+      for (const item of entityItems) {
+        if (!force && item.retryCount >= 10 && item.status === "failed") {
+          continue;
+        }
+
+        const success = await processSyncItem(item);
+        if (success) anySynced = true;
+      }
+    }
+
+    if (anySynced && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("tailor-offline-synced"));
     }
   } catch (err) {
     console.error("Sync manager error:", err);
   } finally {
     syncInProgress = false;
-  }
-}
-
-async function syncShop(shopId) {
-  for (const entity of ENTITY_ORDER) {
-    const items = await getPendingSyncItems(shopId);
-    const entityItems = items.filter((i) => i.entity === entity);
-
-    for (const item of entityItems) {
-      if (item.retryCount >= MAX_RETRIES) {
-        await updateSyncItemStatus(item.id, "failed");
-        continue;
-      }
-
-      await processSyncItem(item);
-    }
   }
 }
 
@@ -99,17 +110,31 @@ async function processSyncItem(item) {
       default:
         console.warn(`Unknown entity type: ${item.entity}`);
     }
-    await removeSyncItem(item.id);
+    await removeSyncItem(item);
+    return true;
   } catch (err) {
     console.error(`Sync failed for ${item.entity} ${item.operation}:`, err);
-    await incrementRetryCount(item.id);
+    await incrementRetryCount(item);
+    return false;
   }
 }
 
 async function syncCustomerItem(item) {
-  const { operation, localId, serverId, payload } = item;
+  const { operation, localId, serverId, payload, shopId } = item;
 
   if (operation === "create") {
+    // If local customer already has serverId, mark as synced
+    const localCust = await customerRepo.getById(shopId, localId);
+    if (localCust?.serverId && localCust.syncStatus === "synced") {
+      return;
+    }
+
+    const bodyPayload = {
+      name: payload?.name || localCust?.name,
+      phone: payload?.phone || localCust?.phone,
+      notes: payload?.notes || localCust?.notes || "",
+    };
+
     const res = await fetch("/api/customers/add", {
       method: "POST",
       headers: {
@@ -117,24 +142,19 @@ async function syncCustomerItem(item) {
         "X-Client-Id": localId,
       },
       credentials: "include",
-      body: JSON.stringify({ ...payload, clientId: localId }),
+      body: JSON.stringify({ ...bodyPayload, clientId: localId }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      if (res.status === 409 || err.duplicate) {
-        const existing = await res.json();
-        await customerRepo.markSynced(
-          localId,
-          existing._id || serverId,
-          existing,
-        );
+      if (res.status === 409 || data.duplicate) {
+        await customerRepo.markSynced(localId, data._id || serverId, data);
         return;
       }
-      throw new Error(err.error || "Customer sync failed");
+      throw new Error(data.error || "Customer sync failed");
     }
 
-    const data = await res.json();
     await customerRepo.markSynced(localId, data._id, data);
   } else if (operation === "update") {
     const res = await fetch(`/api/customers/update/${serverId}`, {
@@ -147,12 +167,12 @@ async function syncCustomerItem(item) {
       body: JSON.stringify({ ...payload, clientId: localId }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Customer update sync failed");
+      throw new Error(data.error || "Customer update sync failed");
     }
 
-    const data = await res.json();
     await customerRepo.markSynced(localId, serverId, data);
   } else if (operation === "delete") {
     await customerRepo.markSynced(localId, serverId, null);
@@ -166,7 +186,20 @@ async function syncMeasurementItem(item) {
     const measurement = await measurementRepo.getById(shopId, localId);
     if (!measurement) return;
 
-    const customerServerId = measurement.customerId;
+    let customerServerId = measurement.customerId;
+    if (!customerServerId && measurement.customerLocalId) {
+      const cust = await customerRepo.getById(
+        shopId,
+        measurement.customerLocalId,
+      );
+      if (cust?.serverId) {
+        customerServerId = cust.serverId;
+        await measurementRepo.update(shopId, localId, {
+          customerId: customerServerId,
+        });
+      }
+    }
+
     if (!customerServerId) {
       throw new Error("Customer not yet synced, cannot sync measurement");
     }
@@ -188,12 +221,12 @@ async function syncMeasurementItem(item) {
       body: JSON.stringify({ ...payload, clientId: localId }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Measurement sync failed");
+      throw new Error(data.error || "Measurement sync failed");
     }
 
-    const data = await res.json();
     await measurementRepo.markSynced(localId, data._id || serverId);
   } else if (operation === "delete") {
     const measurement = await measurementRepo.getById(shopId, localId);
@@ -214,9 +247,30 @@ async function syncOrderItem(item) {
     const order = await orderRepo.getById(shopId, localId);
     if (!order) return;
 
-    const customerServerId = order.customerId;
+    let customerServerId = order.customerId;
+    if (!customerServerId && order.customerLocalId) {
+      const cust = await customerRepo.getById(shopId, order.customerLocalId);
+      if (cust?.serverId) {
+        customerServerId = cust.serverId;
+        await orderRepo.update(shopId, localId, {
+          customerId: customerServerId,
+        });
+      }
+    }
+
     if (!customerServerId) {
       throw new Error("Customer not yet synced, cannot sync order");
+    }
+
+    let measurementServerId = order.measurementId;
+    if (!measurementServerId && order.measurementLocalId) {
+      const meas = await measurementRepo.getById(
+        shopId,
+        order.measurementLocalId,
+      );
+      if (meas?.serverId) {
+        measurementServerId = meas.serverId;
+      }
     }
 
     const res = await fetch("/api/orders/add", {
@@ -229,21 +283,21 @@ async function syncOrderItem(item) {
       body: JSON.stringify({
         ...payload,
         customer: customerServerId,
+        measurement: measurementServerId || undefined,
         clientId: localId,
       }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      if (res.status === 409 || err.duplicate) {
-        const existing = await res.json();
-        await orderRepo.markSynced(localId, existing._id || serverId, existing);
+      if (res.status === 409 || data.duplicate) {
+        await orderRepo.markSynced(localId, data._id || serverId, data);
         return;
       }
-      throw new Error(err.error || "Order sync failed");
+      throw new Error(data.error || "Order sync failed");
     }
 
-    const data = await res.json();
     await orderRepo.markSynced(localId, data._id, data);
   } else if (operation === "update") {
     const res = await fetch(`/api/orders/update/${serverId}`, {
@@ -256,12 +310,12 @@ async function syncOrderItem(item) {
       body: JSON.stringify({ ...payload, clientId: localId }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Order update sync failed");
+      throw new Error(data.error || "Order update sync failed");
     }
 
-    const data = await res.json();
     await orderRepo.markSynced(localId, serverId, data);
   } else if (operation === "updateStatus") {
     const res = await fetch(`/api/orders/status/${serverId}`, {
@@ -274,9 +328,10 @@ async function syncOrderItem(item) {
       body: JSON.stringify({ status: payload.status, clientId: localId }),
     });
 
+    const data = await res.json().catch(() => ({}));
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Order status sync failed");
+      throw new Error(data.error || "Order status sync failed");
     }
 
     await orderRepo.markSynced(localId, serverId, null);
@@ -289,24 +344,23 @@ async function syncOrderItem(item) {
   }
 }
 
-async function fetchAllCustomers(shopId) {
+async function fetchAllCustomers() {
   const res = await fetch("/api/customers/all", { credentials: "include" });
   if (!res.ok) return [];
   const data = await res.json();
   return data.customers || [];
 }
 
-async function fetchAllOrders(shopId) {
+async function fetchAllOrders() {
   const allOrders = [];
   let page = 1;
   const limit = 100;
   let hasMore = true;
 
   while (hasMore) {
-    const res = await fetch(
-      `/api/orders/all?page=${page}&limit=${limit}`,
-      { credentials: "include" },
-    );
+    const res = await fetch(`/api/orders/all?page=${page}&limit=${limit}`, {
+      credentials: "include",
+    });
     if (!res.ok) break;
 
     const data = await res.json();

@@ -6,26 +6,24 @@ const TABLE = "measurements";
 
 export async function getAll(shopId) {
   if (!shopId) return [];
-  return db[TABLE].where("shopId").equals(shopId).toArray();
+  const results = await db[TABLE].where("shopId").equals(shopId).toArray();
+  return results.sort(
+    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+  );
 }
 
 export async function getByCustomerId(shopId, customerId) {
   if (!shopId || !customerId) return null;
-  return db[TABLE]
-    .where("shopId")
+  return db[TABLE].where("shopId")
     .equals(shopId)
-    .and(
-      (m) =>
-        m.customerId === customerId || m.customerLocalId === customerId,
-    )
+    .and((m) => m.customerId === customerId || m.customerLocalId === customerId)
     .sortBy("createdAt")
     .then((results) => results[results.length - 1] || null);
 }
 
 export async function getByCustomerLocalId(shopId, customerLocalId) {
   if (!shopId || !customerLocalId) return null;
-  return db[TABLE]
-    .where("shopId")
+  return db[TABLE].where("shopId")
     .equals(shopId)
     .and((m) => m.customerLocalId === customerLocalId)
     .sortBy("createdAt")
@@ -34,8 +32,7 @@ export async function getByCustomerLocalId(shopId, customerLocalId) {
 
 export async function getById(shopId, localId) {
   if (!shopId || !localId) return null;
-  return db[TABLE]
-    .where("localId")
+  return db[TABLE].where("localId")
     .equals(localId)
     .and((m) => m.shopId === shopId)
     .first();
@@ -48,9 +45,9 @@ export async function create(shopId, data) {
   const record = {
     localId,
     serverId: null,
-    shopId,
-    customerId: data.customerServerId || null,
-    customerLocalId: data.customerLocalId || null,
+    shopId: String(shopId || ""),
+    customerId: data.customerServerId ? String(data.customerServerId) : null,
+    customerLocalId: data.customerLocalId ? String(data.customerLocalId) : null,
     lower: data.lower || { type: "shalwar" },
     length: data.length,
     shoulder: data.shoulder,
@@ -94,8 +91,8 @@ export async function create(shopId, data) {
     operation: "create",
     localId,
     serverId: null,
-    shopId,
-    payload: data,
+    shopId: String(shopId || ""),
+    payload: JSON.parse(JSON.stringify(data || {})),
   });
 
   return record;
@@ -106,7 +103,12 @@ export async function update(shopId, localId, data) {
   if (!existing) throw new Error("Measurement not found locally");
 
   const now = new Date().toISOString();
-  const updated = { ...existing, ...data, syncStatus: "pending", updatedAt: now };
+  const updated = {
+    ...existing,
+    ...data,
+    syncStatus: "pending",
+    updatedAt: now,
+  };
 
   await db[TABLE].where("localId").equals(localId).modify(updated);
 
@@ -139,7 +141,11 @@ export async function remove(shopId, localId) {
     localId,
     serverId: existing.serverId,
     shopId,
-    payload: { localId, serverId: existing.serverId, customerId: existing.customerId || existing.customerLocalId },
+    payload: {
+      localId,
+      serverId: existing.serverId,
+      customerId: existing.customerId || existing.customerLocalId,
+    },
   });
 }
 
@@ -154,10 +160,16 @@ export async function markSynced(localId, serverId) {
 
 export async function markSyncFailed(localId) {
   if (!localId) return;
-  await db[TABLE].where("localId").equals(localId).modify({ syncStatus: "failed" });
+  await db[TABLE].where("localId")
+    .equals(localId)
+    .modify({ syncStatus: "failed" });
 }
 
-export async function upsertFromServer(shopId, serverRecord, customerServerIdMap) {
+export async function upsertFromServer(
+  shopId,
+  serverRecord,
+  customerServerIdMap,
+) {
   if (!shopId || !serverRecord?._id) return null;
 
   try {
@@ -166,8 +178,7 @@ export async function upsertFromServer(shopId, serverRecord, customerServerIdMap
         ? serverRecord.customer?._id
         : serverRecord.customer;
 
-    const existing = await db[TABLE]
-      .where("serverId")
+    const existing = await db[TABLE].where("serverId")
       .equals(String(serverRecord._id))
       .and((m) => m.shopId === shopId)
       .first();
@@ -177,7 +188,8 @@ export async function upsertFromServer(shopId, serverRecord, customerServerIdMap
       serverId: String(serverRecord._id),
       shopId: String(shopId),
       customerId: customerId ? String(customerId) : null,
-      customerLocalId: customerServerIdMap?.[customerId] || existing?.customerLocalId || null,
+      customerLocalId:
+        customerServerIdMap?.[customerId] || existing?.customerLocalId || null,
       lower: serverRecord.lower || { type: "shalwar" },
       length: serverRecord.length,
       shoulder: serverRecord.shoulder,
@@ -223,7 +235,11 @@ export async function upsertFromServer(shopId, serverRecord, customerServerIdMap
 
     return record;
   } catch (err) {
-    console.error("measurementRepo.upsertFromServer error:", err, serverRecord?._id);
+    console.error(
+      "measurementRepo.upsertFromServer error:",
+      err,
+      serverRecord?._id,
+    );
     return null;
   }
 }
