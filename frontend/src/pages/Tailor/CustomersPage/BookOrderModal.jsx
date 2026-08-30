@@ -3,7 +3,6 @@ import toast from "react-hot-toast";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Ruler,
   DollarSign,
   Scissors,
   FileText,
@@ -13,14 +12,14 @@ import {
   ChevronUp,
   Plus,
   Trash2,
-  Loader,
-  Phone,
 } from "lucide-react";
 
 import CustomInput from "../../../components/CustomInput";
 import CustomSelect from "../../../components/CustomSelect";
 import FullScreenModal from "../../../components/FullScreenModal";
 import CustomDatePicker from "../../../components/CustomDatePicker";
+import useGetAuth from "../../../hooks/useGetAuth";
+import * as suitTypeRepo from "../../../offline/repos/suitTypeRepo";
 // Imports End-----
 
 // ─── Constants ────────────────────────────────────────────────
@@ -67,6 +66,8 @@ const BookOrderModal = ({ open, onClose, customer }) => {
   const queryClient = useQueryClient();
   const customerId = customer?._id;
   const [collapsedMap, setCollapsedMap] = useState({});
+  const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
 
   const toggleCollapse = (id) =>
     setCollapsedMap((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -101,11 +102,26 @@ const BookOrderModal = ({ open, onClose, customer }) => {
     queryKey: ["suitTypes", "active"],
     enabled: open,
     queryFn: async () => {
-      const res = await fetch("/api/suit-types/active", {
-        credentials: "include",
-      });
-      if (!res.ok) return { suitTypes: [] };
-      return res.json();
+      if (navigator.onLine) {
+        try {
+          const res = await fetch("/api/suit-types/active", {
+            credentials: "include",
+          });
+          if (res.ok) {
+            const data = await res.json();
+            for (const s of data.suitTypes || []) {
+              await suitTypeRepo.upsertFromServer(shopId, s);
+            }
+          }
+        } catch {
+          // fall through to local
+        }
+      }
+
+      const all = await suitTypeRepo.getAll(shopId);
+      return {
+        suitTypes: all.filter((s) => !s.isDeleted && s.isActive !== false),
+      };
     },
   });
 
