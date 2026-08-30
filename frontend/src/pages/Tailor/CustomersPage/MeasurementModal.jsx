@@ -8,6 +8,10 @@ import CustomInput from "../../../components/CustomInput";
 import LoadingSpinner from "../../../components/LoadingSpinner";
 import FullScreenModal from "../../../components/FullScreenModal";
 
+import useGetAuth from "../../../hooks/useGetAuth";
+import * as measurementRepo from "../../../offline/repos/measurementRepo";
+import * as customerRepo from "../../../offline/repos/customerRepo";
+
 import {
   KAMEEZ_FIELDS,
   SHALWAR_FIELDS,
@@ -29,16 +33,32 @@ const MeasurementModal = ({
   const queryClient = useQueryClient();
   const customerId = customer?._id;
   const [activeLowerTab, setActiveLowerTab] = useState("shalwar");
+  const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
 
   const { data: existingMeasurement, isLoading } = useQuery({
     queryKey: ["measurement", customerId],
     enabled: !!customerId && open,
     queryFn: async () => {
-      const res = await fetch(`/api/measurements/${customerId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch measurement");
-      return res.json();
+      if (navigator.onLine) {
+        try {
+          const res = await fetch(`/api/measurements/${customerId}`, {
+            credentials: "include",
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data) {
+              await measurementRepo.upsertFromServer(shopId, data);
+              return data;
+            }
+          }
+        } catch (err) {
+          console.warn("[MeasurementModal] Online fetch failed:", err);
+        }
+      }
+
+      const local = await measurementRepo.getByCustomerId(shopId, customerId);
+      return local || null;
     },
     retry: false,
   });
@@ -76,11 +96,6 @@ const MeasurementModal = ({
 
   const { mutate: saveMeasurement, isPending } = useMutation({
     mutationFn: async (data) => {
-      const method = existingMeasurement ? "PUT" : "POST";
-      const url = existingMeasurement
-        ? `/api/measurements/update/${customerId}`
-        : `/api/measurements/add/${customerId}`;
-
       const payload = { ...data, lower: { type: activeLowerTab } };
       ALL_FIELDS.forEach((f) => {
         if (
@@ -92,22 +107,53 @@ const MeasurementModal = ({
         }
       });
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+      if (navigator.onLine) {
+        const method = existingMeasurement ? "PUT" : "POST";
+        const url = existingMeasurement
+          ? `/api/measurements/update/${customerId}`
+          : `/api/measurements/add/${customerId}`;
 
-      if (!res.ok) {
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const result = await res.json();
+          throw new Error(
+            result.message || result.error || "Failed to save measurements",
+          );
+        }
         const result = await res.json();
-        throw new Error(
-          result.message || result.error || "Failed to save measurements",
+        await measurementRepo.upsertFromServer(shopId, result);
+        return result;
+      } else {
+        if (existingMeasurement?.localId) {
+          return measurementRepo.update(
+            shopId,
+            existingMeasurement.localId,
+            payload,
+          );
+        } else {
+          return measurementRepo.create(shopId, {
+            ...payload,
+            customerServerId:
+              customer._id !== customer.localId ? customer._id : null,
+            customerLocalId: customer.localId || null,
+          });
+        }
+      }
+    },
+    onSuccess: async (result) => {
+      if (shopId && customerId) {
+        await customerRepo.setMeasurementId(
+          shopId,
+          customerId,
+          result?.localId || result?._id,
         );
       }
-      return res.json();
-    },
-    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["measurement", customerId] });
       toast.success(

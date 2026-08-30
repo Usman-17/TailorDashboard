@@ -148,7 +148,11 @@ async function syncCustomerItem(item) {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      if (res.status === 409 || data.duplicate) {
+      if (
+        res.status === 409 ||
+        data.duplicate ||
+        (res.status === 400 && /already exists/i.test(data.error || ""))
+      ) {
         await customerRepo.markSynced(localId, data._id || serverId, data);
         return;
       }
@@ -180,7 +184,7 @@ async function syncCustomerItem(item) {
 }
 
 async function syncMeasurementItem(item) {
-  const { operation, localId, serverId, payload, shopId } = item;
+  const { operation, localId, serverId, shopId } = item;
 
   if (operation === "create" || operation === "update") {
     const measurement = await measurementRepo.getById(shopId, localId);
@@ -211,6 +215,40 @@ async function syncMeasurementItem(item) {
 
     const method = operation === "create" ? "POST" : "PUT";
 
+    const fullPayload = {
+      lower: measurement.lower || { type: "shalwar" },
+      length: measurement.length,
+      shoulder: measurement.shoulder,
+      chest: measurement.chest,
+      waist: measurement.waist,
+      ghera: measurement.ghera,
+      hip: measurement.hip,
+      neck: measurement.neck,
+      collar: measurement.collar,
+      ban: measurement.ban,
+      sleeveLength: measurement.sleeveLength,
+      armHole: measurement.armHole,
+      bicep: measurement.bicep,
+      cuff: measurement.cuff,
+      shalwarLength: measurement.shalwarLength,
+      shalwarWaist: measurement.shalwarWaist,
+      shalwarHip: measurement.shalwarHip,
+      shalwarGhera: measurement.shalwarGhera,
+      aasan: measurement.aasan,
+      thigh: measurement.thigh,
+      knee: measurement.knee,
+      bottom: measurement.bottom,
+      trouserLength: measurement.trouserLength,
+      trouserWaist: measurement.trouserWaist,
+      trouserHip: measurement.trouserHip,
+      trouserGhera: measurement.trouserGhera,
+      trouserAasan: measurement.trouserAasan,
+      trouserThigh: measurement.trouserThigh,
+      trouserKnee: measurement.trouserKnee,
+      trouserBottom: measurement.trouserBottom,
+      remarks: measurement.remarks || "",
+    };
+
     const res = await fetch(endpoint, {
       method,
       headers: {
@@ -218,7 +256,7 @@ async function syncMeasurementItem(item) {
         "X-Client-Id": localId,
       },
       credentials: "include",
-      body: JSON.stringify({ ...payload, clientId: localId }),
+      body: JSON.stringify({ ...fullPayload, clientId: localId }),
     });
 
     const data = await res.json().catch(() => ({}));

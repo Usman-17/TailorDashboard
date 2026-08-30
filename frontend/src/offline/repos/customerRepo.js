@@ -188,6 +188,32 @@ export async function count(shopId) {
   return db[TABLE].where("shopId").equals(shopId).count();
 }
 
+export async function setMeasurementId(shopId, customerId, measurementLocalId) {
+  if (!shopId || !customerId) return;
+  const now = new Date().toISOString();
+
+  const record = await db[TABLE].where("localId")
+    .equals(customerId)
+    .and((c) => c.shopId === shopId)
+    .first();
+  if (record) {
+    await db[TABLE].where("localId")
+      .equals(customerId)
+      .modify({ measurement: measurementLocalId, updatedAt: now });
+    return;
+  }
+
+  const serverRecord = await db[TABLE].where("serverId")
+    .equals(String(customerId))
+    .and((c) => c.shopId === shopId)
+    .first();
+  if (serverRecord) {
+    await db[TABLE].where("localId")
+      .equals(serverRecord.localId)
+      .modify({ measurement: measurementLocalId, updatedAt: now });
+  }
+}
+
 export async function clearAll(shopId) {
   if (!shopId) return;
   await db[TABLE].where("shopId").equals(shopId).delete();
@@ -206,6 +232,12 @@ export async function upsertFromServer(shopId, serverRecord) {
       .and((c) => c.shopId === shopId)
       .first();
 
+    const measurementId = serverRecord.measurement
+      ? typeof serverRecord.measurement === "object"
+        ? serverRecord.measurement._id || null
+        : serverRecord.measurement
+      : null;
+
     const record = {
       localId: existing?.localId || generateLocalId(),
       serverId: String(serverRecord._id),
@@ -215,6 +247,7 @@ export async function upsertFromServer(shopId, serverRecord) {
         : null,
       name: String(serverRecord.name || ""),
       phone: String(serverRecord.phone || ""),
+      measurement: measurementId ? String(measurementId) : null,
       syncStatus: "synced",
       createdAt: serverRecord.createdAt || new Date().toISOString(),
       updatedAt: serverRecord.updatedAt || new Date().toISOString(),
