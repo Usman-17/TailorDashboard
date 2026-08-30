@@ -122,6 +122,13 @@ const CustomersPage = () => {
             throw new Error(result.error || "Failed to update customer");
           return result;
         } else {
+          const existing = await customerRepo.getByPhone(shopId, payload.phone);
+          if (
+            existing &&
+            existing.localId !== (editCustomer.localId || editCustomer._id)
+          ) {
+            throw new Error("A customer with this phone number already exists");
+          }
           const localId = editCustomer.localId || editCustomer._id;
           return customerRepo.update(shopId, localId, payload);
         }
@@ -141,6 +148,10 @@ const CustomersPage = () => {
           }
           return result;
         } else {
+          const existing = await customerRepo.getByPhone(shopId, payload.phone);
+          if (existing) {
+            throw new Error("A customer with this phone number already exists");
+          }
           return customerRepo.create(shopId, payload);
         }
       }

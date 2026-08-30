@@ -48,6 +48,15 @@ export async function getByServerId(shopId, serverId) {
     .first();
 }
 
+export async function getByPhone(shopId, phone) {
+  if (!shopId || !phone) return null;
+  const cleaned = String(phone).replace(/[\s\-()]/g, "");
+  return db[TABLE].where("shopId")
+    .equals(shopId)
+    .and((c) => !c.isDeleted && c.phone === cleaned)
+    .first();
+}
+
 export async function create(shopId, data) {
   const localId = generateLocalId();
   const now = new Date().toISOString();
