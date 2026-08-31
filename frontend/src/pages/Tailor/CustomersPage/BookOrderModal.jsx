@@ -20,6 +20,8 @@ import FullScreenModal from "../../../components/FullScreenModal";
 import CustomDatePicker from "../../../components/CustomDatePicker";
 import useGetAuth from "../../../hooks/useGetAuth";
 import * as suitTypeRepo from "../../../offline/repos/suitTypeRepo";
+import * as orderRepo from "../../../offline/repos/orderRepo";
+import * as customerRepo from "../../../offline/repos/customerRepo";
 // Imports End-----
 
 // ─── Constants ────────────────────────────────────────────────
@@ -195,20 +197,52 @@ const BookOrderModal = ({ open, onClose, customer }) => {
 
   const { mutate: bookOrder, isPending } = useMutation({
     mutationFn: async (payload) => {
-      const res = await fetch("/api/orders/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(
-          result.error || result.message || "Failed to book order",
-        );
-      return result;
+      if (navigator.onLine) {
+        const res = await fetch("/api/orders/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+        const result = await res.json();
+        if (!res.ok)
+          throw new Error(
+            result.error || result.message || "Failed to book order",
+          );
+        return result;
+      } else {
+        return orderRepo.create(shopId, {
+          orderNumber: payload.orderNumber || null,
+          customerServerId:
+            customer.serverId ||
+            (customer._id !== customer.localId ? customer._id : null),
+          customerLocalId: customer.localId || customer._id,
+          customerName: customer.name || "",
+          measurementServerId: payload.measurement || null,
+          measurementLocalId: null,
+          items: payload.items || [],
+          deliveryDate: payload.deliveryDate,
+          status: "pending",
+          totalAmount: payload.totalAmount || 0,
+          discount: payload.discount || 0,
+          advancePaid: payload.advancePaid || 0,
+          remainingBalance:
+            (payload.totalAmount || 0) -
+            (payload.advancePaid || 0) -
+            (payload.discount || 0),
+          notes: payload.notes || "",
+          createdBy: null,
+        });
+      }
     },
-    onSuccess: () => {
+    onSuccess: async (result) => {
+      if (shopId && customer) {
+        await customerRepo.addOrderId(
+          shopId,
+          customer._id,
+          result?.localId || result?._id,
+        );
+      }
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["customerDetail"] });

@@ -188,6 +188,38 @@ export async function count(shopId) {
   return db[TABLE].where("shopId").equals(shopId).count();
 }
 
+export async function addOrderId(shopId, customerId, orderLocalId) {
+  if (!shopId || !customerId || !orderLocalId) return;
+  const now = new Date().toISOString();
+
+  const record = await db[TABLE].where("localId")
+    .equals(customerId)
+    .and((c) => c.shopId === shopId)
+    .first();
+  if (record) {
+    const orders = record.orders || [];
+    if (!orders.includes(orderLocalId)) {
+      await db[TABLE].where("localId")
+        .equals(customerId)
+        .modify({ orders: [...orders, orderLocalId], updatedAt: now });
+    }
+    return;
+  }
+
+  const serverRecord = await db[TABLE].where("serverId")
+    .equals(String(customerId))
+    .and((c) => c.shopId === shopId)
+    .first();
+  if (serverRecord) {
+    const orders = serverRecord.orders || [];
+    if (!orders.includes(orderLocalId)) {
+      await db[TABLE].where("localId")
+        .equals(serverRecord.localId)
+        .modify({ orders: [...orders, orderLocalId], updatedAt: now });
+    }
+  }
+}
+
 export async function setMeasurementId(shopId, customerId, measurementLocalId) {
   if (!shopId || !customerId) return;
   const now = new Date().toISOString();
@@ -247,7 +279,10 @@ export async function upsertFromServer(shopId, serverRecord) {
         : null,
       name: String(serverRecord.name || ""),
       phone: String(serverRecord.phone || ""),
-      measurement: measurementId ? String(measurementId) : null,
+      measurement: measurementId
+        ? String(measurementId)
+        : existing?.measurement || null,
+      orders: existing?.orders || [],
       syncStatus: "synced",
       createdAt: serverRecord.createdAt || new Date().toISOString(),
       updatedAt: serverRecord.updatedAt || new Date().toISOString(),
