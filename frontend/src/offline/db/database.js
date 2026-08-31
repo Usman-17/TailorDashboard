@@ -23,6 +23,15 @@ class TailorOfflineDB extends Dexie {
       .upgrade(async (tx) => {
         // No data migration needed — table starts empty
       });
+
+    this.version(3)
+      .stores({
+        expenses:
+          "++id, localId, serverId, shopId, expenseId, category, method, date, isVoided, syncStatus, updatedAt",
+      })
+      .upgrade(async (tx) => {
+        // No data migration needed — table starts empty
+      });
   }
 
   getDatabaseForShop(shopId) {

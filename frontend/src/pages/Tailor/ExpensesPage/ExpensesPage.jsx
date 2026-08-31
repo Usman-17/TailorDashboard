@@ -22,6 +22,8 @@ import DesktopExpensesPage from "./DesktopExpensesPage";
 
 import { useGetExpenses } from "../../../hooks/useGetExpenses";
 import { useExpenseSummary } from "../../../hooks/useExpenseSummary";
+import useGetAuth from "../../../hooks/useGetAuth";
+import * as expenseRepo from "../../../offline/repos/expenseRepo";
 // Imports End----
 
 const CATEGORIES = [
@@ -91,6 +93,10 @@ const emptyForm = {
 
 const ExpensesPage = () => {
   const queryClient = useQueryClient();
+
+  const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
+
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterMethod, setFilterMethod] = useState("all");
@@ -201,12 +207,35 @@ const ExpensesPage = () => {
 
   const { mutate: addExpense, isPending: isAdding } = useMutation({
     mutationFn: async (data) => {
-      const url = editingExpense
-        ? `/api/expense-records/update/${editingExpense._id}`
-        : "/api/expense-records/add";
-      const method = editingExpense ? "PUT" : "POST";
-      const res = await fetch(url, {
-        method,
+      if (editingExpense) {
+        const localId = editingExpense.localId;
+        if (!navigator.onLine || !editingExpense.serverId) {
+          return await expenseRepo.update(shopId, localId, data);
+        }
+        const res = await fetch(
+          `/api/expense-records/update/${editingExpense.serverId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(data),
+          },
+        );
+        if (!res.ok) {
+          const d = await res.json();
+          throw new Error(d.error || "Failed");
+        }
+        const result = await res.json();
+        await expenseRepo.upsertFromServer(shopId, result);
+        return result;
+      }
+
+      if (!navigator.onLine) {
+        return await expenseRepo.create(shopId, data);
+      }
+
+      const res = await fetch("/api/expense-records/add", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(data),
@@ -215,7 +244,9 @@ const ExpensesPage = () => {
         const d = await res.json();
         throw new Error(d.error || "Failed");
       }
-      return res.json();
+      const result = await res.json();
+      await expenseRepo.upsertFromServer(shopId, result);
+      return result;
     },
     onSuccess: () => {
       toast.success(editingExpense ? "Expense updated" : "Expense added");
@@ -227,8 +258,11 @@ const ExpensesPage = () => {
   });
 
   const { mutate: voidExpense, isPending: isVoiding } = useMutation({
-    mutationFn: async (id) => {
-      const res = await fetch(`/api/expense-records/void/${id}`, {
+    mutationFn: async (expense) => {
+      if (!navigator.onLine || !expense.serverId) {
+        return await expenseRepo.voidExpense(shopId, expense.localId);
+      }
+      const res = await fetch(`/api/expense-records/void/${expense.serverId}`, {
         method: "PUT",
         credentials: "include",
       });
@@ -236,7 +270,9 @@ const ExpensesPage = () => {
         const d = await res.json();
         throw new Error(d.error || "Failed");
       }
-      return res.json();
+      const result = await res.json();
+      await expenseRepo.upsertFromServer(shopId, result);
+      return result;
     },
     onSuccess: () => {
       toast.success("Expense voided");
@@ -251,16 +287,24 @@ const ExpensesPage = () => {
   });
 
   const { mutate: restoreExpense } = useMutation({
-    mutationFn: async (id) => {
-      const res = await fetch(`/api/expense-records/restore/${id}`, {
-        method: "PUT",
-        credentials: "include",
-      });
+    mutationFn: async (expense) => {
+      if (!navigator.onLine || !expense.serverId) {
+        return await expenseRepo.restoreExpense(shopId, expense.localId);
+      }
+      const res = await fetch(
+        `/api/expense-records/restore/${expense.serverId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+        },
+      );
       if (!res.ok) {
         const d = await res.json();
         throw new Error(d.error || "Failed");
       }
-      return res.json();
+      const result = await res.json();
+      await expenseRepo.upsertFromServer(shopId, result);
+      return result;
     },
     onSuccess: () => {
       toast.success("Expense restored");
@@ -328,7 +372,7 @@ const ExpensesPage = () => {
     onAdd: openAddModal,
     onEdit: openEditModal,
     onVoid: (exp) => setDeleteModal({ open: true, expense: exp }),
-    onRestore: (exp) => restoreExpense(exp._id),
+    onRestore: (exp) => restoreExpense(exp),
   };
 
   return (
@@ -497,7 +541,7 @@ const ExpensesPage = () => {
       <ConfirmDeleteModal
         isOpen={deleteModal.open}
         onClose={() => setDeleteModal({ open: false, expense: null })}
-        onConfirm={() => voidExpense(deleteModal.expense?._id)}
+        onConfirm={() => voidExpense(deleteModal.expense)}
         title="Void Expense"
         message={`Are you sure you want to void "${deleteModal.expense?.title}"? The record will be kept but excluded from all reports and totals.`}
         confirmText="Void"

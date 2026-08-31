@@ -2,6 +2,7 @@ import * as customerRepo from "../repos/customerRepo";
 import * as measurementRepo from "../repos/measurementRepo";
 import * as orderRepo from "../repos/orderRepo";
 import * as suitTypeRepo from "../repos/suitTypeRepo";
+import * as expenseRepo from "../repos/expenseRepo";
 import {
   getPendingSyncItems,
   updateSyncItemStatus,
@@ -12,7 +13,13 @@ import db from "../db/database";
 
 const MAX_RETRIES = 5;
 
-const ENTITY_ORDER = ["customer", "measurement", "order", "suitType"];
+const ENTITY_ORDER = [
+  "customer",
+  "measurement",
+  "order",
+  "suitType",
+  "expense",
+];
 
 let syncInProgress = false;
 let syncTimeout = null;
@@ -110,6 +117,9 @@ async function processSyncItem(item) {
         break;
       case "suitType":
         await syncSuitTypeItem(item);
+        break;
+      case "expense":
+        await syncExpenseItem(item);
         break;
       default:
         console.warn(`Unknown entity type: ${item.entity}`);
@@ -450,6 +460,88 @@ async function syncSuitTypeItem(item) {
   }
 }
 
+async function syncExpenseItem(item) {
+  const { operation, localId, serverId, payload, shopId } = item;
+
+  if (operation === "create") {
+    const localExp = await expenseRepo.getById(shopId, localId);
+    if (localExp?.serverId && localExp.syncStatus === "synced") return;
+
+    const bodyPayload = {
+      title: payload?.title || localExp?.title,
+      category: payload?.category || localExp?.category,
+      amount: payload?.amount ?? localExp?.amount ?? 0,
+      method: payload?.method || localExp?.method || "cash",
+      date: payload?.date || localExp?.date,
+      note: payload?.note || localExp?.note || "",
+    };
+
+    const res = await fetch("/api/expense-records/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Client-Id": localId,
+      },
+      credentials: "include",
+      body: JSON.stringify({ ...bodyPayload, clientId: localId }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      if (
+        res.status === 409 ||
+        data.duplicate ||
+        (res.status === 400 && /already exists/i.test(data.error || ""))
+      ) {
+        await expenseRepo.markSynced(localId, data._id || serverId, data);
+        return;
+      }
+      throw new Error(data.error || "Expense sync failed");
+    }
+
+    await expenseRepo.markSynced(localId, data._id, data);
+  } else if (operation === "update") {
+    const res = await fetch(`/api/expense-records/update/${serverId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Client-Id": localId,
+      },
+      credentials: "include",
+      body: JSON.stringify({ ...payload, clientId: localId }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Expense update sync failed");
+    await expenseRepo.markSynced(localId, serverId, data);
+  } else if (operation === "void") {
+    const res = await fetch(`/api/expense-records/void/${serverId}`, {
+      method: "PUT",
+      headers: { "X-Client-Id": localId },
+      credentials: "include",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 400) {
+      throw new Error(data.error || "Expense void sync failed");
+    }
+    await expenseRepo.markSynced(localId, serverId, data);
+  } else if (operation === "restore") {
+    const res = await fetch(`/api/expense-records/restore/${serverId}`, {
+      method: "PUT",
+      headers: { "X-Client-Id": localId },
+      credentials: "include",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 400) {
+      throw new Error(data.error || "Expense restore sync failed");
+    }
+    await expenseRepo.markSynced(localId, serverId, data);
+  }
+}
+
 async function fetchAllCustomers() {
   const res = await fetch("/api/customers/all", { credentials: "include" });
   if (!res.ok) return [];
@@ -550,6 +642,16 @@ export async function fetchAndCacheServerData(shopId) {
       const suitData = await suitRes.json();
       for (const s of suitData.suitTypes || []) {
         await suitTypeRepo.upsertFromServer(shopId, s);
+      }
+    }
+
+    const expRes = await fetch("/api/expense-records/all?limit=500", {
+      credentials: "include",
+    });
+    if (expRes.ok) {
+      const expData = await expRes.json();
+      for (const e of expData.expenses || []) {
+        await expenseRepo.upsertFromServer(shopId, e);
       }
     }
   } catch (err) {
