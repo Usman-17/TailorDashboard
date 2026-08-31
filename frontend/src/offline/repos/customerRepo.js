@@ -2,6 +2,12 @@ import db from "../db/database";
 import { generateLocalId } from "../utils/generateLocalId";
 import { addToSyncQueue } from "../db/syncQueue";
 
+const dispatchQueueChange = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("tailor-sync-queue-changed"));
+  }
+};
+
 const TABLE = "customers";
 
 export async function getAll(shopId) {
@@ -107,6 +113,33 @@ export async function update(shopId, localId, data) {
   };
 
   await db[TABLE].where("localId").equals(localId).modify(updated);
+
+  if (!existing.serverId) {
+    const existingItem = await db.syncQueue
+      .where("localId")
+      .equals(localId)
+      .and(
+        (i) =>
+          i.entity === "customer" &&
+          i.operation === "create" &&
+          i.status !== "synced",
+      )
+      .first();
+
+    if (existingItem) {
+      await db.syncQueue.update(existingItem.id, {
+        payload: {
+          name: updated.name,
+          phone: updated.phone,
+          notes: updated.notes || "",
+          localId,
+          serverId: null,
+        },
+      });
+      dispatchQueueChange();
+      return updated;
+    }
+  }
 
   await addToSyncQueue({
     entity: "customer",
