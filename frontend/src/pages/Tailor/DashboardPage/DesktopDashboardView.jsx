@@ -51,7 +51,7 @@ const DesktopDashboardView = () => {
   const { data: latestCustomers = [], isLoading: customersLoading } =
     useTailorLatestCustomers();
 
-  if (statsLoading || chartsLoading) {
+  if (!stats && (statsLoading || chartsLoading)) {
     return <DesktopDashboardSkeleton />;
   }
 

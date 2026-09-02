@@ -1,13 +1,26 @@
 import db from "../db/database";
+import * as customerRepo from "./customerRepo";
 import { generateLocalId } from "../utils/generateLocalId";
 import { addToSyncQueue } from "../db/syncQueue";
 
 const TABLE = "orders";
 
 export async function getAll(shopId) {
-  if (!shopId) return [];
-  const results = await db[TABLE].where("shopId").equals(shopId).toArray();
-  return results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  try {
+    const sId = shopId ? String(shopId) : null;
+    const all = await db[TABLE].toArray();
+    const results = sId
+      ? all.filter(
+          (o) => !o.isDeleted && (!o.shopId || String(o.shopId) === sId),
+        )
+      : all.filter((o) => !o.isDeleted);
+    return results.sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+    );
+  } catch (err) {
+    console.warn("[orderRepo.getAll] Error:", err);
+    return [];
+  }
 }
 
 export async function search(shopId, query) {
@@ -15,8 +28,7 @@ export async function search(shopId, query) {
   const q = (query || "").toLowerCase().trim();
   if (!q) return getAll(shopId);
 
-  const results = await db[TABLE]
-    .where("shopId")
+  const results = await db[TABLE].where("shopId")
     .equals(shopId)
     .and(
       (o) =>
@@ -25,13 +37,14 @@ export async function search(shopId, query) {
     )
     .toArray();
 
-  return results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  return results.sort(
+    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+  );
 }
 
 export async function getById(shopId, localId) {
   if (!shopId || !localId) return null;
-  return db[TABLE]
-    .where("localId")
+  return db[TABLE].where("localId")
     .equals(localId)
     .and((o) => o.shopId === shopId)
     .first();
@@ -39,8 +52,7 @@ export async function getById(shopId, localId) {
 
 export async function getByServerId(shopId, serverId) {
   if (!shopId || !serverId) return null;
-  return db[TABLE]
-    .where("serverId")
+  return db[TABLE].where("serverId")
     .equals(serverId)
     .and((o) => o.shopId === shopId)
     .first();
@@ -58,8 +70,12 @@ export async function create(shopId, data) {
     customerId: data.customerServerId ? String(data.customerServerId) : null,
     customerLocalId: data.customerLocalId ? String(data.customerLocalId) : null,
     customerName: data.customerName || "",
-    measurementId: data.measurementServerId ? String(data.measurementServerId) : null,
-    measurementLocalId: data.measurementLocalId ? String(data.measurementLocalId) : null,
+    measurementId: data.measurementServerId
+      ? String(data.measurementServerId)
+      : null,
+    measurementLocalId: data.measurementLocalId
+      ? String(data.measurementLocalId)
+      : null,
     items: data.items || [],
     deliveryDate: data.deliveryDate,
     status: data.status || "pending",
@@ -95,12 +111,14 @@ export async function update(shopId, localId, data) {
   if (!existing) throw new Error("Order not found locally");
 
   const now = new Date().toISOString();
-  const updated = { ...existing, ...data, syncStatus: "pending", updatedAt: now };
+  const updated = {
+    ...existing,
+    ...data,
+    syncStatus: "pending",
+    updatedAt: now,
+  };
 
-  await db[TABLE]
-    .where("localId")
-    .equals(localId)
-    .modify(updated);
+  await db[TABLE].where("localId").equals(localId).modify(updated);
 
   await addToSyncQueue({
     entity: "order",
@@ -119,10 +137,7 @@ export async function updateStatus(shopId, localId, status) {
   if (!existing) throw new Error("Order not found locally");
 
   const now = new Date().toISOString();
-  await db[TABLE]
-    .where("localId")
-    .equals(localId)
-    .modify({
+  await db[TABLE].where("localId").equals(localId).modify({
     status,
     syncStatus: "pending",
     updatedAt: now,
@@ -143,14 +158,11 @@ export async function remove(shopId, localId) {
   if (!existing) throw new Error("Order not found locally");
 
   const now = new Date().toISOString();
-  await db[TABLE]
-    .where("localId")
-    .equals(localId)
-    .modify({
-      isDeleted: true,
-      syncStatus: "pending",
-      updatedAt: now,
-    });
+  await db[TABLE].where("localId").equals(localId).modify({
+    isDeleted: true,
+    syncStatus: "pending",
+    updatedAt: now,
+  });
 
   await addToSyncQueue({
     entity: "order",
@@ -164,20 +176,28 @@ export async function remove(shopId, localId) {
 
 export async function markSynced(localId, serverId, serverData) {
   if (!localId) return;
-  await db[TABLE].where("localId").equals(localId).modify({
-    serverId,
-    syncStatus: "synced",
-    orderNumber: serverData?.orderNumber || undefined,
-    updatedAt: new Date().toISOString(),
-  });
+  await db[TABLE].where("localId")
+    .equals(localId)
+    .modify({
+      serverId,
+      syncStatus: "synced",
+      orderNumber: serverData?.orderNumber || undefined,
+      updatedAt: new Date().toISOString(),
+    });
 }
 
 export async function markSyncFailed(localId) {
   if (!localId) return;
-  await db[TABLE].where("localId").equals(localId).modify({ syncStatus: "failed" });
+  await db[TABLE].where("localId")
+    .equals(localId)
+    .modify({ syncStatus: "failed" });
 }
 
-export async function upsertFromServer(shopId, serverRecord, customerServerIdMap) {
+export async function upsertFromServer(
+  shopId,
+  serverRecord,
+  customerServerIdMap,
+) {
   if (!shopId || !serverRecord?._id) return null;
 
   try {
@@ -186,13 +206,22 @@ export async function upsertFromServer(shopId, serverRecord, customerServerIdMap
         ? serverRecord.customer?._id
         : serverRecord.customer;
 
-    const customerName =
+    let customerName =
       typeof serverRecord.customer === "object"
         ? serverRecord.customer?.name || ""
         : "";
 
-    const existing = await db[TABLE]
-      .where("serverId")
+    if (!customerName && customerId) {
+      const localCust = await customerRepo.getByServerId(
+        shopId,
+        String(customerId),
+      );
+      if (localCust?.name) {
+        customerName = localCust.name;
+      }
+    }
+
+    const existing = await db[TABLE].where("serverId")
       .equals(String(serverRecord._id))
       .and((o) => o.shopId === shopId)
       .first();
@@ -203,7 +232,8 @@ export async function upsertFromServer(shopId, serverRecord, customerServerIdMap
       shopId: String(shopId),
       orderNumber: serverRecord.orderNumber || null,
       customerId: customerId ? String(customerId) : null,
-      customerLocalId: customerServerIdMap?.[customerId] || existing?.customerLocalId || null,
+      customerLocalId:
+        customerServerIdMap?.[customerId] || existing?.customerLocalId || null,
       customerName,
       measurementId: serverRecord.measurement || null,
       measurementLocalId: existing?.measurementLocalId || null,

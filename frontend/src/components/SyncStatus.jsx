@@ -1,6 +1,10 @@
 import { Component, useEffect } from "react";
 import { useOfflineStatus } from "../offline/hooks/useOfflineStatus";
-import { fetchAndCacheServerData, runSync } from "../offline/sync/syncManager";
+import {
+  fetchAndCacheServerData,
+  runSync,
+  cacheDashboardData,
+} from "../offline/sync/syncManager";
 import useGetAuth from "../hooks/useGetAuth";
 import { RefreshCw, Check, AlertTriangle, CloudOff } from "lucide-react";
 
@@ -24,10 +28,26 @@ function SyncStatusInner() {
   const { isOffline, syncStats, hasPending, hasFailed } =
     useOfflineStatus(shopId);
 
+  // Fetch and cache server data (customers, orders, etc.) — once per session
   useEffect(() => {
     if (shopId && navigator.onLine) {
       fetchAndCacheServerData(shopId);
     }
+  }, [shopId]);
+
+  // Cache dashboard data every time we come online (runs without the initialSyncDone guard)
+  useEffect(() => {
+    if (!shopId) return;
+
+    const refreshDashboard = () => {
+      if (navigator.onLine) cacheDashboardData(shopId);
+    };
+
+    // Run immediately if online now
+    refreshDashboard();
+
+    window.addEventListener("online", refreshDashboard);
+    return () => window.removeEventListener("online", refreshDashboard);
   }, [shopId]);
 
   if (!shopId) return null;

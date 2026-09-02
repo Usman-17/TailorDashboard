@@ -11,11 +11,21 @@ const dispatchQueueChange = () => {
 const TABLE = "customers";
 
 export async function getAll(shopId) {
-  if (!shopId) return [];
-  const results = await db[TABLE].where("shopId").equals(shopId).toArray();
-  return results.sort(
-    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
-  );
+  try {
+    const sId = shopId ? String(shopId) : null;
+    const all = await db[TABLE].toArray();
+    const results = sId
+      ? all.filter(
+          (c) => !c.isDeleted && (!c.shopId || String(c.shopId) === sId),
+        )
+      : all.filter((c) => !c.isDeleted);
+    return results.sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+    );
+  } catch (err) {
+    console.warn("[customerRepo.getAll] Error:", err);
+    return [];
+  }
 }
 
 export async function search(shopId, query) {

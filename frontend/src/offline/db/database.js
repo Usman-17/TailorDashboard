@@ -32,6 +32,15 @@ class TailorOfflineDB extends Dexie {
       .upgrade(async (tx) => {
         // No data migration needed — table starts empty
       });
+
+    this.version(4)
+      .stores({
+        // key format: "shopId:queryKey" → stores cached JSON for dashboard
+        dashboardCache: "key, shopId, updatedAt",
+      })
+      .upgrade(async (tx) => {
+        // No data migration needed — table starts empty
+      });
   }
 
   getDatabaseForShop(shopId) {

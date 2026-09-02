@@ -11,6 +11,8 @@ import {
 } from "../db/syncQueue";
 import db from "../db/database";
 
+import { setDashboardCache } from "../db/dashboardCache";
+
 const MAX_RETRIES = 5;
 
 const ENTITY_ORDER = [
@@ -24,12 +26,56 @@ const ENTITY_ORDER = [
 let syncInProgress = false;
 let syncTimeout = null;
 let initialSyncDone = {};
+let dashboardCacheInProgress = false;
 
 export function resetInitialSync(shopId) {
   if (shopId) {
     delete initialSyncDone[shopId];
   } else {
     initialSyncDone = {};
+  }
+}
+
+const DASHBOARD_ENDPOINTS = [
+  { key: "stats", url: "/api/tailor-dashboard/stats" },
+  { key: "charts", url: "/api/tailor-dashboard/charts" },
+  { key: "recent-orders", url: "/api/tailor-dashboard/recent-orders" },
+  { key: "latest-customers", url: "/api/tailor-dashboard/latest-customers" },
+  {
+    key: "upcoming-deliveries",
+    url: "/api/tailor-dashboard/upcoming-deliveries",
+  },
+];
+
+/**
+ * Refresh dashboard cache from server. Called every time we come online.
+ * Runs independently of initialSyncDone so cache always stays fresh.
+ */
+export async function cacheDashboardData(shopId) {
+  if (!navigator.onLine || !shopId || dashboardCacheInProgress) return;
+  dashboardCacheInProgress = true;
+  try {
+    for (const endpoint of DASHBOARD_ENDPOINTS) {
+      try {
+        const res = await fetch(endpoint.url, { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          await setDashboardCache(shopId, endpoint.key, json);
+        }
+      } catch {
+        // ignore individual endpoint failure
+      }
+    }
+    // Notify React Query to refetch dashboard queries
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("tailor-dashboard-cached", { detail: { shopId } }),
+      );
+    }
+  } catch {
+    // ignore
+  } finally {
+    dashboardCacheInProgress = false;
   }
 }
 
@@ -652,6 +698,33 @@ export async function fetchAndCacheServerData(shopId) {
       const expData = await expRes.json();
       for (const e of expData.expenses || []) {
         await expenseRepo.upsertFromServer(shopId, e);
+      }
+    }
+
+    // ── Cache dashboard data for offline use ──────────────────────
+    const { setDashboardCache } = await import("../db/dashboardCache");
+    const dashboardEndpoints = [
+      { key: "stats", url: "/api/tailor-dashboard/stats" },
+      { key: "charts", url: "/api/tailor-dashboard/charts" },
+      { key: "recent-orders", url: "/api/tailor-dashboard/recent-orders" },
+      {
+        key: "latest-customers",
+        url: "/api/tailor-dashboard/latest-customers",
+      },
+      {
+        key: "upcoming-deliveries",
+        url: "/api/tailor-dashboard/upcoming-deliveries",
+      },
+    ];
+    for (const endpoint of dashboardEndpoints) {
+      try {
+        const res = await fetch(endpoint.url, { credentials: "include" });
+        if (res.ok) {
+          const json = await res.json();
+          await setDashboardCache(shopId, endpoint.key, json);
+        }
+      } catch {
+        // ignore — will retry next online session
       }
     }
   } catch (err) {
