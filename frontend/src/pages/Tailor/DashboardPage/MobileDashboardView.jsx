@@ -13,6 +13,8 @@ import MobileDashboardSkeleton from "./MobileDashboardSkeleton";
 
 import useTailorRecentOrders from "../../../hooks/useTailorRecentOrders";
 import useTailorDashboardStats from "../../../hooks/useTailorDashboardStats";
+import useGetAuth from "../../../hooks/useGetAuth";
+import * as customerRepo from "../../../offline/repos/customerRepo";
 
 // Assets imports
 import suitIcon from "../../../assets/suit.png";
@@ -70,8 +72,11 @@ const STATUS_STYLES = {
 const MobileDashboardView = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
+
   const { data: stats, isLoading: statsLoading } = useTailorDashboardStats();
-  const { data: recentOrders, isLoading: ordersLoading } =
+  const { data: recentOrders = [], isLoading: ordersLoading } =
     useTailorRecentOrders();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,23 +85,39 @@ const MobileDashboardView = () => {
 
   const { mutate: saveCustomer, isPending } = useMutation({
     mutationFn: async (payload) => {
-      const res = await fetch("/api/customers/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          name: payload.name.trim(),
-          phone: payload.phone.replace(/[\s\-()]/g, ""),
-        }),
-      });
+      const cleanName = payload.name.trim();
+      const cleanPhone = payload.phone.replace(/[\s\-()]/g, "");
 
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || "Failed to save customer");
-      return result;
+      if (navigator.onLine) {
+        const res = await fetch("/api/customers/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            name: cleanName,
+            phone: cleanPhone,
+          }),
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Failed to save customer");
+        return result;
+      } else {
+        const existing = await customerRepo.getByPhone(shopId, cleanPhone);
+        if (existing) {
+          throw new Error("A customer with this phone number already exists");
+        }
+        return await customerRepo.create(shopId, {
+          name: cleanName,
+          phone: cleanPhone,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
       queryClient.invalidateQueries({ queryKey: ["tailorDashboardStats"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorRecentOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["tailorLatestCustomers"] });
       toast.success("Customer added successfully!");
       closeModal();
     },
@@ -123,7 +144,7 @@ const MobileDashboardView = () => {
     {
       id: "active_orders",
       title: "Active Orders",
-      count: statsLoading ? "..." : (stats?.pendingOrders ?? 0),
+      count: !stats ? "..." : (stats?.pendingOrders ?? 0),
       image: shoppingBagIcon,
       bgColor: "bg-[#f2ebfe] dark:bg-[#2a1f4e]",
       onClick: () => navigate("/orders"),
@@ -131,7 +152,7 @@ const MobileDashboardView = () => {
     {
       id: "total_customers",
       title: "Total Customers",
-      count: statsLoading ? "..." : (stats?.totalCustomers ?? 0),
+      count: !stats ? "..." : (stats?.totalCustomers ?? 0),
       image: teamIcon,
       bgColor: "bg-[#e6f9ed] dark:bg-[#1a3a2a]",
       onClick: () => navigate("/customers"),
@@ -139,7 +160,7 @@ const MobileDashboardView = () => {
     {
       id: "payments",
       title: "Payments",
-      count: statsLoading ? "..." : (stats?.readyOrders ?? 0),
+      count: !stats ? "..." : (stats?.readyOrders ?? 0),
       image: moneyIcon,
       bgColor: "bg-[#fff2e6] dark:bg-[#3a2f1a]",
       onClick: () => navigate("/payments"),
