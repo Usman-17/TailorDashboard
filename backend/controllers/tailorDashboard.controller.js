@@ -24,6 +24,7 @@ export const getTailorStats = async (req, res) => {
       readyOrders,
       deliveredOrders,
       cancelledOrders,
+      activeOrders,
       todayDeliveries,
       overdueOrders,
     ] = await Promise.all([
@@ -56,6 +57,17 @@ export const getTailorStats = async (req, res) => {
       }),
       Order.countDocuments({
         shopId,
+        status: {
+          $in: [
+            ORDER_STATUS.PENDING,
+            ORDER_STATUS.IN_PROGRESS,
+            ORDER_STATUS.READY,
+          ],
+        },
+        isDeleted: { $ne: true },
+      }),
+      Order.countDocuments({
+        shopId,
         status: { $in: [ORDER_STATUS.READY, ORDER_STATUS.IN_PROGRESS] },
         deliveryDate: { $gte: startOfDay, $lte: endOfDay },
         isDeleted: { $ne: true },
@@ -82,6 +94,7 @@ export const getTailorStats = async (req, res) => {
       readyOrders,
       deliveredOrders,
       cancelledOrders,
+      activeOrders,
       todayDeliveries,
       overdueOrders,
     });
