@@ -69,7 +69,7 @@ const DesktopDashboardView = () => {
       icon: Package,
       color:
         "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
-      trend: `${stats?.pendingOrders || 0} pending`,
+      trend: `${stats?.activeOrders || 0} active`,
     },
     {
       title: "Ready Orders",

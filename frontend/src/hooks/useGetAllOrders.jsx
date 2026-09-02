@@ -20,12 +20,12 @@ const useGetAllOrders = () => {
 
         if (navigator.onLine) {
           try {
-            const response = await fetch("/api/orders/all");
+            const response = await fetch("/api/orders/all?limit=999");
             if (response.ok) {
               const json = await response.json();
               const serverOrders = Array.isArray(json)
                 ? json
-                : json.orders ?? json.data ?? [];
+                : (json.orders ?? json.data ?? []);
 
               for (const o of serverOrders) {
                 await orderRepo.upsertFromServer(shopId, o);

@@ -144,7 +144,7 @@ const MobileDashboardView = () => {
     {
       id: "active_orders",
       title: "Active Orders",
-      count: !stats ? "..." : (stats?.pendingOrders ?? 0),
+      count: !stats ? "..." : (stats?.activeOrders ?? 0),
       image: shoppingBagIcon,
       bgColor: "bg-[#f2ebfe] dark:bg-[#2a1f4e]",
       onClick: () => navigate("/orders"),

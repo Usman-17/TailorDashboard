@@ -33,6 +33,9 @@ export async function getOfflineStats(shopId) {
     const cancelledOrders = activeOrders.filter(
       (o) => o.status === "cancelled",
     ).length;
+    const activeCount = activeOrders.filter((o) =>
+      ["pending", "in_progress", "ready"].includes(o.status),
+    ).length;
 
     const now = new Date();
     const startOfDay = new Date(
@@ -73,6 +76,7 @@ export async function getOfflineStats(shopId) {
       cancelledOrders: totalOrders
         ? cancelledOrders
         : base.cancelledOrders || 0,
+      activeOrders: totalOrders ? activeCount : base.activeOrders || 0,
       todayDeliveries: totalOrders
         ? todayDeliveries
         : base.todayDeliveries || 0,
@@ -95,6 +99,7 @@ export async function getOfflineStats(shopId) {
       inProgressOrders: 0,
       deliveredOrders: 0,
       cancelledOrders: 0,
+      activeOrders: 0,
     };
   }
 }
