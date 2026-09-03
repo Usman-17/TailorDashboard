@@ -248,6 +248,7 @@ export async function upsertFromServer(
       isPaid: serverRecord.isPaid || false,
       priority: serverRecord.priority || "normal",
       notes: serverRecord.notes || "",
+      paymentHistory: serverRecord.paymentHistory || [],
       createdBy: serverRecord.createdBy || null,
       syncStatus: "synced",
       createdAt: serverRecord.createdAt || new Date().toISOString(),
