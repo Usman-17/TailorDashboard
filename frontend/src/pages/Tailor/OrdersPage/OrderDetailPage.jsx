@@ -98,11 +98,17 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
     }
   }, [showPaymentModal, order]);
 
+  const fetchWithTimeout = (url, opts, ms = 10000) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+  };
+
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
     mutationFn: async ({ status, note = "" }) => {
       if (navigator.onLine) {
         try {
-          const res = await fetch(`/api/orders/status/${orderId}`, {
+          const res = await fetchWithTimeout(`/api/orders/status/${orderId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -137,7 +143,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
       const amount = paymentAmount ? Number(paymentAmount) : remaining;
       if (navigator.onLine) {
         try {
-          const res = await fetch(`/api/orders/payment/${orderId}`, {
+          const res = await fetchWithTimeout(`/api/orders/payment/${orderId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -196,7 +202,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
     mutationFn: async () => {
       if (navigator.onLine) {
         try {
-          const res = await fetch(`/api/orders/status/${orderId}`, {
+          const res = await fetchWithTimeout(`/api/orders/status/${orderId}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
