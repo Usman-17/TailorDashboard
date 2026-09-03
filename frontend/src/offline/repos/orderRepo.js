@@ -133,11 +133,12 @@ export async function update(shopId, localId, data) {
 }
 
 export async function updateStatus(shopId, localId, status) {
-  const existing = await getById(shopId, localId);
+  let existing = await getById(shopId, localId);
+  if (!existing) existing = await getByServerId(shopId, String(localId));
   if (!existing) throw new Error("Order not found locally");
 
   const now = new Date().toISOString();
-  await db[TABLE].where("localId").equals(localId).modify({
+  await db[TABLE].where("localId").equals(existing.localId).modify({
     status,
     syncStatus: "pending",
     updatedAt: now,
@@ -146,10 +147,10 @@ export async function updateStatus(shopId, localId, status) {
   await addToSyncQueue({
     entity: "order",
     operation: "updateStatus",
-    localId,
+    localId: existing.localId,
     serverId: existing.serverId,
     shopId,
-    payload: { status, localId, serverId: existing.serverId },
+    payload: { status, localId: existing.localId, serverId: existing.serverId },
   });
 }
 

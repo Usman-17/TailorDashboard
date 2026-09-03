@@ -20,6 +20,7 @@ import {
 
 import { useGetOrder } from "../../../hooks/useGetOrder";
 import useGetAuth from "../../../hooks/useGetAuth";
+import * as orderRepo from "../../../offline/repos/orderRepo";
 
 import CustomModal from "../../../components/CustomModal";
 import FullScreenModal from "../../../components/FullScreenModal";
@@ -80,6 +81,7 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const queryClient = useQueryClient();
   const { order, isLoading } = useGetOrder(orderId);
   const { data: authUser } = useGetAuth();
+  const shopId = authUser?.shop?._id || authUser?.shop;
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -98,20 +100,32 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
 
   const { mutate: updateStatus, isPending: isUpdatingStatus } = useMutation({
     mutationFn: async ({ status, note = "" }) => {
-      const res = await fetch(`/api/orders/status/${orderId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status, note }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to update status");
+      if (navigator.onLine) {
+        try {
+          const res = await fetch(`/api/orders/status/${orderId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ status, note }),
+          });
+          if (res.ok) return res.json();
+        } catch {
+          // fallback to offline
+        }
       }
-      return res.json();
+
+      if (shopId) {
+        await orderRepo.updateStatus(shopId, orderId, status);
+        return { success: true, offline: true };
+      }
+      throw new Error("Failed to update status");
     },
-    onSuccess: () => {
-      toast.success("Status updated");
+    onSuccess: (data) => {
+      if (data?.offline) {
+        toast.success("Status updated (offline)");
+      } else {
+        toast.success("Status updated");
+      }
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
@@ -121,25 +135,52 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
   const { mutate: addPayment, isPending: isAddingPayment } = useMutation({
     mutationFn: async () => {
       const amount = paymentAmount ? Number(paymentAmount) : remaining;
-      const res = await fetch(`/api/orders/payment/${orderId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
+      if (navigator.onLine) {
+        try {
+          const res = await fetch(`/api/orders/payment/${orderId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              amount,
+              method: paymentMethod,
+              note: paymentNote,
+              referenceNo: paymentRefNo,
+            }),
+          });
+          if (res.ok) return res.json();
+        } catch {
+          // fallback to offline
+        }
+      }
+
+      if (shopId && order) {
+        const newAdvancePaid = (order.advancePaid || 0) + amount;
+        const newPayment = {
           amount,
           method: paymentMethod,
           note: paymentNote,
           referenceNo: paymentRefNo,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to add payment");
+          date: new Date().toISOString(),
+        };
+        const existingPayments = Array.isArray(order.paymentHistory)
+          ? order.paymentHistory
+          : [];
+        await orderRepo.update(shopId, order.localId || order._id, {
+          advancePaid: newAdvancePaid,
+          remainingBalance: (order.totalAmount || 0) - newAdvancePaid,
+          paymentHistory: [...existingPayments, newPayment],
+        });
+        return { success: true, offline: true };
       }
-      return res.json();
+      throw new Error("Failed to add payment");
     },
-    onSuccess: () => {
-      toast.success("Payment recorded");
+    onSuccess: (data) => {
+      if (data?.offline) {
+        toast.success("Payment recorded (offline)");
+      } else {
+        toast.success("Payment recorded");
+      }
       setShowPaymentModal(false);
       setPaymentAmount("");
       setPaymentMethod("cash");
@@ -153,20 +194,35 @@ const OrderDetailPage = ({ orderId, open, onClose, onEditOrder }) => {
 
   const { mutate: cancelOrder, isPending: isCancelling } = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/orders/status/${orderId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ status: "cancelled", note: "Order cancelled" }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to cancel order");
+      if (navigator.onLine) {
+        try {
+          const res = await fetch(`/api/orders/status/${orderId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              status: "cancelled",
+              note: "Order cancelled",
+            }),
+          });
+          if (res.ok) return res.json();
+        } catch {
+          // fallback to offline
+        }
       }
-      return res.json();
+
+      if (shopId) {
+        await orderRepo.updateStatus(shopId, orderId, "cancelled");
+        return { success: true, offline: true };
+      }
+      throw new Error("Failed to cancel order");
     },
-    onSuccess: () => {
-      toast.success("Order cancelled");
+    onSuccess: (data) => {
+      if (data?.offline) {
+        toast.success("Order cancelled (offline)");
+      } else {
+        toast.success("Order cancelled");
+      }
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
