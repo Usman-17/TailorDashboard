@@ -1,10 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 import * as orderRepo from "../offline/repos/orderRepo";
+import * as customerRepo from "../offline/repos/customerRepo";
 import useGetAuth from "./useGetAuth";
 
 const useGetAllOrders = () => {
   const { data: authUser } = useGetAuth();
   const shopId = authUser?.shop?._id || authUser?.shop;
+
+  const resolveCustomer = async (order) => {
+    if (order.customer && typeof order.customer === "object") return order.customer;
+    const id = order.customerId || order.customer || null;
+    if (id) {
+      let customer = await customerRepo.getByServerId(shopId, String(id));
+      if (!customer) customer = await customerRepo.getById(shopId, String(id));
+      if (customer) return { _id: customer.serverId || customer.localId, name: customer.name, phone: customer.phone };
+    }
+    if (order.customerName) return { _id: id || order.localId, name: order.customerName };
+    return { _id: id || "unknown", name: "Unknown" };
+  };
 
   const {
     data: orders,
@@ -42,11 +55,13 @@ const useGetAllOrders = () => {
 
               const allOrders = [
                 ...serverOrders,
-                ...unsyncedPending.map((o) => ({
-                  ...o,
-                  _id: o.serverId || o.localId,
-                  customer: o.customerId || o.customerLocalId,
-                })),
+                ...await Promise.all(
+                  unsyncedPending.map(async (o) => ({
+                    ...o,
+                    _id: o.serverId || o.localId,
+                    customer: await resolveCustomer(o),
+                  })),
+                ),
               ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
               return allOrders;
@@ -56,16 +71,18 @@ const useGetAllOrders = () => {
           }
         }
 
-        return localOrders
-          .filter((o) => !o.isDeleted)
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-          .map((o) => ({
-            ...o,
-            _id: o.serverId || o.localId,
-            customer: o.customerId || o.customerLocalId,
-            createdAt: o.createdAt,
-            updatedAt: o.updatedAt,
-          }));
+        return Promise.all(
+          localOrders
+            .filter((o) => !o.isDeleted)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .map(async (o) => ({
+              ...o,
+              _id: o.serverId || o.localId,
+              customer: await resolveCustomer(o),
+              createdAt: o.createdAt,
+              updatedAt: o.updatedAt,
+            })),
+        );
       }
 
       return [];
