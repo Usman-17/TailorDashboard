@@ -28,7 +28,9 @@ import {
   SHALWAR_FIELDS,
   TROUSER_FIELDS,
   lowerFieldTitle,
+  initialMeasurementState,
 } from "./measurementFields";
+import MeasurementModal from "./MeasurementModal";
 // Imports End----
 
 const STATUS_COLORS = {
@@ -214,6 +216,8 @@ const CustomerDetailPage = () => {
   const [activeTab, setActiveTab] = useState("orders");
   const [bookOrderOpen, setBookOrderOpen] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState(null);
+  const [measureModalOpen, setMeasureModalOpen] = useState(false);
+  const [measureForm, setMeasureForm] = useState(initialMeasurementState);
   const tabRefs = useRef({});
 
   const customer = data?.customer || null;
@@ -877,9 +881,19 @@ const CustomerDetailPage = () => {
                 size={40}
                 className="text-gray-300 dark:text-gray-600 mb-3"
               />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 No measurement added for this customer yet
               </p>
+              <button
+                onClick={() => {
+                  setMeasureForm(initialMeasurementState);
+                  setMeasureModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition cursor-pointer"
+              >
+                <Plus size={16} />
+                Add Measurement
+              </button>
             </div>
           )}
 
@@ -913,6 +927,15 @@ const CustomerDetailPage = () => {
         open={!!editingOrderId}
         onClose={() => setEditingOrderId(null)}
         orderId={editingOrderId}
+      />
+      {/* Measurement Modal */}
+      <MeasurementModal
+        open={measureModalOpen}
+        onClose={() => setMeasureModalOpen(false)}
+        mode="add"
+        customer={customer}
+        measureForm={measureForm}
+        setMeasureForm={setMeasureForm}
       />
     </div>
   );
