@@ -180,7 +180,7 @@ const MobileDashboardView = () => {
       title: "Measurements",
       image: measuringTapeIcon,
       bgColor: "bg-[#e6f9ed] dark:bg-[#1a3a2a]",
-      onClick: () => navigate("/customers"),
+      onClick: () => navigate("/customers?filter=without_measurement"),
     },
     {
       id: "add_orders",

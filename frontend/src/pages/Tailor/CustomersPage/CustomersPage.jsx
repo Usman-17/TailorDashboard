@@ -44,8 +44,14 @@ const validate = (form) => {
 };
 
 const CustomersPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const modalParam = searchParams.get("modal");
+  const filterParam = searchParams.get("filter");
+
   const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("all");
+  const [filterType, setFilterType] = useState(
+    filterParam === "without_measurement" ? "without_measurement" : "all",
+  );
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editCustomer, setEditCustomer] = useState(null);
   const [form, setForm] = useState({ name: "", phone: "" });
@@ -63,8 +69,6 @@ const CustomersPage = () => {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
-  const [searchParams, setSearchParams] = useSearchParams();
-  const modalParam = searchParams.get("modal");
 
   const openBookOrderModal = (customer) => {
     setBookOrderModal({ open: true, customer });
